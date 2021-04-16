@@ -260,6 +260,7 @@ contract L2_NovaRegistry is ReentrancyGuard {
         require(requestCreators[execHash] == msg.sender, "NOT_CREATOR");
         require(gasPrice > previousGasPrice, "LESS_THAN_PREVIOUS_GAS_PRICE");
 
+        // Generate a new execHash for the resubmitted request.
         systemNonce += 1;
         newExecHash = keccak256(
             abi.encodePacked(
@@ -272,6 +273,7 @@ contract L2_NovaRegistry is ReentrancyGuard {
 
         uint32 gasLimit = requestGasLimits[execHash];
 
+        // Fill out data for the resubmitted request.
         requestTasks[newExecHash] = requestTasks[execHash];
         requestCalldatas[newExecHash] = requestCalldatas[execHash];
         requestGasLimits[newExecHash] = gasLimit;
