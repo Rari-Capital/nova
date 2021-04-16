@@ -245,7 +245,11 @@ contract L2_NovaRegistry is ReentrancyGuard {
         emit Withdraw(execHash);
     }
 
-    /// @notice
+    /// @notice Resubmit a request with a higher gas price.
+    /// @notice This will "uncle" the `execHash` which means after `MIN_CANCEL_SECONDS` it will be disabled and the `newExecHash` will be enabled.
+    /// @notice msg.sender must be the creator of the request associated with the `execHash`.
+    /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
+    /// @param gasPrice The updated gas price to use for the resubmitted request.
     function bumpGas(bytes32 execHash, uint256 gasPrice)
         external
         returns (bytes32 newExecHash)
