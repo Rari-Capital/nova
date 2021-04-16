@@ -308,7 +308,16 @@ contract L2_NovaRegistry is ReentrancyGuard {
         Bounty[] memory bounties = requestBounties[execHash];
 
         // Transfer the ETH used for gas to the rewardRecipient.
-        ETH.transfer(rewardRecipient, requestGasPrices[execHash] * gasUsed);
+        ETH.transfer(
+            rewardRecipient,
+            requestGasPrices[execHash] *
+                (
+                    // Don't give them any more ETH than the gas limit
+                    gasUsed > requestGasLimits[execHash]
+                        ? requestGasLimits[execHash]
+                        : gasUsed
+                )
+        );
 
         // Only transfer input tokens if the request didn't revert.
         if (!reverted) {
