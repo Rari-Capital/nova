@@ -6,11 +6,20 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract L2_NovaRegistry is ReentrancyGuard {
+import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
+
+contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     using SafeERC20 for IERC20;
 
     IERC20 immutable ETH = IERC20(0x4200000000000000000000000000000000000006);
     uint256 immutable MIN_CANCEL_SECONDS = 300;
+    address L1_NovaExecutionManager;
+
+    constructor(address _L1_NovaExecutionManager)
+        OVM_CrossDomainEnabled(0x4200000000000000000000000000000000000007)
+    {
+        L1_NovaExecutionManager = _L1_NovaExecutionManager;
+    }
 
     /// @notice Emitted when `cancel` is called.
     /// @param timestamp When the cancel will set into effect and the creator will be able to withdraw.
@@ -303,7 +312,11 @@ contract L2_NovaRegistry is ReentrancyGuard {
         address rewardRecipient,
         uint256 gasUsed,
         bool reverted
-    ) external nonReentrant {
+    )
+        external
+        nonReentrant
+        onlyFromCrossDomainAccount(L1_NovaExecutionManager)
+    {
         (bool executable, ) = isExecutable(execHash);
         require(executable, "NOT_EXECUTABLE");
 
