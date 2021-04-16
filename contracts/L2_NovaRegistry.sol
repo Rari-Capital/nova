@@ -15,8 +15,8 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     uint256 immutable MIN_CANCEL_SECONDS = 300;
     address immutable L1_NovaExecutionManager;
 
-    constructor(address _L1_NovaExecutionManager)
-        OVM_CrossDomainEnabled(0x4200000000000000000000000000000000000007)
+    constructor(address _L1_NovaExecutionManager, address _messenger)
+        OVM_CrossDomainEnabled(_messenger)
     {
         L1_NovaExecutionManager = _L1_NovaExecutionManager;
     }

@@ -7,23 +7,29 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract L1_NovaExecutionManager {
-    function exec(
-        uint72 execNonce,
-        address task,
-        bytes memory l1calldata,
-        uint256 xDomainMessageGasLimit
-    ) public {
-        // TODO
-    }
-
     function execWithRecipient(
         uint72 execNonce,
         address task,
         bytes calldata l1calldata,
         uint256 xDomainMessageGasLimit,
         address l2Recipient
-    ) external {
+    ) public {
         // TODO
+    }
+
+    function exec(
+        uint72 execNonce,
+        address task,
+        bytes calldata l1calldata,
+        uint256 xDomainMessageGasLimit
+    ) external {
+        execWithRecipient(
+            execNonce,
+            task,
+            l1calldata,
+            xDomainMessageGasLimit,
+            msg.sender
+        );
     }
 
     function hardRevert() external {
