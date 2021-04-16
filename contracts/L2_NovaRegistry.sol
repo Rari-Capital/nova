@@ -341,17 +341,19 @@ contract L2_NovaRegistry is ReentrancyGuard {
             // Transfer 70% of the bounty to the rewardRecipient and 30% back to the creator.
             for (uint256 i = 0; i < bounties.length; i++) {
                 IERC20 token = bounties[i].token;
+                uint256 bountyFullAmount = bounties[i].amount;
+                uint256 recipientAmount = (bountyFullAmount * 7) / 10;
 
                 token.safeTransfer(
                     rewardRecipient,
-                    // 70% goes to the rewardRecipient
-                    (bounties[i].amount * 3) / 10
+                    // 70% goes to the rewardRecipient:
+                    recipientAmount
                 );
 
                 token.safeTransfer(
                     creator,
-                    // 30% goes to the creator
-                    (bounties[i].amount * 3) / 10
+                    // Remainder goes to the creator:
+                    bountyFullAmount - recipientAmount
                 );
             }
         }
