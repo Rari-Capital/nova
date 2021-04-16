@@ -321,16 +321,23 @@ contract L2_NovaRegistry is ReentrancyGuard {
         view
         returns (bool executable, uint256 changeTimestamp)
     {
-        (bool tokensRemoved, uint256 tokensRemovedChangeTimestamp) =
-            areTokensRemoved(execHash);
-        (bool canceled, uint256 canceledChangeTimestamp) = isCanceled(execHash);
+        if (requestCreators[execHash] == address(0)) {
+            // This isn't a valid execHash!
+            executable = false;
+            changeTimestamp = 0;
+        } else {
+            (bool tokensRemoved, uint256 tokensRemovedChangeTimestamp) =
+                areTokensRemoved(execHash);
+            (bool canceled, uint256 canceledChangeTimestamp) =
+                isCanceled(execHash);
 
-        executable = !tokensRemoved && !canceled;
+            executable = !tokensRemoved && !canceled;
 
-        // One or both of these values will be 0 so we can just add them.
-        changeTimestamp =
-            canceledChangeTimestamp +
-            tokensRemovedChangeTimestamp;
+            // One or both of these values will be 0 so we can just add them.
+            changeTimestamp =
+                canceledChangeTimestamp +
+                tokensRemovedChangeTimestamp;
+        }
     }
 
     /// @notice Checks if the request is currently canceled along with a timestamp of when it may be canceled.
