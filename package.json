@@ -1,0 +1,49 @@
+{
+  "name": "nova",
+  "version": "1.0.0",
+  "description": "🍣🌟",
+  "scripts": {
+    "postinstall": "patch-package --patch-dir node_modules/@thesatoshicompany/optimism-openzeppelin-compat/patches",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "coverage": "hardhat coverage",
+    "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
+    "deploy": "hardhat deploy",
+    "verify": "hardhat verify"
+  },
+  "author": "t11s",
+  "license": "AGPL-3.0-only",
+  "devDependencies": {
+    "@nomiclabs/hardhat-etherscan": "^2.1.1",
+    "@typechain/ethers-v5": "^6.0.5",
+    "@typechain/hardhat": "^1.0.1",
+    "@types/bn.js": "^5.1.0",
+    "@types/chai": "^4.2.16",
+    "@types/chai-as-promised": "^7.1.3",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^14.14.37",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "dotenv": "^8.2.0",
+    "ganache-time-traveler": "^1.0.15",
+    "hardhat": "^2.1.2",
+    "hardhat-gas-reporter": "^1.0.4",
+    "hardhat-preprocessor": "^0.1.2",
+    "solidity-coverage": "^0.7.16",
+    "ts-generator": "^0.1.1",
+    "ts-node": "^9.1.1",
+    "typechain": "^4.0.3",
+    "typescript": "^4.2.3",
+    "web3": "^1.3.4"
+  },
+  "dependencies": {
+    "@eth-optimism/contracts": "^0.1.11",
+    "@eth-optimism/hardhat-ovm": "0.0.2",
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/contracts": "^3.4.0",
+    "@thesatoshicompany/optimism-openzeppelin-compat": "^1.0.3",
+    "ethereum-waffle": "^3.3.0",
+    "ethers": "^5.1.0"
+  }
+}
