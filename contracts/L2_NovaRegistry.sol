@@ -13,7 +13,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
 
     IERC20 immutable ETH = IERC20(0x4200000000000000000000000000000000000006);
     uint256 immutable MIN_CANCEL_SECONDS = 300;
-    address L1_NovaExecutionManager;
+    address immutable L1_NovaExecutionManager;
 
     constructor(address _L1_NovaExecutionManager)
         OVM_CrossDomainEnabled(0x4200000000000000000000000000000000000007)
