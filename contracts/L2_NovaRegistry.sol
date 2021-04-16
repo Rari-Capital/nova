@@ -233,7 +233,7 @@ contract L2_NovaRegistry is ReentrancyGuard {
             requestGasPrices[execHash] * requestGasLimits[execHash]
         );
 
-        // Transfer bounties back to the creator.
+        // Transfer input tokens back to the creator.
         for (uint256 i = 0; i < inputTokens.length; i++) {
             inputTokens[i].l2Token.safeTransfer(creator, inputTokens[i].amount);
         }
@@ -303,6 +303,58 @@ contract L2_NovaRegistry is ReentrancyGuard {
 
         // Store that the request has had its tokens removed.
         requestTokenRemovalTimestamps[execHash] = 1;
+
+        InputToken[] memory inputTokens = requestInputTokens[execHash];
+        Bounty[] memory bounties = requestBounties[execHash];
+
+        // Transfer the ETH used for gas to the rewardRecipient.
+        ETH.transfer(rewardRecipient, requestGasPrices[execHash] * gasUsed);
+
+        // Only transfer input tokens if the request didn't revert.
+        if (!reverted) {
+            // Transfer input tokens to the rewardRecipient.
+            for (uint256 i = 0; i < inputTokens.length; i++) {
+                inputTokens[i].l2Token.safeTransfer(
+                    rewardRecipient,
+                    inputTokens[i].amount
+                );
+            }
+
+            // Transfer full bounty back to the rewardRecipient.
+            for (uint256 i = 0; i < bounties.length; i++) {
+                bounties[i].token.safeTransfer(
+                    rewardRecipient,
+                    bounties[i].amount
+                );
+            }
+        } else {
+            address creator = requestCreators[execHash];
+
+            // Transfer input tokens back to the creator.
+            for (uint256 i = 0; i < inputTokens.length; i++) {
+                inputTokens[i].l2Token.safeTransfer(
+                    creator,
+                    inputTokens[i].amount
+                );
+            }
+
+            // Transfer 70% of the bounty to the rewardRecipient and 30% back to the creator.
+            for (uint256 i = 0; i < bounties.length; i++) {
+                IERC20 token = bounties[i].token;
+
+                token.safeTransfer(
+                    rewardRecipient,
+                    // 70% goes to the rewardRecipient
+                    (bounties[i].amount * 3) / 10
+                );
+
+                token.safeTransfer(
+                    creator,
+                    // 30% goes to the creator
+                    (bounties[i].amount * 3) / 10
+                );
+            }
+        }
 
         emit ExecCompleted(
             execHash,
