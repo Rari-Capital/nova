@@ -80,7 +80,7 @@ const config: HardhatUserConfig = {
 
   gasReporter: {
     currency: "USD",
-    gasPrice: parseInt(process.env.GWEI_GAS_PRICE ?? "20"),
+    gasPrice: parseInt(process.env.GWEI_GAS_PRICE ?? "100"),
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
   },
 };
