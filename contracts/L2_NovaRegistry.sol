@@ -15,8 +15,8 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     uint256 immutable MIN_CANCEL_SECONDS = 300;
     address immutable L1_NovaExecutionManager;
 
-    constructor(address _L1_NovaExecutionManager, address _messenger)
-        OVM_CrossDomainEnabled(_messenger)
+    constructor(address _L1_NovaExecutionManager)
+        OVM_CrossDomainEnabled(0x4200000000000000000000000000000000000007)
     {
         L1_NovaExecutionManager = _L1_NovaExecutionManager;
     }
@@ -149,7 +149,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         requestCreators[execHash] = msg.sender;
 
         // Transfer in ETH to pay for max gas usage.
-        ETH.safeTransferFrom(msg.sender, address(this), gasPrice * gasLimit);
+        // ETH.safeTransferFrom(msg.sender, address(this), gasPrice * gasLimit);
 
         // Transfer input tokens in that the msg.sender has approved.
         for (uint256 i = 0; i < inputTokens.length; i++) {

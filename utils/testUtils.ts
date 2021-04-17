@@ -18,3 +18,12 @@ export const createTestWallet = (
 export function createFactory<T>(name: string): Promise<T> {
   return ethers.getContractFactory(name) as any;
 }
+
+export async function waitForL1ToL2Tx(
+  tx: Promise<ContractTransaction>,
+  watcher: any
+) {
+  const { transaction } = await wait(tx);
+  const [msgHash] = await watcher.getMessageHashesFromL1Tx(transaction.hash);
+  await watcher.getL2TransactionReceipt(msgHash);
+}

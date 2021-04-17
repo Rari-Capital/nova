@@ -1,11 +1,19 @@
-import chai from "chai";
+import chai, { expect } from "chai";
 import chaiAsPromised from "chai-as-promised";
 
 import { getContractFactory } from "@eth-optimism/contracts";
 
 import { Watcher } from "@eth-optimism/core-utils";
-import { L2NovaRegistry__factory, L2NovaRegistry } from "../typechain";
-import { createFactory, createTestWallet, wait } from "../utils/testUtils";
+import { L2NovaRegistry__factory, L2NovaRegistry, IERC20 } from "../typechain";
+import {
+  createFactory,
+  createTestWallet,
+  wait,
+  waitForL1ToL2Tx,
+} from "../utils/testUtils";
+import { ethers } from "hardhat";
+import { L1NovaExecutionManager } from "../typechain/L1NovaExecutionManager";
+import { L1NovaExecutionManager__factory } from "../typechain/factories/L1NovaExecutionManager__factory";
 
 chai.use(chaiAsPromised);
 chai.should();
@@ -22,7 +30,7 @@ describe("Nova", function () {
 
   const OVM_ETH = getContractFactory("OVM_ETH")
     .connect(l2Wallet)
-    .attach("0x4200000000000000000000000000000000000006");
+    .attach("0x4200000000000000000000000000000000000006") as IERC20;
 
   // Cross layer watcher:
   const watcher = new Watcher({
@@ -37,47 +45,48 @@ describe("Nova", function () {
   });
 
   // Nova specific contracts:
-  let l2_novaRegistry: L2NovaRegistry;
+  let l1_NovaExecutionManager: L1NovaExecutionManager;
+  let l2_NovaRegistry: L2NovaRegistry;
+
   before(async () => {
-    l2_novaRegistry = await (
+    // Deposit ETH to our L2 wallet:
+    await waitForL1ToL2Tx(
+      OVM_L1ETHGateway.connect(l1Wallet).depositTo(l2Wallet.address, {
+        value: ethers.utils.parseEther("5"),
+      }),
+      watcher
+    );
+
+    l1_NovaExecutionManager = await (
+      await createFactory<L1NovaExecutionManager__factory>(
+        "L1_NovaExecutionManager"
+      )
+    )
+      .connect(l1Wallet)
+      .deploy();
+
+    l2_NovaRegistry = await (
       await createFactory<L2NovaRegistry__factory>("L2_NovaRegistry")
-    ).deploy("0x0000000000000000000000000000000000000000", l2Wallet.address);
+    )
+      .connect(l2Wallet)
+      .deploy(l1_NovaExecutionManager.address, {
+        gasLimit: 9000000,
+        gasPrice: 0,
+      });
   });
 
   it("requestExec", async function () {
-    console.log("Depositing ETH...");
-    const { transaction } = await wait(
-      OVM_L1ETHGateway.connect(l1Wallet).deposit({
-        value: "1000",
-      })
+    await wait(OVM_ETH.approve(l2_NovaRegistry.address, 100));
+
+    const { receipt } = await wait(
+      l2_NovaRegistry.requestExec(
+        "0x0000000000000000000000000000000000000000",
+        "0x20",
+        10,
+        10,
+        [],
+        []
+      )
     );
-
-    console.log(
-      "ETH balance:",
-      (await OVM_ETH.balanceOf(l1Wallet.address)).toString()
-    );
-
-    console.log("Getting message hash...");
-    const [msgHash] = await watcher.getMessageHashesFromL1Tx(transaction.hash);
-    console.log("Getting l2 transaction receipt...");
-    await watcher.getL2TransactionReceipt(msgHash);
-
-    console.log(
-      "New ETH balance:",
-      (await OVM_ETH.balanceOf(l1Wallet.address)).toString()
-    );
-
-    // const response = await (
-    //   await l2_novaRegistry.requestExec(
-    //     "0x0000000000000000000000000000000000000000",
-    //     "0x20",
-    //     100,
-    //     100,
-    //     [],
-    //     []
-    //   )
-    // ).wait();
-
-    // console.log(response.gasUsed.toString());
   });
 });
