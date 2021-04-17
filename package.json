@@ -5,13 +5,11 @@
   "scripts": {
     "postinstall": "patch-package --patch-dir node_modules/@thesatoshicompany/optimism-openzeppelin-compat/patches",
     "compile": "hardhat compile",
-    "test": "hardhat test --network optimism",
+    "test": "hardhat test",
     "coverage": "hardhat coverage",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
     "deploy": "hardhat deploy",
-    "verify": "hardhat verify",
-    "start-optimism": "cd optimism/ops && docker-compose up",
-    "full-run": "concurrently 'npm:start-optimism' 'sleep 20 && npm run test' --kill-others --success first"
+    "verify": "hardhat verify"
   },
   "author": "t11s",
   "license": "AGPL-3.0-only",
@@ -47,7 +45,6 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^3.4.0",
     "@thesatoshicompany/optimism-openzeppelin-compat": "^1.0.3",
-    "concurrently": "^6.0.2",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.1.0"
   }
