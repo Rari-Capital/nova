@@ -181,7 +181,7 @@ A bot can still execute the uncled request associated with the `execHash` up unt
 function isExecutable(bytes32 execHash) public view returns (bool executable, uint256 changeTimestamp)
 ```
 
-Checks if the request is executable along with a timestamp of when that may change. The `changeTimestamp` will be timestamp indicating when the request might switch from being executable to unexecutable (or vice-versa). Will be 0 if there is no change expected. It will be a timestamp if the request will be enabled soon (as it's a resubmitted version of an uncled request) or the request is being canceled soon.
+Returns if the request is executable (`executeable`) along with a timestamp of when that may change (`changeTimestamp`). The `changeTimestamp` will be timestamp indicating when the request might switch from being executable to unexecutable (or vice-versa). Will be 0 if there is no change expected. It will be a timestamp if the request will be enabled soon (as it's a resubmitted version of an uncled request) or the request is being canceled soon.
 
 Bots should call this function before trying to execute a request in the registry.
 
