@@ -149,7 +149,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         requestCreators[execHash] = msg.sender;
 
         // Transfer in ETH to pay for max gas usage.
-        // ETH.safeTransferFrom(msg.sender, address(this), gasPrice * gasLimit);
+        ETH.safeTransferFrom(msg.sender, address(this), gasPrice * gasLimit);
 
         // Transfer input tokens in that the msg.sender has approved.
         for (uint256 i = 0; i < inputTokens.length; i++) {

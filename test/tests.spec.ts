@@ -7,6 +7,7 @@ import { Watcher } from "@eth-optimism/core-utils";
 import { L2NovaRegistry__factory, L2NovaRegistry, IERC20 } from "../typechain";
 import {
   createFactory,
+  createOVMFactory,
   createTestWallet,
   wait,
   waitForL1ToL2Tx,
@@ -57,36 +58,49 @@ describe("Nova", function () {
       watcher
     );
 
-    l1_NovaExecutionManager = await (
-      await createFactory<L1NovaExecutionManager__factory>(
-        "L1_NovaExecutionManager"
-      )
+    l1_NovaExecutionManager = await createFactory<L1NovaExecutionManager__factory>(
+      "L1_NovaExecutionManager"
     )
       .connect(l1Wallet)
       .deploy();
 
-    l2_NovaRegistry = await (
-      await createFactory<L2NovaRegistry__factory>("L2_NovaRegistry")
+    l2_NovaRegistry = await createOVMFactory<L2NovaRegistry__factory>(
+      "L2_NovaRegistry"
     )
       .connect(l2Wallet)
-      .deploy(l1_NovaExecutionManager.address, {
-        gasLimit: 9000000,
-        gasPrice: 0,
-      });
+      .deploy(l1_NovaExecutionManager.address);
   });
 
-  it("requestExec", async function () {
-    await wait(OVM_ETH.approve(l2_NovaRegistry.address, 100));
+  describe("requestExec", async function () {
+    it("should allow a valid request", async function () {
+      // Approve 100 wei as gas for the first request.
+      await wait(OVM_ETH.approve(l2_NovaRegistry.address, 100));
 
-    const { receipt } = await wait(
-      l2_NovaRegistry.requestExec(
-        "0x0000000000000000000000000000000000000000",
-        "0x20",
-        10,
-        10,
-        [],
-        []
-      )
-    );
+      // This will not revert because we have approved just enough wei.
+      await l2_NovaRegistry
+        .connect(l2Wallet)
+        .requestExec(
+          "0x0000000000000000000000000000000000000000",
+          "0x20",
+          10,
+          10,
+          [],
+          []
+        ).should.not.be.reverted;
+    });
+
+    it("should revert if not enough wei is approved to pay for gas", async function () {
+      // This should revert as the 100 wei was already taken by the previous request.
+      await l2_NovaRegistry
+        .connect(l2Wallet)
+        .requestExec(
+          "0x0000000000000000000000000000000000000000",
+          "0x20",
+          10,
+          10,
+          [],
+          []
+        ).should.be.reverted;
+    });
   });
 });

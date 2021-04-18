@@ -4,8 +4,8 @@
   "description": "🍣🌟",
   "scripts": {
     "postinstall": "patch-package --patch-dir node_modules/@thesatoshicompany/optimism-openzeppelin-compat/patches",
-    "compile": "hardhat compile",
-    "test": "hardhat test",
+    "compile": "hardhat compile && hardhat compile --network optimism",
+    "test": "hardhat test --network optimism",
     "coverage": "hardhat coverage",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
     "deploy": "hardhat deploy",
