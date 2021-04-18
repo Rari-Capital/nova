@@ -75,17 +75,22 @@ describe("Nova", function () {
       watcher
     );
 
+    // Deploy execution manager on L1.
     l1_NovaExecutionManager = await createFactory<L1NovaExecutionManager__factory>(
       "L1_NovaExecutionManager"
     )
       .connect(l1Wallet)
-      .deploy();
+      .deploy(watcher.l1.messengerAddress);
 
+    // Deploy registry on L2.
     l2_NovaRegistry = await createOVMFactory<L2NovaRegistry__factory>(
       "L2_NovaRegistry"
     )
       .connect(l2Wallet)
       .deploy(l1_NovaExecutionManager.address);
+
+    // Tell the execution manager about the registry's address on L2.
+    await wait(l1_NovaExecutionManager.init(l2_NovaRegistry.address));
   });
 
   describe("requestExec", async function () {

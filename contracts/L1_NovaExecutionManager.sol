@@ -26,16 +26,16 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         keccak256("__NOVA__HARD__REVERT__");
 
     /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
-    address private immutable L2_NovaRegistry;
+    address private L2_NovaRegistry;
 
     /// @dev The address of the strategy that is currenlty being called.
     address private currentlyExecutingStrategy;
     /// @dev The address who called `exec`/`execWithRecipient`.
     address private currentExecutor;
 
-    constructor(address _L2_NovaRegistry, address _l1messenger)
-        OVM_CrossDomainEnabled(_l1messenger)
-    {
+    constructor(address _l1messenger) OVM_CrossDomainEnabled(_l1messenger) {}
+
+    function init(address _L2_NovaRegistry) external {
         L2_NovaRegistry = _L2_NovaRegistry;
     }
 
