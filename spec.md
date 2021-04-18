@@ -147,7 +147,7 @@ Once the registry verifies that the `execHash` was previously registered (meanin
 
 - It will then loop over all the `bounties` and transfer the `amount` of each `l2Token` to the `rewardRecipient`. **If `reverted` is true it will transfer 30% of the amount back to the request's creator and only 70% to the `rewardRecipient`.**
 
-After all the bounties/inputs have been paid out we will delete the `execHash` from the registry's storage so it cannot be executed again.
+After all the bounties/inputs have been paid out it will mark `execHash` as executed so it cannot be executed again.
 
 ```solidity
 function cancel(bytes32 execHash, uint256 withdrawDelaySeconds) public
