@@ -6,7 +6,6 @@ import { HardhatUserConfig } from "hardhat/config";
 import { gweiToWei } from "./utils";
 
 // Plugins:
-import "solidity-coverage";
 import "@nomiclabs/hardhat-etherscan";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";

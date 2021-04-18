@@ -6,8 +6,6 @@
     "postinstall": "patch-package --patch-dir node_modules/@thesatoshicompany/optimism-openzeppelin-compat/patches",
     "compile": "hardhat compile && hardhat compile --network optimism",
     "test": "hardhat test --network optimism",
-    "coverage": "hardhat coverage",
-    "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
     "deploy": "hardhat deploy",
     "verify": "hardhat verify"
   },
@@ -29,7 +27,6 @@
     "hardhat": "^2.1.2",
     "hardhat-gas-reporter": "^1.0.4",
     "hardhat-preprocessor": "^0.1.2",
-    "solidity-coverage": "^0.7.16",
     "ts-generator": "^0.1.1",
     "ts-node": "^9.1.1",
     "typechain": "^4.0.3",
