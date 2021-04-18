@@ -173,26 +173,17 @@ A user cannot call this function unless they have already called `cancel` and wa
 function bumpGas(bytes32 execHash, uint256 gasPrice) external returns (bytes32 newExecHash)
 ```
 
-`bumpGas` allows a user to increase the gas price for their execution request without having to `cancel`, `withdraw` and call `requestExec` again. Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (bots will no longer be able to fill the request) and enabling an updated version of the request (`newExecHash`).
+`bumpGas` allows a user to increase the gas price for their execution request without having to `cancel`, `withdraw` and call `requestExec` again. Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (this is known as the "uncled" request) and enabling an updated version of the request (this is known as the resubmitted request which can be found under `newExecHash`).
 
-A bot can still execute the original request associated with the `execHash` up until the delay has passed.
+A bot can still execute the uncled request associated with the `execHash` up until the delay has passed. If a bot executes the uncled request before the delay has passed the resubmitted request will not be executable after the delay. 
 
 ```solidity
-function isDisabled(bytes32 execHash) external view returns (bool isDisabled, int256 disableTimestamp)
+function isExecutable(bytes32 execHash) public view returns (bool executable, uint256 changeTimestamp)
 ```
 
-This function will return true if the execution request this `execHash` points to has been disabled. It also returns the timestamp of when the request will/has become disabled (will be 0 if no cancel or bump has been initiated). The `disableTimestamp` will be a negative timestamp if the request is currently disabled but after a delay period will become re-enabled (type #3 below); the absolute value of the timestamp will be when the strategy enables.
+Returns if the request is executable (`executeable`) along with a timestamp of when that may change (`changeTimestamp`). The `changeTimestamp` will be timestamp indicating when the request might switch from being executable to unexecutable (or vice-versa). Will be 0 if there is no change expected. It will be a timestamp if the request will be enabled soon (as it's a resubmitted version of an uncled request) or the request is being canceled soon.
 
-An execution request can be disabled for 1 of 3 reasons:
-
-1. The request was canceled
-2. The request was bumped (replaced by a new one with a higher gas price)
-3. The request is a replacement for a request being bumped (waiting for the 5 minute delay to pass before it's bumped)
-   - Replacement requests are the only of the 3 disable types that starts disabled and un-disables after 5 minutes. Bots should be aware of this (they can check by determining if `disableTimestamp` is negative. If the timestamp is negative, the absolute value of it is the timestamp of when the strategy enables).
-
-This function will only return true once the delay period has passed for the cancel/bump/replacement (min 5 minutes).
-
-Bots should call this function before trying to execute a strategy in the registry (as some of these disabled requests may still be present).
+Bots should call this function before trying to execute a request in the registry.
 
 ## Example Integration
 
