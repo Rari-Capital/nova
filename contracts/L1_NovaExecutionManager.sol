@@ -8,16 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 
-interface iL2_NovaRegistry {
-    function execCompleted(
-        bytes32 execHash,
-        address executor,
-        address rewardRecipient,
-        uint256 gasUsed,
-        bool reverted
-    ) external;
-}
-
 contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     using SafeERC20 for IERC20;
 
@@ -138,4 +128,14 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
             return false;
         }
     }
+}
+
+interface iL2_NovaRegistry {
+    function execCompleted(
+        bytes32 execHash,
+        address executor,
+        address rewardRecipient,
+        uint256 gasUsed,
+        bool reverted
+    ) external;
 }
