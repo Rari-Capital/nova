@@ -114,6 +114,11 @@ describe("Nova", function () {
           }),
           "0x0000000000000000000000000000000000000000"
         );
+
+      // Ensure the registry transferred in the ETH.
+      await OVM_ETH.balanceOf(l2_NovaRegistry.address).should.eventually.equal(
+        100
+      );
     });
 
     it("should revert if not enough wei is approved to pay for gas", async function () {
