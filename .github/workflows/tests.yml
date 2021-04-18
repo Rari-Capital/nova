@@ -1,0 +1,28 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Clone the Optimism Monorepo
+        working-directory: ../
+        run: git clone https://github.com/ethereum-optimism/optimism.git
+
+      - name: Build Optimism Ops
+        working-directory: ../optimism/ops
+        run: ./scripts/build-ci.sh
+
+      - name: Bring Optimism ops up and wait for the sequencer to be ready
+        working-directory: ../optimism/ops
+        run: docker-compose up -d && ./scripts/wait-for-sequencer.sh
+
+      - name: Run the tests
+        run: |
+          npm install
+          npm run compile
+          npm run test
