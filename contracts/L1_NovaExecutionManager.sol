@@ -36,6 +36,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     constructor(address _l1messenger) OVM_CrossDomainEnabled(_l1messenger) {}
 
     function init(address _L2_NovaRegistry) external {
+        require(L2_NovaRegistry == address(0), "ALREADY_INITIALIZED");
         L2_NovaRegistry = _L2_NovaRegistry;
     }
 
