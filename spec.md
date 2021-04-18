@@ -8,7 +8,7 @@
 
 - Bots execute requests on L1 by calling the Nova "Execution Manager" contract (on L1) with the calldata users on L2 give them.
 
-- The strategy can send tokens up to L2 via a bridge.
+- The execution manager will call a specific strategy contract which can send tokens up to L2 via a bridge.
 
 - After executing a request, the Nova Execution Manager sends a confirmation up to L2 to unlock the bounty for the bot.
 
