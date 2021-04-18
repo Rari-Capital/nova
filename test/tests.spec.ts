@@ -1,4 +1,4 @@
-import chai, { expect } from "chai";
+import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 
 import { getContractFactory } from "@eth-optimism/contracts";
@@ -18,6 +18,23 @@ import { L1NovaExecutionManager__factory } from "../typechain/factories/L1NovaEx
 
 chai.use(chaiAsPromised);
 chai.should();
+
+function computeExecNonce({
+  nonce,
+  task,
+  calldata,
+  gasPrice,
+}: {
+  nonce: number;
+  task: string;
+  calldata: string;
+  gasPrice: number;
+}) {
+  return ethers.utils.solidityKeccak256(
+    ["uint72", "address", "bytes", "uint256"],
+    [nonce, task, calldata, gasPrice]
+  );
+}
 
 describe("Nova", function () {
   const l1Wallet = createTestWallet("http://localhost:9545");
@@ -86,7 +103,17 @@ describe("Nova", function () {
           10,
           [],
           []
-        ).should.not.be.reverted;
+        )
+        .should.emit(l2_NovaRegistry, "Request")
+        .withArgs(
+          computeExecNonce({
+            nonce: 1,
+            task: "0x0000000000000000000000000000000000000000",
+            calldata: "0x20",
+            gasPrice: 10,
+          }),
+          "0x0000000000000000000000000000000000000000"
+        );
     });
 
     it("should revert if not enough wei is approved to pay for gas", async function () {
