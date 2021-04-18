@@ -19,7 +19,7 @@
 - L1_NovaExecutionManager:
 
 ```solidity
-function exec(uint72 execNonce, address strategy, bytes memory l1calldata, uint256 xDomainMessageGasLimit) public
+function exec(uint72 nonce, address strategy, bytes memory l1calldata, uint256 xDomainMessageGasLimit) public
 ```
 
 This function calls the `strategy` address with the specified `l1calldata`.
@@ -33,7 +33,7 @@ The call to `strategy` is wrapped in a try-catch block:
   - [This is called a SOFT REVERT.](#core-spec)
   - If a strategy **soft reverts**, the `inputTokens` for the request will **not be sent** to the bot and **only 70% of the bounty** will be sent (instead of the usual 100%). The **30% bounty penalty** is to prevent bots from attempting to cause or wait for soft reverts and **act in good faith** instead.
 
-The `execNonce` argument is used to compute the `execHash` needed to unlock the bounty for this strategy on L2.
+The `nonce` argument is used to compute the `execHash` needed to unlock the bounty for this strategy on L2.
 
 The `xDomainMessageGasLimit` is used to determine the gas limit used for the cross domain call to `execCompleted`. [A fraction of this gas limit (currently 1/32nd) is consumed by the call to `sendMessage`](https://github.com/ethereum-optimism/contracts/blob/master/contracts/optimistic-ethereum/OVM/chain/OVM_CanonicalTransactionChain.sol#L42)
 
@@ -58,7 +58,7 @@ After the call to `strategy` is completed, the EM will compute the `execHash` it
 Bots cannot call `exec` with arguments that produce an `execHash` which has previously been successfuly executed.
 
 ```solidity
-function execWithRecipient(uint72 execNonce, address strategy, bytes calldata l1calldata, uint256 xDomainMessageGasLimit, address l2Recipient) external
+function execWithRecipient(uint72 nonce, address strategy, bytes calldata l1calldata, uint256 xDomainMessageGasLimit, address l2Recipient) external
 ```
 
 Behaves like `exec` but tells the `L2_NovaRegistry` contract to send the `inputTokens`/`bounties` to the `l2Recipient` on L2 (instead of specifically the bot who calls the function).
@@ -108,9 +108,9 @@ function requestExec(address strategy, bytes calldata l1calldata, uint256 gasLim
 
 This function allows a user to request a strategy to be executed.
 
-It will first increment `execNonce` for the system which is to prevent duplicate execution requests from having the same `execHash`. The nonce is type `uint72` as it can accommodate 7,000,000,000 people requesting an execution every second for 21,000 years before overflowing.
+It will first increment the contract's nonce which is to prevent duplicate execution requests from having the same `execHash`. The nonce is type `uint72` as it can accommodate 7,000,000,000 people requesting an execution every second for 21,000 years before overflowing.
 
-It will then compute the `execHash` (unique identifier of this specific execution request) like so: `keccak256(abi.encodePacked(execNonce, strategy, l1calldata, gasPrice))`.
+It will then compute the `execHash` (unique identifier of this specific execution request) like so: `keccak256(abi.encodePacked(nonce, strategy, l1calldata, gasPrice))`.
 
 It will then store `execHash` in a mapping and assign it to all of the arguments this function was passed.
 
@@ -130,7 +130,7 @@ function execCompleted(bytes32 execHash, address executor, address rewardRecipie
 
 This function can only be called via a message relayed from cross domain messenger with the L1 origin being the `L1_NovaExecutionManager` contract.
 
-The `execHash` gets computed by the `L1_NovaExecutionManager` like so: `keccak256(abi.encodePacked(execNonce, strategy, l1calldata, gasPrice))` and is used to ensure the right calldata **(and gas price)** was used on L1.
+The `execHash` gets computed by the `L1_NovaExecutionManager` like so: `keccak256(abi.encodePacked(nonce, strategy, l1calldata, gasPrice))` and is used to ensure the right calldata **(and gas price)** was used on L1.
 
 [If there is an active sequencer this function will revert if `executor` is not the sequencer.](#mev-extraction)
 
@@ -198,6 +198,7 @@ function getRequestData(bytes32 execHash)
         InputToken[] memory inputTokens,
         Bounty[] memory bounties,
         // Other data:
+        uint72 nonce,
         address creator,
         bytes32 uncle,
         // Can be fetched via `isExecutable`:
@@ -209,6 +210,7 @@ function getRequestData(bytes32 execHash)
 Returns all relevant data about a request by its `execHash`. 
 
 - The first 6 return items are the parameters passed to `requestExec`. 
+- `nonce` is the nonce assigned to this request. It is used to compute the `execHash`.
 - `creator` is the address which called `requestExec` to create this request.
 - `uncle` may either be an empty bytestring or the execHash of the uncle of this transaction (the transaction that this resubmitted transaction is cloned from).
 - The last two return items are the return values of calling `isExecutable` with `execHash`.
