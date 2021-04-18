@@ -19,7 +19,7 @@ import { L1NovaExecutionManager__factory } from "../typechain/factories/L1NovaEx
 chai.use(chaiAsPromised);
 chai.should();
 
-function computeExecNonce({
+function computeExecHash({
   nonce,
   strategy,
   calldata,
@@ -111,7 +111,7 @@ describe("Nova", function () {
         )
         .should.emit(l2_NovaRegistry, "Request")
         .withArgs(
-          computeExecNonce({
+          computeExecHash({
             nonce: 1,
             strategy: "0x0000000000000000000000000000000000000000",
             calldata: "0x20",
