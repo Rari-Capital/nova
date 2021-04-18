@@ -185,6 +185,34 @@ Returns if the request is executable (`executeable`) along with a timestamp of w
 
 Bots should call this function before trying to execute a request in the registry.
 
+```solidity
+function getRequestData(bytes32 execHash)
+    external
+    view
+    returns (
+        // General request data:
+        address strategy,
+        bytes memory l1calldata,
+        uint256 gasLimit,
+        uint256 gasPrice,
+        InputToken[] memory inputTokens,
+        Bounty[] memory bounties,
+        // Other data:
+        address creator,
+        bytes32 uncle,
+        // Can be fetched via `isExecutable`:
+        bool executable,
+        uint256 changeTimestamp
+    )
+```
+
+Returns all relevant data about a request by its `execHash`. 
+
+- The first 6 return items are the parameters passed to `requestExec`. 
+- `creator` is the address which called `requestExec` to create this request.
+- `uncle` may either be an empty bytestring or the execHash of the uncle of this transaction (the transaction that this resubmitted transaction is cloned from).
+- The last two return items are the return values of calling `isExecutable` with `execHash`.
+
 ## Example Integration
 
 To integrate **Uniswap** we only need to write one custom contract (a Strategy contract on L1).
