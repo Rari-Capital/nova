@@ -23,13 +23,13 @@ const config: HardhatUserConfig = {
     mainnet: {
       url: "https://mainnet.infura.io/v3/" + process.env.INFURA_KEY,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : undefined,
-      gasPrice: gweiToWei(process.env.GWEI_GAS_PRICE ?? "30"),
+      gasPrice: gweiToWei(process.env.GWEI_GAS_PRICE ?? "50"),
     },
 
     kovan: {
       url: "https://kovan.infura.io/v3/" + process.env.INFURA_KEY,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : undefined,
-      gasPrice: gweiToWei(process.env.GWEI_GAS_PRICE ?? "30"),
+      gasPrice: gweiToWei(process.env.GWEI_GAS_PRICE ?? "10"),
     },
 
     optimism: {
