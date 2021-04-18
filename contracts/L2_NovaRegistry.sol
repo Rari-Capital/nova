@@ -395,7 +395,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         );
     }
 
-    /// @notice Checks if the request is executable along with a timestamp of when that may change.
+    /// @notice Returns if the request is executable along with a timestamp of when that may change.
     /// @return executable A boolean indicating if the request is executable.
     /// @return changeTimestamp A timestamp indicating when the request might switch from being executable to unexecutable (or vice-versa). Will be 0 if there is no change expected. It will be a timestamp if the request will be enabled soon (it's a resubmitted version of an uncled request) or the request is being canceled soon.
     function isExecutable(bytes32 execHash)
