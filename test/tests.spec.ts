@@ -21,18 +21,18 @@ chai.should();
 
 function computeExecNonce({
   nonce,
-  task,
+  strategy,
   calldata,
   gasPrice,
 }: {
   nonce: number;
-  task: string;
+  strategy: string;
   calldata: string;
   gasPrice: number;
 }) {
   return ethers.utils.solidityKeccak256(
     ["uint72", "address", "bytes", "uint256"],
-    [nonce, task, calldata, gasPrice]
+    [nonce, strategy, calldata, gasPrice]
   );
 }
 
@@ -108,7 +108,7 @@ describe("Nova", function () {
         .withArgs(
           computeExecNonce({
             nonce: 1,
-            task: "0x0000000000000000000000000000000000000000",
+            strategy: "0x0000000000000000000000000000000000000000",
             calldata: "0x20",
             gasPrice: 10,
           }),

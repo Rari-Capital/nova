@@ -29,7 +29,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     event Withdraw(bytes32 indexed execHash);
 
     /// @notice Emitted when `requestExec` is called.
-    event Request(bytes32 indexed execHash, address indexed task);
+    event Request(bytes32 indexed execHash, address indexed strategy);
 
     /// @notice Emitted when `bumpGas` is called.
     /// @param newExecHash The execHash of the resubmitted request (copy of its uncle with an updated gasPrice).
@@ -65,8 +65,8 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
 
     /// @dev Maps execHashes to the creator of each request.
     mapping(bytes32 => address) private requestCreators;
-    /// @dev Maps execHashes to the address of the task associated with the request.
-    mapping(bytes32 => address) private requestTasks;
+    /// @dev Maps execHashes to the address of the strategy associated with the request.
+    mapping(bytes32 => address) private requestStrategies;
     /// @dev Maps execHashes to the calldata associated with the request.
     mapping(bytes32 => bytes) private requestCalldatas;
     /// @dev Maps execHashes to the gas limit a bot should use to execute the request.
@@ -97,7 +97,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         view
         returns (
             // General request data:
-            address task,
+            address strategy,
             bytes memory l1calldata,
             uint32 gasLimit,
             uint256 gasPrice,
@@ -111,7 +111,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             uint256 changeTimestamp
         )
     {
-        task = requestTasks[execHash];
+        strategy = requestStrategies[execHash];
         l1calldata = requestCalldatas[execHash];
         gasLimit = requestGasLimits[execHash];
         gasPrice = requestGasPrices[execHash];
@@ -123,14 +123,14 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         (executable, changeTimestamp) = isExecutable(execHash);
     }
 
-    /// @param task The address of the "task" contract on L1 a bot should call with `calldata`.
-    /// @param l1calldata The abi encoded calldata a bot should call the `task` with on L1.
+    /// @param strategy The address of the "strategy" contract on L1 a bot should call with `calldata`.
+    /// @param l1calldata The abi encoded calldata a bot should call the `strategy` with on L1.
     /// @param gasLimit The gas limit a bot should use on L1.
     /// @param gasPrice The gas price a bot should use on L1.
-    /// @param inputTokens An array of token amounts that a bot will need on L1 to execute the request (`l1Token`s) along with the equivalent tokens that will be returned on L2 (`l2Token`s). `inputTokens` will not be awarded if the `task` reverts on L1.
-    /// @param bounties An array of tokens that will be awarded to the bot who executes the request. Only 50% of the bounty will be paid to the bot if the `task` reverts on L1.
+    /// @param inputTokens An array of token amounts that a bot will need on L1 to execute the request (`l1Token`s) along with the equivalent tokens that will be returned on L2 (`l2Token`s). `inputTokens` will not be awarded if the `strategy` reverts on L1.
+    /// @param bounties An array of tokens that will be awarded to the bot who executes the request. Only 50% of the bounty will be paid to the bot if the `strategy` reverts on L1.
     function requestExec(
-        address task,
+        address strategy,
         bytes calldata l1calldata,
         uint32 gasLimit,
         uint256 gasPrice,
@@ -139,10 +139,10 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     ) public nonReentrant returns (bytes32 execHash) {
         systemNonce += 1;
         execHash = keccak256(
-            abi.encodePacked(systemNonce, task, l1calldata, gasPrice)
+            abi.encodePacked(systemNonce, strategy, l1calldata, gasPrice)
         );
 
-        requestTasks[execHash] = task;
+        requestStrategies[execHash] = strategy;
         requestCalldatas[execHash] = l1calldata;
         requestGasLimits[execHash] = gasLimit;
         requestGasPrices[execHash] = gasPrice;
@@ -175,13 +175,13 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             requestBounties[execHash][i] = bounties[i];
         }
 
-        emit Request(execHash, task);
+        emit Request(execHash, strategy);
     }
 
     /// @notice Calls `requestExec` with all relevant parameters along with calling `cancel` with the `autoCancelDelay` argument.
     /// @dev See `requestExec` and `cancel` for more information.
     function requestExecWithTimeout(
-        address task,
+        address strategy,
         bytes calldata l1calldata,
         uint32 gasLimit,
         uint256 gasPrice,
@@ -190,7 +190,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         uint256 autoCancelDelay
     ) external returns (bytes32 execHash) {
         execHash = requestExec(
-            task,
+            strategy,
             l1calldata,
             gasLimit,
             gasPrice,
@@ -219,7 +219,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         emit Cancel(execHash, timestamp);
     }
 
-    /// @notice Withdraws tokens (input/gas/bounties) from a canceled task.
+    /// @notice Withdraws tokens (input/gas/bounties) from a canceled strategy.
     /// @notice The creator of the request associated with `execHash` must call `cancel` and wait the `withdrawDelaySeconds` they specified before calling `withdraw`.
     /// @notice Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to withdraw from.
@@ -274,7 +274,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         newExecHash = keccak256(
             abi.encodePacked(
                 systemNonce,
-                requestTasks[execHash],
+                requestStrategies[execHash],
                 requestCalldatas[execHash],
                 gasPrice
             )
@@ -283,7 +283,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         uint32 gasLimit = requestGasLimits[execHash];
 
         // Fill out data for the resubmitted request.
-        requestTasks[newExecHash] = requestTasks[execHash];
+        requestStrategies[newExecHash] = requestStrategies[execHash];
         requestCalldatas[newExecHash] = requestCalldatas[execHash];
         requestGasLimits[newExecHash] = gasLimit;
         requestGasPrices[newExecHash] = gasPrice;

@@ -6,11 +6,11 @@
 
 - Users pay a bounty which pays for the gas of execution on L1 + whatever upfront costs a bot executing on L1 needs to have.
 
-- Bots execute tasks on L1 by calling the Nova "Execution Manager" contract (on L1) with the calldata users on L2 give them.
+- Bots execute requests on L1 by calling the Nova "Execution Manager" contract (on L1) with the calldata users on L2 give them.
 
-- The task can send tokens up to L2 via a bridge.
+- The strategy can send tokens up to L2 via a bridge.
 
-- After executing a task, the Nova Execution Manager sends a confirmation up to L2 to unlock the bounty for the bot.
+- After executing a request, the Nova Execution Manager sends a confirmation up to L2 to unlock the bounty for the bot.
 
 <img width="737" alt="Screen Shot 2021-04-12 at 11 26 29 PM" src="https://user-images.githubusercontent.com/26209401/114506366-8ae55200-9be6-11eb-930d-7dc9483b939e.png">
 
@@ -19,20 +19,21 @@
 - L1_NovaExecutionManager:
 
 ```solidity
-function exec(uint72 execNonce, address task, bytes memory l1calldata, uint256 xDomainMessageGasLimit) public
+function exec(uint72 execNonce, address strategy, bytes memory l1calldata, uint256 xDomainMessageGasLimit) public
 ```
 
-This function calls the `task` address with the specified `l1calldata`. 
+This function calls the `strategy` address with the specified `l1calldata`.
 
-The call to `task` is wrapped in a try-catch block:
+The call to `strategy` is wrapped in a try-catch block:
+
 - If the call reverts and the revert message is `__NOVA__HARD__REVERT__`, **`exec` will revert immediately (no message to L2 will be sent).**
-    - [This is called a HARD REVERT.](#core-spec)
-    - Task contracts should only **hard revert** if the bot has not properly set up the execution context (like not approving the right amount input of tokens, etc)
+  - [This is called a HARD REVERT.](#core-spec)
+  - Strategy contracts should only **hard revert** if the bot has not properly set up the execution context (like not approving the right amount input of tokens, etc)
 - If the call reverts and the revert message is empty or is not `__NOVA__HARD__REVERT__`, **`exec` will continue with sending a message to L2.**
-    - [This is called a SOFT REVERT.](#core-spec)
-    - If a task **soft reverts**, the `inputTokens` for the request will **not be sent** to the bot and **only 70% of the bounty** will be sent (instead of the usual 100%). The **30% bounty penalty** is to prevent bots from attempting to cause or wait for soft reverts and **act in good faith** instead.
+  - [This is called a SOFT REVERT.](#core-spec)
+  - If a strategy **soft reverts**, the `inputTokens` for the request will **not be sent** to the bot and **only 70% of the bounty** will be sent (instead of the usual 100%). The **30% bounty penalty** is to prevent bots from attempting to cause or wait for soft reverts and **act in good faith** instead.
 
-The `execNonce` argument is used to compute the `execHash` needed to unlock the bounty for this task on L2. 
+The `execNonce` argument is used to compute the `execHash` needed to unlock the bounty for this strategy on L2.
 
 The `xDomainMessageGasLimit` is used to determine the gas limit used for the cross domain call to `execCompleted`. [A fraction of this gas limit (currently 1/32nd) is consumed by the call to `sendMessage`](https://github.com/ethereum-optimism/contracts/blob/master/contracts/optimistic-ethereum/OVM/chain/OVM_CanonicalTransactionChain.sol#L42)
 
@@ -41,7 +42,7 @@ All computation in the function leading up to the cross domain message is sandwi
 ```solidity
 uint256 startGas = gasleft();
 
-... call the task, etc ...
+... call the strategy, etc ...
 
 // Psuedocode estimates for computing how much the `sendMessage` call will cost.
 uint256 xDomainMessageGas = (48 * xDomainCalldata.length) + (xDomainMessageGasLimit / 32) + 74000;
@@ -52,13 +53,12 @@ gasUsed = 21396 + (startGas - gasleft()) + xDomainMessageGas;
 ... send cross domain message ...
 ```
 
-After the call to `task` is completed, the EM will compute the `execHash` it needs (using the arguments passed into `exec` along with the `tx.gasprice`) and **send a cross domain message** to call the `L2_NovaRegistry`'s `execCompleted` with the neccessary arguments. This will send the `inputTokens`/`bounties` to the caller of `exec` on L2.
+After the call to `strategy` is completed, the EM will compute the `execHash` it needs (using the arguments passed into `exec` along with the `tx.gasprice`) and **send a cross domain message** to call the `L2_NovaRegistry`'s `execCompleted` with the neccessary arguments. This will send the `inputTokens`/`bounties` to the caller of `exec` on L2.
 
-Bots cannot call `exec` with arguments that produce an `execHash` which has previously been successfuly executed.  
-
+Bots cannot call `exec` with arguments that produce an `execHash` which has previously been successfuly executed.
 
 ```solidity
-function execWithRecipient(uint72 execNonce, address task, bytes calldata l1calldata, uint256 xDomainMessageGasLimit, address l2Recipient) external
+function execWithRecipient(uint72 execNonce, address strategy, bytes calldata l1calldata, uint256 xDomainMessageGasLimit, address l2Recipient) external
 ```
 
 Behaves like `exec` but tells the `L2_NovaRegistry` contract to send the `inputTokens`/`bounties` to the `l2Recipient` on L2 (instead of specifically the bot who calls the function).
@@ -73,11 +73,11 @@ Convenience function that simply runs `revert("__NOVA__HARD__REVERT__")`.
 function transferFromBot(address token, uint256 amount) external
 ```
 
-This function transfers tokens the calling bot (the account that called `execute`) has approved to the execution manager to the currently executing `task`.
+This function transfers tokens the calling bot (the account that called `execute`) has approved to the execution manager to the currently executing `strategy`.
 
-This function will trigger a [HARD REVERT](#core-spec) if the bot executing the current task has not approved at least `amount` of `token` to the `L1_NovaExecutionManager` (like `safeTransferFrom`).
+This function will trigger a [HARD REVERT](#core-spec) if the bot executing the current strategy has not approved at least `amount` of `token` to the `L1_NovaExecutionManager` (like `safeTransferFrom`).
 
-Only the currently executing `task` can call this function.
+Only the currently executing `strategy` can call this function.
 
 ---
 
@@ -97,34 +97,32 @@ struct Bounty {
 ```
 
 ```solidity
-/// @param task The address of the "task" contract on L1 a bot should call with `l1calldata`.
-/// @param l1calldata The abi encoded calldata a bot should call the `task` with on L1.
+/// @param strategy The address of the "strategy" contract on L1 a bot should call with `l1calldata`.
+/// @param l1calldata The abi encoded calldata a bot should call the `strategy` with on L1.
 /// @param gasLimit The gas limit a bot should use on L1.
 /// @param gasPrice The gas price a bot should use on L1.
-/// @param inputTokens An array of token amounts that a bot will need on L1 to execute the request (`l1Token`s) along with the equivalent tokens that will be returned on L2 (`l2Token`s). `inputTokens` will not be awarded if the `task` reverts on L1.
-/// @param bounties An array of tokens that will be awarded to the bot who executes the request. Only 50% of the bounty will be paid to the bot if the `task` reverts on L1.
-function requestExec(address task, bytes calldata l1calldata, uint256 gasLimit, uint256 gasPrice, InputToken[] calldata inputTokens, Bounty[] calldata bounties) public returns (bytes32 execHash)
+/// @param inputTokens An array of token amounts that a bot will need on L1 to execute the request (`l1Token`s) along with the equivalent tokens that will be returned on L2 (`l2Token`s). `inputTokens` will not be awarded if the `strategy` reverts on L1.
+/// @param bounties An array of tokens that will be awarded to the bot who executes the request. Only 50% of the bounty will be paid to the bot if the `strategy` reverts on L1.
+function requestExec(address strategy, bytes calldata l1calldata, uint256 gasLimit, uint256 gasPrice, InputToken[] calldata inputTokens, Bounty[] calldata bounties) public returns (bytes32 execHash)
 ```
 
-This function allows a user to request a task to be executed. 
+This function allows a user to request a strategy to be executed.
 
 It will first increment `execNonce` for the system which is to prevent duplicate execution requests from having the same `execHash`. The nonce is type `uint72` as it can accommodate 7,000,000,000 people requesting an execution every second for 21,000 years before overflowing.
 
-It will then compute the `execHash` (unique identifier of this specific execution request) like so: `keccak256(abi.encodePacked(execNonce, task, l1calldata, gasPrice))`.
+It will then compute the `execHash` (unique identifier of this specific execution request) like so: `keccak256(abi.encodePacked(execNonce, strategy, l1calldata, gasPrice))`.
 
 It will then store `execHash` in a mapping and assign it to all of the arguments this function was passed.
 
 It will then transfer in all the `InputToken`s and `Bounty`s (**all of these inputs/bounties must be approved to the registry by the caller**).
 
-**The bounty is not checked to be sufficient by the registry, it is up to Nova bots to determine which tasks are profitable via `getBounty`.**
-
+**The bounty is not checked to be sufficient by the registry, it is up to Nova bots to determine which requests are profitable via `getBounty`.**
 
 ```solidity
-function requestExecWithTimeout(address task, bytes calldata l1calldata, uint256 gasLimit, uint256 gasPrice, InputToken[] calldata inputTokens, Bounty[] calldata bounties, uint256 autoCancelDelay) external returns (bytes32 execHash)
+function requestExecWithTimeout(address strategy, bytes calldata l1calldata, uint256 gasLimit, uint256 gasPrice, InputToken[] calldata inputTokens, Bounty[] calldata bounties, uint256 autoCancelDelay) external returns (bytes32 execHash)
 ```
 
-Behaves exactly like `requestExec` but also calls `cancel` with `autoCancelDelay` automatically. This function is useful for tasks that are likely to cause hard reverts or not be executed for some reason. The user will still have to call `withdraw` once the `autoCancelDelay` timeout completes.
-
+Behaves exactly like `requestExec` but also calls `cancel` with `autoCancelDelay` automatically. This function is useful for strategies that are likely to cause hard reverts or not be executed for some reason. The user will still have to call `withdraw` once the `autoCancelDelay` timeout completes.
 
 ```solidity
 function execCompleted(bytes32 execHash, address executor, address rewardRecipient, uint256 gasUsed, bool reverted) external onlyXDomainMessageFromNovaExecutionManager
@@ -132,18 +130,20 @@ function execCompleted(bytes32 execHash, address executor, address rewardRecipie
 
 This function can only be called via a message relayed from cross domain messenger with the L1 origin being the `L1_NovaExecutionManager` contract.
 
-The `execHash` gets computed by the `L1_NovaExecutionManager` like so: `keccak256(abi.encodePacked(execNonce, task, l1calldata, gasPrice))` and is used to ensure the right calldata **(and gas price)** was used on L1.
+The `execHash` gets computed by the `L1_NovaExecutionManager` like so: `keccak256(abi.encodePacked(execNonce, strategy, l1calldata, gasPrice))` and is used to ensure the right calldata **(and gas price)** was used on L1.
 
 [If there is an active sequencer this function will revert if `executor` is not the sequencer.](#mev-extraction)
 
 Once the registry verifies that the `execHash` was previously registered (meaning this execution was valid) & not disabled (via `isDisabled`):
+
 - It will find this `execHash` in the registry's storage and retrieve the `gasPrice` and bounty/inputToken information associated with this execHash.
 
-- It will first pay for the gas cost of L1 execution by calculating the ETH to send to the `bot` using `(gasLimit > gasUsed ? gasUsed : gasLimit) * gasPrice`. Any remaining ETH will be sent back to the user who requested execution (just like how gas is refunded on L1 if the gas limit exceeds gas used). 
+- It will first pay for the gas cost of L1 execution by calculating the ETH to send to the `bot` using `(gasLimit > gasUsed ? gasUsed : gasLimit) * gasPrice`. Any remaining ETH will be sent back to the user who requested execution (just like how gas is refunded on L1 if the gas limit exceeds gas used).
 
 - It will then loop over all the `inputTokens` and transfer the `amount` of each `l2Token` to either:
-    1. The `rewardRecipient` if `reverted` is false.
-    2. The request's creator if `reverted` is true.
+
+  1. The `rewardRecipient` if `reverted` is false.
+  2. The request's creator if `reverted` is true.
 
 - It will then loop over all the `bounties` and transfer the `amount` of each `l2Token` to the `rewardRecipient`. **If `reverted` is true it will transfer 30% of the amount back to the request's creator and only 70% to the `rewardRecipient`.**
 
@@ -159,7 +159,7 @@ This function cancels an execution request. After `cancel` is called the user mu
 
 A bot can still execute the request associated with the `execHash` up until the withdraw delay has passed.
 
-A user may call may not call `cancel` a second time on the same `execHash`. 
+A user may call may not call `cancel` a second time on the same `execHash`.
 
 ```solidity
 function withdraw(bytes32 execHash) external
@@ -181,31 +181,32 @@ A bot can still execute the original request associated with the `execHash` up u
 function isDisabled(bytes32 execHash) external view returns (bool isDisabled, int256 disableTimestamp)
 ```
 
-This function will return true if the execution request this `execHash` points to has been disabled. It also returns the timestamp of when the request will/has become disabled (will be 0 if no cancel or bump has been initiated). The `disableTimestamp` will be a negative timestamp if the request is currently disabled but after a delay period will become re-enabled (type #3 below); the absolute value of the timestamp will be when the task enables.
+This function will return true if the execution request this `execHash` points to has been disabled. It also returns the timestamp of when the request will/has become disabled (will be 0 if no cancel or bump has been initiated). The `disableTimestamp` will be a negative timestamp if the request is currently disabled but after a delay period will become re-enabled (type #3 below); the absolute value of the timestamp will be when the strategy enables.
 
-An execution request can be disabled for 1 of 3 reasons:  
-1. The request was canceled 
+An execution request can be disabled for 1 of 3 reasons:
+
+1. The request was canceled
 2. The request was bumped (replaced by a new one with a higher gas price)
 3. The request is a replacement for a request being bumped (waiting for the 5 minute delay to pass before it's bumped)
-    - Replacement requests are the only of the 3 disable types that starts disabled and un-disables after 5 minutes. Bots should be aware of this (they can check by determining if `disableTimestamp` is negative. If the timestamp is negative, the absolute value of it is the timestamp of when the task enables).
+   - Replacement requests are the only of the 3 disable types that starts disabled and un-disables after 5 minutes. Bots should be aware of this (they can check by determining if `disableTimestamp` is negative. If the timestamp is negative, the absolute value of it is the timestamp of when the strategy enables).
 
 This function will only return true once the delay period has passed for the cancel/bump/replacement (min 5 minutes).
 
-Bots should call this function before trying to execute a task in the registry (as some of these disabled requests may still be present).
+Bots should call this function before trying to execute a strategy in the registry (as some of these disabled requests may still be present).
 
 ## Example Integration
 
-To integrate **Uniswap** we only need to write one custom contract (a Task contract on L1).
+To integrate **Uniswap** we only need to write one custom contract (a Strategy contract on L1).
 
-- This task would have all the same methods as the Uniswap router has
-- The `to` parameter of the task's methods would be hijacked and not passed into the Uniswap router.
+- This strategy would have all the same methods as the Uniswap router has
+- The `to` parameter of the strategy's methods would be hijacked and not passed into the Uniswap router.
   - The `to` param will be used as the recipient of the tokens on L2.
-  - The Uniswap router will be told to send the output tokens back to the `Nova_UniswapTask` contract (so it can send them up to L2 via the bridge)
+  - The Uniswap router will be told to send the output tokens back to the `Nova_UniswapStrategy` contract (so it can send them up to L2 via the bridge)
 - Each of the methods would require that a bot approve the tokens necessary for the swap to the `L1_NovaExecutionManager`
 - The method would call `transferFromBot` to get the input tokens from the bot and then perform the corresponding method call on the Uniswap router.
 - The method would then send the output tokens through an Optimism token bridge to the `to` address.
 
-**Here's what one of those wrapped router functions in the Task contract would look like:**
+**Here's what one of those wrapped router functions in the Strategy contract would look like:**
 
 ```solidity
 function swapExactTokensForTokens(
@@ -217,7 +218,7 @@ function swapExactTokensForTokens(
 ) external {
     ERC20 input = ERC20(path[0]);
     ERC20 output = ERC20(path[path.length - 1]);
-    
+
     // Transfer in tokens from the bot.
     L1_NovaExecutionManager(msg.sender).transferFromBot(input, amountIn);
 
@@ -245,13 +246,13 @@ function swapExactTokensForTokens(
 
 An important property of Nova is that it is censorship resistant. There is no single "operator" who can execute requests, anyone is free to. Having a competitive landscape of different bots filling orders is important to ensure users can always get their execution requests filled and they are never censored.
 
-However, considering that many of these requests will come with a bounty that is profitable beyond the maximum gas it takes to execute them, it is natural for multiple bots to engage in PGAs to extract profit from as many tasks that they can.
+However, considering that many of these requests will come with a bounty that is profitable beyond the maximum gas it takes to execute them, it is natural for multiple bots to engage in PGAs to extract profit from as many strategies that they can.
 
 The profits from these PGAs don't go to the Nova platform or users who request execution, they go to **miners** who contribute no value to the protocol.
 
-We can extract the value that would have gone to miners by auctioning off "priority rights" to execute requests for specific tasks (this is also known as a [MEVA](https://ethresear.ch/t/mev-auction-auctioning-transaction-ordering-rights-as-a-solution-to-miner-extractable-value/6788)). Each task will have its own sequencer (bot with priority rights) to prevent a sequencer from potentially ignoring a task that their bot is not capable of fulfilling executions for. The auctions will function like so:
+We can extract the value that would have gone to miners by auctioning off "priority rights" to execute requests for specific strategies (this is also known as a [MEVA](https://ethresear.ch/t/mev-auction-auctioning-transaction-ordering-rights-as-a-solution-to-miner-extractable-value/6788)). Each strategy will have its own sequencer (bot with priority rights) to prevent a sequencer from potentially ignoring a strategy that their bot is not capable of fulfilling executions for. The auctions will function like so:
 
-- Every X hours (configurable) anyone would be able to call `function triggerAuction(address task)` on the `L2_NovaRegistry`.
+- Every X hours (configurable) anyone would be able to call `function triggerAuction(address strategy)` on the `L2_NovaRegistry`.
 - From there a 5-minute auction would be initiated
 - Every bid must be at least 20% greater than the previous bid
 - If there is a new bid within the last 1 minute of the auction, the auction timer is extended by 1 minute
@@ -260,19 +261,19 @@ We can extract the value that would have gone to miners by auctioning off "prior
 - The auction winner's bid is taken by the system while all other bids are sent back to their respective bidders.
 - The winner is given ownership of an NFT (known as the "priority key") that they can transfer around at will.
 
-The owner of the priority key for each task will from here on be referred to as a task's "sequencer".
+The owner of the priority key for each strategy will from here on be referred to as a strategy's "sequencer".
 
-The task's sequencer is given a Y (configurable) minute window where **only they** can execute that specific task. Any other bot performing an execution for a task during its "sequencer window" will not receive the execution request's bounty (the task's sequencer will).
+The strategy's sequencer is given a Y (configurable) minute window where **only they** can execute that specific strategy. Any other bot performing an execution for a strategy during its "sequencer window" will not receive the execution request's bounty (the strategy's sequencer will).
 
 After the Y minute window expires for the request any bot is free to execute requests and receive the full bounty.
 
-Users will be able to opt out of giving the task sequencer priority when requesting an execution (but will pay a small penalty).
+Users will be able to opt out of giving the strategy sequencer priority when requesting an execution (but will pay a small penalty).
 
 This system not only extracts PGA profits that would have gone to miners, but they are also able to **extract other frontrunning profits** that would have gone to sandwich bots, etc.
 
 - The sequencer effectively has the rights to **reorder transactions** within that 1 minute window
 - Importantly, **they can insert their own transactions** inbetween/around them as part of an atomic bundle (via something like a DSProxy).
 - Atomic insertion and reoreding rights allow them to take advantage of frontrunning schemes like sandwich attacks without miner/other bot competition.
-- Bots bidding in auctions for different tasks will price-in the frontrunning profits they estimate they can extract and adjust their bid accordingly.
+- Bots bidding in auctions for different strategies will price-in the frontrunning profits they estimate they can extract and adjust their bid accordingly.
   - **Since the profits from these auctions go to the protocol, we have effectively extracted MEV profits that miners/frontrunning bots could have made off of Nova users and brought it back to the protocol instead.**
   - _We can even redistribute the profits we earn from MEVA back to users as a way to reduce costs!_

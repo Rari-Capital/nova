@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract L1_NovaExecutionManager {
     function execWithRecipient(
         uint72 execNonce,
-        address task,
+        address strategy,
         bytes calldata l1calldata,
         uint256 xDomainMessageGasLimit,
         address l2Recipient
@@ -19,13 +19,13 @@ contract L1_NovaExecutionManager {
 
     function exec(
         uint72 execNonce,
-        address task,
+        address strategy,
         bytes calldata l1calldata,
         uint256 xDomainMessageGasLimit
     ) external {
         execWithRecipient(
             execNonce,
-            task,
+            strategy,
             l1calldata,
             xDomainMessageGasLimit,
             msg.sender
