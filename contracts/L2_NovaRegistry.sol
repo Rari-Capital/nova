@@ -65,6 +65,8 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
 
     /// @dev Maps execHashes to the creator of each request.
     mapping(bytes32 => address) private requestCreators;
+    /// @dev Maps execHashes to the nonce of each request.
+    mapping(bytes32 => uint72) private requestNonces;
     /// @dev Maps execHashes to the address of the strategy associated with the request.
     mapping(bytes32 => address) private requestStrategies;
     /// @dev Maps execHashes to the calldata associated with the request.
@@ -104,6 +106,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             InputToken[] memory inputTokens,
             Bounty[] memory bounties,
             // Other data:
+            uint72 nonce,
             address creator,
             bytes32 uncle,
             // Can be fetched via `isExecutable`:
@@ -117,6 +120,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         gasPrice = requestGasPrices[execHash];
         inputTokens = requestInputTokens[execHash];
         bounties = requestBounties[execHash];
+        nonce = requestNonces[execHash];
         creator = requestCreators[execHash];
         uncle = uncles[execHash];
 
@@ -146,6 +150,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         requestCalldatas[execHash] = l1calldata;
         requestGasLimits[execHash] = gasLimit;
         requestGasPrices[execHash] = gasPrice;
+        requestNonces[execHash] = systemNonce;
         requestCreators[execHash] = msg.sender;
 
         // Transfer in ETH to pay for max gas usage.
@@ -287,6 +292,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         requestCalldatas[newExecHash] = requestCalldatas[execHash];
         requestGasLimits[newExecHash] = gasLimit;
         requestGasPrices[newExecHash] = gasPrice;
+        requestNonces[execHash] = systemNonce;
         requestCreators[newExecHash] = msg.sender;
 
         // Map the resubmitted request to its uncle.
