@@ -11,13 +11,17 @@ import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     using SafeERC20 for IERC20;
 
-    IERC20 immutable ETH = IERC20(0x4200000000000000000000000000000000000006);
-    uint256 immutable MIN_CANCEL_SECONDS = 300;
+    uint256 constant MIN_CANCEL_SECONDS = 300;
+
+    IERC20 immutable ETH;
     address immutable L1_NovaExecutionManager;
 
-    constructor(address _L1_NovaExecutionManager)
-        OVM_CrossDomainEnabled(0x4200000000000000000000000000000000000007)
-    {
+    constructor(
+        address _L1_NovaExecutionManager,
+        address _ETH,
+        address _messenger
+    ) OVM_CrossDomainEnabled(_messenger) {
+        ETH = IERC20(_ETH);
         L1_NovaExecutionManager = _L1_NovaExecutionManager;
     }
 
@@ -34,11 +38,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @notice Emitted when `bumpGas` is called.
     /// @param newExecHash The execHash of the resubmitted request (copy of its uncle with an updated gasPrice).
     /// @param timestamp When the uncled request (`execHash`) will have its tokens transfered to the resubmitted request (`newExecHash`).
-    event BumpGas(
-        bytes32 indexed execHash,
-        bytes32 indexed newExecHash,
-        uint256 timestamp
-    );
+    event BumpGas(bytes32 indexed execHash, bytes32 indexed newExecHash, uint256 timestamp);
 
     /// @notice Emitted when `execCompleted` is called.
     event ExecCompleted(
@@ -142,9 +142,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         Bounty[] calldata bounties
     ) public nonReentrant returns (bytes32 execHash) {
         systemNonce += 1;
-        execHash = keccak256(
-            abi.encodePacked(systemNonce, strategy, l1calldata, gasPrice)
-        );
+        execHash = keccak256(abi.encodePacked(systemNonce, strategy, l1calldata, gasPrice));
 
         requestStrategies[execHash] = strategy;
         requestCalldatas[execHash] = l1calldata;
@@ -170,11 +168,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
 
         // Transfer bounties in that the msg.sender has approved.
         for (uint256 i = 0; i < bounties.length; i++) {
-            bounties[i].token.safeTransferFrom(
-                msg.sender,
-                address(this),
-                bounties[i].amount
-            );
+            bounties[i].token.safeTransferFrom(msg.sender, address(this), bounties[i].amount);
 
             // Copy over this index to the requestBounties mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
             requestBounties[execHash][i] = bounties[i];
@@ -194,14 +188,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         Bounty[] calldata bounties,
         uint256 autoCancelDelay
     ) external returns (bytes32 execHash) {
-        execHash = requestExec(
-            strategy,
-            l1calldata,
-            gasLimit,
-            gasPrice,
-            inputTokens,
-            bounties
-        );
+        execHash = requestExec(strategy, l1calldata, gasLimit, gasPrice, inputTokens, bounties);
 
         cancel(execHash, autoCancelDelay);
     }
@@ -242,10 +229,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         requestTokenRemovalTimestamps[execHash] = 1;
 
         // Transfer the ETH which would have been used for gas back to the creator.
-        ETH.transfer(
-            creator,
-            requestGasPrices[execHash] * requestGasLimits[execHash]
-        );
+        ETH.transfer(creator, requestGasPrices[execHash] * requestGasLimits[execHash]);
 
         // Transfer input tokens back to the creator.
         for (uint256 i = 0; i < inputTokens.length; i++) {
@@ -264,10 +248,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
-    function bumpGas(bytes32 execHash, uint256 gasPrice)
-        external
-        returns (bytes32 newExecHash)
-    {
+    function bumpGas(bytes32 execHash, uint256 gasPrice) external returns (bytes32 newExecHash) {
         (bool executable, ) = isExecutable(execHash);
         require(executable, "NOT_EXECUTABLE");
         uint256 previousGasPrice = requestGasPrices[execHash];
@@ -303,11 +284,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         requestTokenRemovalTimestamps[execHash] = switchTimestamp;
 
         // Transfer in additional ETH to pay for the new gas limit.
-        ETH.safeTransferFrom(
-            msg.sender,
-            address(this),
-            (gasPrice - previousGasPrice) * gasLimit
-        );
+        ETH.safeTransferFrom(msg.sender, address(this), (gasPrice - previousGasPrice) * gasLimit);
 
         emit BumpGas(execHash, newExecHash, switchTimestamp);
     }
@@ -318,11 +295,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         address rewardRecipient,
         uint256 gasUsed,
         bool reverted
-    )
-        external
-        nonReentrant
-        onlyFromCrossDomainAccount(L1_NovaExecutionManager)
-    {
+    ) external nonReentrant onlyFromCrossDomainAccount(L1_NovaExecutionManager) {
         (bool executable, ) = isExecutable(execHash);
         require(executable, "NOT_EXECUTABLE");
 
@@ -338,9 +311,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             requestGasPrices[execHash] *
                 (
                     // Don't give them any more ETH than the gas limit
-                    gasUsed > requestGasLimits[execHash]
-                        ? requestGasLimits[execHash]
-                        : gasUsed
+                    gasUsed > requestGasLimits[execHash] ? requestGasLimits[execHash] : gasUsed
                 )
         );
 
@@ -348,28 +319,19 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         if (!reverted) {
             // Transfer input tokens to the rewardRecipient.
             for (uint256 i = 0; i < inputTokens.length; i++) {
-                inputTokens[i].l2Token.safeTransfer(
-                    rewardRecipient,
-                    inputTokens[i].amount
-                );
+                inputTokens[i].l2Token.safeTransfer(rewardRecipient, inputTokens[i].amount);
             }
 
             // Transfer full bounty back to the rewardRecipient.
             for (uint256 i = 0; i < bounties.length; i++) {
-                bounties[i].token.safeTransfer(
-                    rewardRecipient,
-                    bounties[i].amount
-                );
+                bounties[i].token.safeTransfer(rewardRecipient, bounties[i].amount);
             }
         } else {
             address creator = requestCreators[execHash];
 
             // Transfer input tokens back to the creator.
             for (uint256 i = 0; i < inputTokens.length; i++) {
-                inputTokens[i].l2Token.safeTransfer(
-                    creator,
-                    inputTokens[i].amount
-                );
+                inputTokens[i].l2Token.safeTransfer(creator, inputTokens[i].amount);
             }
 
             // Transfer 70% of the bounty to the rewardRecipient and 30% back to the creator.
@@ -392,13 +354,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             }
         }
 
-        emit ExecCompleted(
-            execHash,
-            executor,
-            rewardRecipient,
-            gasUsed,
-            reverted
-        );
+        emit ExecCompleted(execHash, executor, rewardRecipient, gasUsed, reverted);
     }
 
     /// @notice Returns if the request is executable along with a timestamp of when that may change.
@@ -414,17 +370,13 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             executable = false;
             changeTimestamp = 0;
         } else {
-            (bool tokensRemoved, uint256 tokensRemovedChangeTimestamp) =
-                areTokensRemoved(execHash);
-            (bool canceled, uint256 canceledChangeTimestamp) =
-                isCanceled(execHash);
+            (bool tokensRemoved, uint256 tokensRemovedChangeTimestamp) = areTokensRemoved(execHash);
+            (bool canceled, uint256 canceledChangeTimestamp) = isCanceled(execHash);
 
             executable = !tokensRemoved && !canceled;
 
             // One or both of these values will be 0 so we can just add them.
-            changeTimestamp =
-                canceledChangeTimestamp +
-                tokensRemovedChangeTimestamp;
+            changeTimestamp = canceledChangeTimestamp + tokensRemovedChangeTimestamp;
         }
     }
 
@@ -449,8 +401,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             } else {
                 // This is a resubmitted version of a uncled request, so we have to check if the uncle has had its tokens removed,
                 // if so, this request has its tokens.
-                uint256 uncleDeathTimestamp =
-                    requestTokenRemovalTimestamps[uncle];
+                uint256 uncleDeathTimestamp = requestTokenRemovalTimestamps[uncle];
 
                 if (uncleDeathTimestamp == 1) {
                     // The uncle request has had its tokens removed early.

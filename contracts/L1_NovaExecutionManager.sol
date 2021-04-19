@@ -11,9 +11,13 @@ import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     using SafeERC20 for IERC20;
 
+    /// @dev The bytes length of an abi encoded execCompleted call.
+    uint256 private constant execCompletedMessageBytesLength = 164;
+
+    /// @dev The revert message text used to cause a hard revert.
+    string private constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.
-    bytes32 private immutable HARD_REVERT_HASH =
-        keccak256("__NOVA__HARD__REVERT__");
+    bytes32 private constant HARD_REVERT_HASH = keccak256(abi.encodePacked(HARD_REVERT_TEXT));
 
     /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
     address private L2_NovaRegistry;
@@ -23,7 +27,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @dev The address who called `exec`/`execWithRecipient`.
     address private currentExecutor;
 
-    constructor(address _l1messenger) OVM_CrossDomainEnabled(_l1messenger) {}
+    constructor(address _messenger) OVM_CrossDomainEnabled(_messenger) {}
 
     function init(address _L2_NovaRegistry) external {
         require(L2_NovaRegistry == address(0), "ALREADY_INITIALIZED");
@@ -54,17 +58,12 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         currentExecutor = address(0);
 
         // Compute the execHash.
-        bytes32 execHash =
-            keccak256(
-                abi.encodePacked(nonce, strategy, l1calldata, tx.gasprice)
-            );
+        bytes32 execHash = keccak256(abi.encodePacked(nonce, strategy, l1calldata, tx.gasprice));
 
         // Figure out how much gas this xDomain message is going to cost us.
         uint256 xDomainMessageGas =
-            // TODO: Figure out how to estimate the calldata size before we have it. (replace 696969696969696969696969696969696969696969696969)
-            (48 * 696969696969696969696969696969696969696969696969) +
-                (xDomainMessageGasLimit / 32) +
-                74000;
+            // ((estimated cost per calldata char) * (bytes length for an encoded call to execCompleted)) + ((cross domain gas limit) / (enqueue gas burn)) + (sendMessage overhead)
+            (48 * execCompletedMessageBytesLength) + (xDomainMessageGasLimit / 32) + 74000;
 
         // Figure out how much gas this call will take up in total: (Constant function call gas) + (Gas diff after calls) + (the amount of gas that will be burned via enqueue + storage/other message overhead)
         uint256 gasUsed = 21396 + (startGas - gasleft()) + xDomainMessageGas;
@@ -90,31 +89,22 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         bytes calldata l1calldata,
         uint32 xDomainMessageGasLimit
     ) external {
-        execWithRecipient(
-            nonce,
-            strategy,
-            l1calldata,
-            xDomainMessageGasLimit,
-            msg.sender
-        );
+        execWithRecipient(nonce, strategy, l1calldata, xDomainMessageGasLimit, msg.sender);
     }
 
     function hardRevert() external pure {
-        revert("__NOVA__HARD__REVERT__");
+        revert(HARD_REVERT_TEXT);
     }
 
     function transferFromBot(address token, uint256 amount) external {
         // Only the currently executing strategy is allowed to call this method.
-        require(
-            msg.sender == currentlyExecutingStrategy,
-            "NOT_CURRENTLY_EXECUTING"
-        );
+        require(msg.sender == currentlyExecutingStrategy, "NOT_CURRENTLY_EXECUTING");
 
         // Transfer the token from the calling bot the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
         IERC20(token).safeTransferFrom(currentExecutor, msg.sender, amount);
     }
 
-    function isHardRevert(bytes memory returnData) private view returns (bool) {
+    function isHardRevert(bytes memory returnData) private pure returns (bool) {
         // TODO: CAN WE FURTHER OPTIMIZE SINCE WE KNOW HOW LONG WE WANT THE REVERT STRING TO BE?
         if (returnData.length >= 68) {
             // Isolate the revert message.

@@ -87,7 +87,11 @@ describe("Nova", function () {
       "L2_NovaRegistry"
     )
       .connect(l2Wallet)
-      .deploy(l1_NovaExecutionManager.address);
+      .deploy(
+        l1_NovaExecutionManager.address,
+        "0x4200000000000000000000000000000000000006",
+        "0x4200000000000000000000000000000000000007"
+      );
 
     // Tell the execution manager about the registry's address on L2.
     await wait(l1_NovaExecutionManager.init(l2_NovaRegistry.address));
