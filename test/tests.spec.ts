@@ -97,51 +97,83 @@ describe("Nova", function () {
     await wait(l1_NovaExecutionManager.init(l2_NovaRegistry.address));
   });
 
-  describe("requestExec", async function () {
-    it("should allow a valid request", async function () {
-      // Approve 100 wei as gas for the first request.
-      await wait(OVM_ETH.approve(l2_NovaRegistry.address, 100));
+  describe("L2_NovaRegistry", async function () {
+    describe("requestExec", async function () {
+      it("should allow a valid request", async function () {
+        // Approve 100 wei as gas for the first request.
+        await wait(OVM_ETH.approve(l2_NovaRegistry.address, 100));
 
-      // This will not revert because we have approved just enough wei.
-      await l2_NovaRegistry
-        .connect(l2Wallet)
-        .requestExec(
+        // This will not revert because we have approved just enough wei.
+        await l2_NovaRegistry
+          .connect(l2Wallet)
+          .requestExec(
+            "0x0000000000000000000000000000000000000000",
+            "0x00",
+            10,
+            10,
+            [],
+            []
+          )
+          .should.emit(l2_NovaRegistry, "Request")
+          .withArgs(
+            computeExecHash({
+              nonce: 1,
+              strategy: "0x0000000000000000000000000000000000000000",
+              calldata: "0x00",
+              gasPrice: 10,
+            }),
+            "0x0000000000000000000000000000000000000000"
+          );
+
+        // Ensure the registry transferred in the ETH.
+        await OVM_ETH.balanceOf(
+          l2_NovaRegistry.address
+        ).should.eventually.equal(100);
+      });
+
+      it("should revert if not enough wei is approved to pay for gas", async function () {
+        // This should revert as the 100 wei was already taken by the previous request.
+        await l2_NovaRegistry
+          .connect(l2Wallet)
+          .requestExec(
+            "0x0000000000000000000000000000000000000000",
+            "0x00",
+            10,
+            10,
+            [],
+            []
+          ).should.be.reverted;
+      });
+    });
+  });
+
+  describe("L1_NovaExecutionManager", async function () {
+    it("execCompletedMessageBytesLength should be correct", async function () {
+      const execCompletedMessageBytesLength = (
+        await l1_NovaExecutionManager.execCompletedMessageBytesLength()
+      ).toNumber();
+
+      // Encode a call to execCompleted
+      const bytes = l2_NovaRegistry.interface.encodeFunctionData(
+        "execCompleted",
+        [
+          ethers.utils.keccak256("0x00"),
           "0x0000000000000000000000000000000000000000",
-          "0x20",
-          10,
-          10,
-          [],
-          []
-        )
-        .should.emit(l2_NovaRegistry, "Request")
-        .withArgs(
-          computeExecHash({
-            nonce: 1,
-            strategy: "0x0000000000000000000000000000000000000000",
-            calldata: "0x20",
-            gasPrice: 10,
-          }),
-          "0x0000000000000000000000000000000000000000"
-        );
-
-      // Ensure the registry transferred in the ETH.
-      await OVM_ETH.balanceOf(l2_NovaRegistry.address).should.eventually.equal(
-        100
+          "0x0000000000000000000000000000000000000000",
+          0,
+          false,
+        ]
       );
+
+      // Length of the encoded data in a bytes array.
+      const bytesLength = (bytes.length - 2) / 2;
+
+      // The `execCompletedMessageBytesLength` variable should equal the proper bytesLength we just computed.
+      execCompletedMessageBytesLength.should.equal(bytesLength);
     });
 
-    it("should revert if not enough wei is approved to pay for gas", async function () {
-      // This should revert as the 100 wei was already taken by the previous request.
-      await l2_NovaRegistry
-        .connect(l2Wallet)
-        .requestExec(
-          "0x0000000000000000000000000000000000000000",
-          "0x20",
-          10,
-          10,
-          [],
-          []
-        ).should.be.reverted;
+    describe("exec", async function () {
+      it("should properly execute a valid requeset", async function () {});
     });
   });
 });

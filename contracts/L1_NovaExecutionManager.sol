@@ -11,16 +11,16 @@ import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     using SafeERC20 for IERC20;
 
-    /// @dev The bytes length of an abi encoded execCompleted call.
-    uint256 private constant execCompletedMessageBytesLength = 164;
-
     /// @dev The revert message text used to cause a hard revert.
     string private constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.
     bytes32 private constant HARD_REVERT_HASH = keccak256(abi.encodePacked(HARD_REVERT_TEXT));
 
+    /// @dev The bytes length of an abi encoded execCompleted call.
+    uint256 public constant execCompletedMessageBytesLength = 164;
+
     /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
-    address private L2_NovaRegistry;
+    address public L2_NovaRegistry;
 
     /// @dev The address of the strategy that is currenlty being called.
     address private currentlyExecutingStrategy;
