@@ -93,6 +93,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     }
 
     function hardRevert() external pure {
+        // Call revert with the hard revert text.
         revert(HARD_REVERT_TEXT);
     }
 

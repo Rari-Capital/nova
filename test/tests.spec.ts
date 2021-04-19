@@ -173,7 +173,7 @@ describe("Nova", function () {
     });
 
     describe("exec", async function () {
-      it("should properly execute a valid requeset", async function () {});
+      it("should properly execute a valid request", async function () {});
     });
   });
 });
