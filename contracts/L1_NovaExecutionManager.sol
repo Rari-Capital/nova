@@ -5,7 +5,6 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 
 contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
@@ -51,11 +50,11 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         (bool success, bytes memory returnData) = strategy.call(l1calldata);
 
         // Revert if the strategy hard reverted.
-        require(!success && isHardRevert(returnData), "HARD_REVERT");
+        require(success || !isHardRevert(returnData), "HARD_REVERT");
 
         // Reset execution context.
-        currentlyExecutingStrategy = address(0);
-        currentExecutor = address(0);
+        delete currentlyExecutingStrategy;
+        delete currentExecutor;
 
         // Compute the execHash.
         bytes32 execHash = keccak256(abi.encodePacked(nonce, strategy, l1calldata, tx.gasprice));
@@ -68,19 +67,19 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         // Figure out how much gas this call will take up in total: (Constant function call gas) + (Gas diff after calls) + (the amount of gas that will be burned via enqueue + storage/other message overhead)
         uint256 gasUsed = 21396 + (startGas - gasleft()) + xDomainMessageGas;
 
-        // Send message to unlock the bounty on L2.
-        sendCrossDomainMessage(
-            L2_NovaRegistry,
-            abi.encodeWithSelector(
-                iL2_NovaRegistry.execCompleted.selector,
-                execHash,
-                msg.sender,
-                l2Recipient,
-                gasUsed,
-                !success
-            ),
-            xDomainMessageGasLimit
-        );
+        // // Send message to unlock the bounty on L2.
+        // sendCrossDomainMessage(
+        //     L2_NovaRegistry,
+        //     abi.encodeWithSelector(
+        //         iL2_NovaRegistry.execCompleted.selector,
+        //         execHash,
+        //         msg.sender,
+        //         l2Recipient,
+        //         gasUsed,
+        //         !success
+        //     ),
+        //     xDomainMessageGasLimit
+        // );
     }
 
     function exec(
@@ -106,18 +105,14 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     }
 
     function isHardRevert(bytes memory returnData) private pure returns (bool) {
-        // TODO: CAN WE FURTHER OPTIMIZE SINCE WE KNOW HOW LONG WE WANT THE REVERT STRING TO BE?
-        if (returnData.length >= 68) {
-            // Isolate the revert message.
-            assembly {
-                returnData := add(returnData, 0x04)
-            }
-
-            // TODO: WILL THIS WORK? (returnData is raw bytes not decoded)
-            return keccak256(returnData) != HARD_REVERT_HASH;
-        } else {
-            return false;
+        // We know the reverting with the HARD_REVERT_TEXT results in returnData with a length of 100.
+        if (returnData.length != 100) return false;
+        // Remove the sighash to just get the revert data.
+        assembly {
+            returnData := add(returnData, 0x04)
         }
+        // Check if the revert data matches the HARD_REVERT_HASH.
+        return keccak256(abi.encodePacked(abi.decode(returnData, (string)))) == HARD_REVERT_HASH;
     }
 }
 
