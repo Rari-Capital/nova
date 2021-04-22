@@ -4,7 +4,12 @@ import chaiAsPromised from "chai-as-promised";
 import { getContractFactory } from "@eth-optimism/contracts";
 
 import { Watcher } from "@eth-optimism/core-utils";
-import { L2NovaRegistry__factory, L2NovaRegistry, IERC20 } from "../typechain";
+import {
+  L2NovaRegistry__factory,
+  L2NovaRegistry,
+  IERC20,
+  MockContract__factory,
+} from "../typechain";
 import {
   createFactory,
   createOVMFactory,
@@ -173,7 +178,24 @@ describe("Nova", function () {
     });
 
     describe("exec", async function () {
-      it("should properly execute a valid request", async function () {});
+      it("should properly execute a valid request", async function () {
+        const mockContract = await ((await ethers.getContractFactory(
+          "MockContract"
+        )) as MockContract__factory)
+          .connect(l1Wallet)
+          .deploy();
+
+        await l1_NovaExecutionManager.exec(
+          // Nonce
+          0,
+          // Strategy
+          mockContract.address,
+          // Calldata
+          mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
+          // xDomain Gas Limit
+          100000
+        ).should.not.be.reverted;
+      });
     });
   });
 });
