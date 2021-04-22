@@ -4,12 +4,7 @@ import chaiAsPromised from "chai-as-promised";
 import { getContractFactory } from "@eth-optimism/contracts";
 
 import { Watcher } from "@eth-optimism/core-utils";
-import {
-  L2NovaRegistry__factory,
-  L2NovaRegistry,
-  IERC20,
-  MockContract__factory,
-} from "../typechain";
+
 import {
   createFactory,
   createOVMFactory,
@@ -18,8 +13,11 @@ import {
   waitForL1ToL2Tx,
 } from "../utils/testUtils";
 import { ethers } from "hardhat";
+
+import { L2NovaRegistry__factory, L2NovaRegistry, IERC20 } from "../typechain";
 import { L1NovaExecutionManager } from "../typechain/L1NovaExecutionManager";
 import { L1NovaExecutionManager__factory } from "../typechain/factories/L1NovaExecutionManager__factory";
+import { MockContract__factory } from "../typechain/factories/MockContract__factory";
 
 chai.use(chaiAsPromised);
 chai.should();
@@ -102,8 +100,8 @@ describe("Nova", function () {
     await wait(l1_NovaExecutionManager.init(l2_NovaRegistry.address));
   });
 
-  describe("L2_NovaRegistry", async function () {
-    describe("requestExec", async function () {
+  describe("L2_NovaRegistry", function () {
+    describe("requestExec", function () {
       it("should allow a valid request", async function () {
         // Approve 100 wei as gas for the first request.
         await wait(OVM_ETH.approve(l2_NovaRegistry.address, 100));
@@ -152,7 +150,7 @@ describe("Nova", function () {
     });
   });
 
-  describe("L1_NovaExecutionManager", async function () {
+  describe("L1_NovaExecutionManager", function () {
     it("execCompletedMessageBytesLength should be correct", async function () {
       const execCompletedMessageBytesLength = (
         await l1_NovaExecutionManager.execCompletedMessageBytesLength()
@@ -177,11 +175,12 @@ describe("Nova", function () {
       execCompletedMessageBytesLength.should.equal(bytesLength);
     });
 
-    describe("exec", async function () {
+    describe("exec", function () {
       it("should properly execute a valid request", async function () {
-        const mockContract = await ((await ethers.getContractFactory(
-          "MockContract"
-        )) as MockContract__factory)
+        const mockContract = await createFactory<MockContract__factory>(
+          "MockContract",
+          "mocks/"
+        )
           .connect(l1Wallet)
           .deploy();
 
