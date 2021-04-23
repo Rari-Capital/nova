@@ -14,7 +14,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @dev The revert message text used to cause a hard revert.
     string private constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.
-    bytes32 private constant HARD_REVERT_HASH = keccak256(abi.encodePacked(HARD_REVERT_TEXT));
+    bytes32 private constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
 
     /// @dev The bytes length of an abi encoded execCompleted call.
     uint256 public constant execCompletedMessageBytesLength = 164;
@@ -27,9 +27,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @dev The address who called `exec`/`execWithRecipient`.
     address private currentExecutor;
 
-    constructor(address _L2_NovaRegistryAddress, address _messenger)
-        OVM_CrossDomainEnabled(_messenger)
-    {
+    constructor(address _L2_NovaRegistryAddress, address _messenger) OVM_CrossDomainEnabled(_messenger) {
         L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
     }
 
@@ -107,11 +105,8 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     function isHardRevert(bytes memory returnData) private pure returns (bool) {
         // We know the reverting with the HARD_REVERT_TEXT results in returnData with a length of 100.
         if (returnData.length != 100) return false;
-        // Remove the sighash to just get the revert data.
-        assembly {
-            returnData := add(returnData, 0x04)
-        }
+
         // Check if the revert data matches the HARD_REVERT_HASH.
-        return keccak256(abi.encodePacked(abi.decode(returnData, (string)))) == HARD_REVERT_HASH;
+        return keccak256(returnData) == HARD_REVERT_HASH;
     }
 }
