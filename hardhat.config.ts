@@ -75,7 +75,7 @@ const config: HardhatUserConfig = {
   },
 
   mocha: {
-    timeout: 10_000,
+    timeout: 99999999,
   },
 
   gasReporter: {

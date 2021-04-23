@@ -18,6 +18,7 @@ import {
   L2NovaRegistry,
   ERC20,
   MockOVMETH__factory,
+  MockCrossDomainMessenger__factory,
 } from "../typechain";
 import { L1NovaExecutionManager } from "../typechain/L1NovaExecutionManager";
 import { L1NovaExecutionManager__factory } from "../typechain/factories/L1NovaExecutionManager__factory";
@@ -99,12 +100,32 @@ describe("Nova", function () {
       );
     } else {
       OVM_ETH = await createFactory<MockOVMETH__factory>(
-        network.ovm,
+        false,
         "MockOVMETH",
         "mocks/"
       )
         .connect(l2Wallet)
         .deploy();
+
+      const MockCrossDomainMessenger = await createFactory<MockCrossDomainMessenger__factory>(
+        false,
+        "MockCrossDomainMessenger",
+        "mocks/"
+      )
+        .connect(l1Wallet)
+        .deploy();
+
+      // We don't actually use this watcher it's just a way to pass down the mssenger address.
+      watcher = new Watcher({
+        l1: {
+          provider: l1Wallet.provider,
+          messengerAddress: MockCrossDomainMessenger.address,
+        },
+        l2: {
+          provider: l2Wallet.provider,
+          messengerAddress: MockCrossDomainMessenger.address,
+        },
+      });
     }
 
     // Deploy registry on L2.
@@ -113,13 +134,7 @@ describe("Nova", function () {
       "L2_NovaRegistry"
     )
       .connect(l2Wallet)
-      .deploy(
-        OVM_ETH.address,
-        // TODO: Make this work with a mock cross domain messenger on L1.
-        network.ovm
-          ? watcher.l2.messengerAddress
-          : "0x0000000000000000000000000000000000000000"
-      );
+      .deploy(OVM_ETH.address, watcher.l2.messengerAddress);
 
     // Deploy execution manager on L1.
     l1_NovaExecutionManager = await createFactory<L1NovaExecutionManager__factory>(
@@ -127,13 +142,7 @@ describe("Nova", function () {
       "L1_NovaExecutionManager"
     )
       .connect(l1Wallet)
-      .deploy(
-        l2_NovaRegistry.address,
-        // TODO: Mock xDomainMessenger on VM
-        network.ovm
-          ? watcher.l1.messengerAddress
-          : "0x0000000000000000000000000000000000000000"
-      );
+      .deploy(l2_NovaRegistry.address, watcher.l1.messengerAddress);
 
     // Tell the registry about the execution manager's L1 address.
     await wait(

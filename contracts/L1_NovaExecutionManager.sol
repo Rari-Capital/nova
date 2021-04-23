@@ -66,18 +66,18 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         uint256 gasUsed = 21396 + (startGas - gasleft()) + xDomainMessageGas;
 
         // Send message to unlock the bounty on L2.
-        // sendCrossDomainMessage(
-        //     L2_NovaRegistryAddress,
-        //     abi.encodeWithSelector(
-        //         L2_NovaRegistry(L2_NovaRegistryAddress).execCompleted.selector,
-        //         execHash,
-        //         msg.sender,
-        //         l2Recipient,
-        //         gasUsed,
-        //         !success
-        //     ),
-        //     xDomainMessageGasLimit
-        // );
+        sendCrossDomainMessage(
+            L2_NovaRegistryAddress,
+            abi.encodeWithSelector(
+                L2_NovaRegistry(L2_NovaRegistryAddress).execCompleted.selector,
+                execHash,
+                msg.sender,
+                l2Recipient,
+                gasUsed,
+                !success
+            ),
+            xDomainMessageGasLimit
+        );
     }
 
     function exec(
