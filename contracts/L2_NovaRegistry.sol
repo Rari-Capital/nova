@@ -2,7 +2,7 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "./utils/OVM_SafeERC20.sol";
+import "ovm-safeerc20/OVM_SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
@@ -165,11 +165,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
 
         // Transfer input tokens in that the msg.sender has approved.
         for (uint256 i = 0; i < inputTokens.length; i++) {
-            inputTokens[i].l2Token.safeTransferFrom(
-                msg.sender,
-                address(this),
-                inputTokens[i].amount
-            );
+            inputTokens[i].l2Token.safeTransferFrom(msg.sender, address(this), inputTokens[i].amount);
 
             // Copy over this index to the requestInputTokens mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
             requestInputTokens[execHash][i] = inputTokens[i];
@@ -267,12 +263,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         // Generate a new execHash for the resubmitted request.
         systemNonce += 1;
         newExecHash = keccak256(
-            abi.encodePacked(
-                systemNonce,
-                requestStrategies[execHash],
-                requestCalldatas[execHash],
-                gasPrice
-            )
+            abi.encodePacked(systemNonce, requestStrategies[execHash], requestCalldatas[execHash], gasPrice)
         );
 
         uint256 gasLimit = requestGasLimits[execHash];
@@ -369,11 +360,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @notice Returns if the request is executable along with a timestamp of when that may change.
     /// @return executable A boolean indicating if the request is executable.
     /// @return changeTimestamp A timestamp indicating when the request might switch from being executable to unexecutable (or vice-versa). Will be 0 if there is no change expected. It will be a timestamp if the request will be enabled soon (it's a resubmitted version of an uncled request) or the request is being canceled soon.
-    function isExecutable(bytes32 execHash)
-        public
-        view
-        returns (bool executable, uint256 changeTimestamp)
-    {
+    function isExecutable(bytes32 execHash) public view returns (bool executable, uint256 changeTimestamp) {
         if (requestCreators[execHash] == address(0)) {
             // This isn't a valid execHash!
             executable = false;
@@ -392,11 +379,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @notice Checks if the request is currently canceled along with a timestamp of when it may be canceled.
     /// @return tokensRemoved A boolean indicating if the request has been canceled.
     /// @return changeTimestamp A timestamp indicating when the request might have its tokens removed or added. Will be 0 if there is no removal/addition expected. It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request).
-    function areTokensRemoved(bytes32 execHash)
-        public
-        view
-        returns (bool tokensRemoved, uint256 changeTimestamp)
-    {
+    function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
         uint256 removalTimestamp = requestTokenRemovalTimestamps[execHash];
 
         if (removalTimestamp == 0) {
@@ -434,11 +417,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @notice Checks if the request is currently canceled along with a timestamp of when it may be canceled.
     /// @return canceled A boolean indicating if the request has been canceled.
     /// @return changeTimestamp A timestamp indicating when the request might be canceled. Will be 0 if there is no cancel expected. It will be a timestamp if a cancel has been requested.
-    function isCanceled(bytes32 execHash)
-        public
-        view
-        returns (bool canceled, uint256 changeTimestamp)
-    {
+    function isCanceled(bytes32 execHash) public view returns (bool canceled, uint256 changeTimestamp) {
         uint256 cancelTimestamp = requestCancelTimestamps[execHash];
 
         if (cancelTimestamp == 0) {

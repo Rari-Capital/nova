@@ -48,6 +48,7 @@
     "@openzeppelin/contracts": "^3.4.0",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.1.0",
+    "ovm-safeerc20": "^1.0.0",
     "solidity-coverage": "^0.7.16"
   }
 }
