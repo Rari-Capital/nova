@@ -18,6 +18,8 @@ import "@nomiclabs/hardhat-ethers";
 // Optimism plugins:
 import "@eth-optimism/hardhat-ovm";
 
+import "./tasks";
+
 const config: HardhatUserConfig = {
   networks: {
     mainnet: {

@@ -1,8 +1,10 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 
-import { getContractFactory } from "@eth-optimism/contracts";
+chai.use(chaiAsPromised);
+chai.should();
 
+import { getContractFactory } from "@eth-optimism/contracts";
 import { Watcher } from "@eth-optimism/core-utils";
 
 import {
@@ -11,7 +13,10 @@ import {
   wait,
   waitForL1ToL2Tx,
 } from "../utils/testUtils";
+
 import { ethers, network } from "hardhat";
+import { Wallet } from "@ethersproject/wallet";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
   L2NovaRegistry__factory,
@@ -19,16 +24,11 @@ import {
   ERC20,
   MockOVMETH__factory,
   MockCrossDomainMessenger__factory,
+  L1NovaExecutionManager,
+  L1NovaExecutionManager__factory,
+  MockContract,
+  MockContract__factory,
 } from "../typechain";
-import { L1NovaExecutionManager } from "../typechain/L1NovaExecutionManager";
-import { L1NovaExecutionManager__factory } from "../typechain/factories/L1NovaExecutionManager__factory";
-import { MockContract__factory } from "../typechain/factories/MockContract__factory";
-import { Wallet } from "@ethersproject/wallet";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { MockContract } from "../typechain/MockContract";
-
-chai.use(chaiAsPromised);
-chai.should();
 
 function computeExecHash({
   nonce,
