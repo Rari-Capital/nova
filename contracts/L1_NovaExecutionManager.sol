@@ -43,6 +43,12 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     ) public {
         uint256 startGas = gasleft();
 
+        // Compute the execHash.
+        bytes32 execHash = keccak256(abi.encodePacked(nonce, strategy, l1calldata, tx.gasprice));
+
+        // Prevent double executing.
+        require(!executed[execHash], "ALREADY_EXECUTED");
+
         // Initialize execution context.
         currentExecutor = msg.sender;
         currentlyExecutingStrategy = strategy;
@@ -56,9 +62,6 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         // Reset execution context.
         delete currentlyExecutingStrategy;
         delete currentExecutor;
-
-        // Compute the execHash.
-        bytes32 execHash = keccak256(abi.encodePacked(nonce, strategy, l1calldata, tx.gasprice));
 
         // Mark the request as executed.
         executed[execHash] = true;

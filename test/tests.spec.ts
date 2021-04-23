@@ -251,6 +251,19 @@ describe("Nova", function () {
         ).should.not.be.reverted;
       });
 
+      it("shouldn't allow double executing", async function () {
+        await l1_NovaExecutionManager.exec(
+          // Nonce
+          0,
+          // Strategy
+          mockContract.address,
+          // Calldata
+          mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
+          // xDomain Gas Limit
+          100000
+        ).should.be.reverted;
+      });
+
       it("should properly handle a hard revert", async function () {
         await l1_NovaExecutionManager.exec(
           // Nonce

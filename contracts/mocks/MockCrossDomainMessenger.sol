@@ -2,7 +2,18 @@
 pragma solidity 0.7.6;
 
 contract MockCrossDomainMessenger {
-    address public xDomainMessageSender;
+    struct xDomainMessage {
+        address _target;
+        bytes _message;
+        uint32 _gasLimit;
+        address sender;
+    }
+
+    xDomainMessage currentMessage;
+
+    function xDomainMessageSender() external view returns (address) {
+        return currentMessage.sender;
+    }
 
     function sendMessage(
         address _target,
@@ -12,19 +23,28 @@ contract MockCrossDomainMessenger {
         uint256 startingGas = gasleft();
         uint256 gasToConsume = _gasLimit / 32;
 
-        // Store the sender.
-        xDomainMessageSender = msg.sender;
-
-        // Make the actual call but don't check the return value because this needs to feel async.
-        _target.call(_message);
-
-        // Remove the sender.
-        delete xDomainMessageSender;
+        currentMessage = xDomainMessage(_target, _message, _gasLimit, msg.sender);
 
         // Mimic enqueue gas burn (https://github.com/ethereum-optimism/optimism/blob/master/packages/contracts/contracts/optimistic-ethereum/OVM/chain/OVM_CanonicalTransactionChain.sol)
         uint256 i;
         while (startingGas - gasleft() < gasToConsume) {
             i++;
         }
+    }
+
+    function relayCurrentMessage() external {
+        (bool success, bytes memory result) = currentMessage._target.call(currentMessage._message);
+        require(success, _getRevertMsg(result));
+    }
+
+    function _getRevertMsg(bytes memory _returnData) private pure returns (string memory) {
+        // If the _res length is less than 68, then the transaction failed silently (without a revert message)
+        if (_returnData.length < 68) return "Transaction reverted silently";
+
+        assembly {
+            // Slice the sighash.
+            _returnData := add(_returnData, 0x04)
+        }
+        return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 }
