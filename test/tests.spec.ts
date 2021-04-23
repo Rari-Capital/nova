@@ -18,6 +18,7 @@ import {
   L2NovaRegistry,
   ERC20,
   MockOVMETH__factory,
+  MockContract,
 } from "../typechain";
 import { L1NovaExecutionManager } from "../typechain/L1NovaExecutionManager";
 import { L1NovaExecutionManager__factory } from "../typechain/factories/L1NovaExecutionManager__factory";
@@ -216,15 +217,19 @@ describe("Nova", function () {
     });
 
     describe("exec", function () {
-      it("should properly execute a valid request", async function () {
-        const mockContract = await createFactory<MockContract__factory>(
+      let mockContract: MockContract;
+
+      before(async function () {
+        mockContract = await createFactory<MockContract__factory>(
           false,
           "MockContract",
           "mocks/"
         )
           .connect(l1Wallet)
           .deploy();
+      });
 
+      it("should properly execute a request that soft reverts", async function () {
         await l1_NovaExecutionManager.exec(
           // Nonce
           0,
@@ -235,6 +240,21 @@ describe("Nova", function () {
           // xDomain Gas Limit
           100000
         ).should.not.be.reverted;
+      });
+
+      it("should properly handle a hard revert", async function () {
+        await l1_NovaExecutionManager.exec(
+          // Nonce
+          0,
+          // Strategy
+          mockContract.address,
+          // Calldata
+          mockContract.interface.encodeFunctionData(
+            "thisFunctionWillHardRevert"
+          ),
+          // xDomain Gas Limit
+          100000
+        ).should.be.reverted;
       });
     });
   });
