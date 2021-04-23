@@ -18,13 +18,13 @@ import {
   L2NovaRegistry,
   ERC20,
   MockOVMETH__factory,
-  MockContract,
 } from "../typechain";
 import { L1NovaExecutionManager } from "../typechain/L1NovaExecutionManager";
 import { L1NovaExecutionManager__factory } from "../typechain/factories/L1NovaExecutionManager__factory";
 import { MockContract__factory } from "../typechain/factories/MockContract__factory";
 import { Wallet } from "@ethersproject/wallet";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { MockContract } from "../typechain/MockContract";
 
 chai.use(chaiAsPromised);
 chai.should();
