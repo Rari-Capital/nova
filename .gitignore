@@ -82,3 +82,4 @@ cache
 typechain
 cache
 coverage.json
+typechain-ovm
