@@ -6,6 +6,7 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
+import "./L2_NovaRegistry.sol";
 
 contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     using SafeERC20 for IERC20;
@@ -19,18 +20,17 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     uint256 public constant execCompletedMessageBytesLength = 164;
 
     /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
-    address public L2_NovaRegistry;
+    address public immutable L2_NovaRegistryAddress;
 
     /// @dev The address of the strategy that is currenlty being called.
     address private currentlyExecutingStrategy;
     /// @dev The address who called `exec`/`execWithRecipient`.
     address private currentExecutor;
 
-    constructor(address _messenger) OVM_CrossDomainEnabled(_messenger) {}
-
-    function init(address _L2_NovaRegistry) external {
-        require(L2_NovaRegistry == address(0), "ALREADY_INITIALIZED");
-        L2_NovaRegistry = _L2_NovaRegistry;
+    constructor(address _L2_NovaRegistryAddress, address _messenger)
+        OVM_CrossDomainEnabled(_messenger)
+    {
+        L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
     }
 
     function execWithRecipient(
@@ -67,11 +67,11 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         // Figure out how much gas this call will take up in total: (Constant function call gas) + (Gas diff after calls) + (the amount of gas that will be burned via enqueue + storage/other message overhead)
         uint256 gasUsed = 21396 + (startGas - gasleft()) + xDomainMessageGas;
 
-        // // Send message to unlock the bounty on L2.
+        // Send message to unlock the bounty on L2.
         // sendCrossDomainMessage(
-        //     L2_NovaRegistry,
+        //     L2_NovaRegistryAddress,
         //     abi.encodeWithSelector(
-        //         iL2_NovaRegistry.execCompleted.selector,
+        //         L2_NovaRegistry(L2_NovaRegistryAddress).execCompleted.selector,
         //         execHash,
         //         msg.sender,
         //         l2Recipient,
@@ -114,14 +114,4 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         // Check if the revert data matches the HARD_REVERT_HASH.
         return keccak256(abi.encodePacked(abi.decode(returnData, (string)))) == HARD_REVERT_HASH;
     }
-}
-
-interface iL2_NovaRegistry {
-    function execCompleted(
-        bytes32 execHash,
-        address executor,
-        address rewardRecipient,
-        uint256 gasUsed,
-        bool reverted
-    ) external;
 }

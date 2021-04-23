@@ -7,17 +7,23 @@ import { Watcher } from "@eth-optimism/core-utils";
 
 import {
   createFactory,
-  createOVMFactory,
   createTestWallet,
   wait,
   waitForL1ToL2Tx,
 } from "../utils/testUtils";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 
-import { L2NovaRegistry__factory, L2NovaRegistry, IERC20 } from "../typechain";
+import {
+  L2NovaRegistry__factory,
+  L2NovaRegistry,
+  ERC20,
+  MockOVMETH__factory,
+} from "../typechain";
 import { L1NovaExecutionManager } from "../typechain/L1NovaExecutionManager";
 import { L1NovaExecutionManager__factory } from "../typechain/factories/L1NovaExecutionManager__factory";
 import { MockContract__factory } from "../typechain/factories/MockContract__factory";
+import { Wallet } from "@ethersproject/wallet";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 chai.use(chaiAsPromised);
 chai.should();
@@ -40,64 +46,98 @@ function computeExecHash({
 }
 
 describe("Nova", function () {
-  const l1Wallet = createTestWallet("http://localhost:9545");
-  const l2Wallet = createTestWallet("http://localhost:8545");
-
-  // OVM contracts:
-  // TODO: Use typechain defs once they're added to `@eth-optimism/contracts`
-  const OVM_L1ETHGateway = getContractFactory("OVM_L1ETHGateway")
-    .connect(l1Wallet)
-    .attach("0x998abeb3e57409262ae5b751f60747921b33613e");
-
-  const OVM_ETH = getContractFactory("OVM_ETH")
-    .connect(l2Wallet)
-    .attach("0x4200000000000000000000000000000000000006") as IERC20;
+  let l1Wallet: Wallet | SignerWithAddress;
+  let l2Wallet: Wallet | SignerWithAddress;
 
   // Cross layer watcher:
-  const watcher = new Watcher({
-    l1: {
-      provider: l1Wallet.provider,
-      messengerAddress: "0x59b670e9fA9D0A427751Af201D676719a970857b",
-    },
-    l2: {
-      provider: l2Wallet.provider,
-      messengerAddress: "0x4200000000000000000000000000000000000007",
-    },
-  });
+  let watcher: Watcher;
 
   // Nova specific contracts:
   let l1_NovaExecutionManager: L1NovaExecutionManager;
   let l2_NovaRegistry: L2NovaRegistry;
 
-  before(async () => {
-    // Deposit ETH to our L2 wallet:
-    await waitForL1ToL2Tx(
-      OVM_L1ETHGateway.connect(l1Wallet).depositTo(l2Wallet.address, {
-        value: ethers.utils.parseEther("5"),
-      }),
-      watcher
-    );
+  // OVM Contracts:
+  let OVM_ETH: ERC20;
 
-    // Deploy execution manager on L1.
-    l1_NovaExecutionManager = await createFactory<L1NovaExecutionManager__factory>(
-      "L1_NovaExecutionManager"
-    )
-      .connect(l1Wallet)
-      .deploy(watcher.l1.messengerAddress);
+  before(async () => {
+    l1Wallet = network.ovm
+      ? createTestWallet("http://localhost:9545")
+      : (await ethers.getSigners())[0];
+    l2Wallet = network.ovm
+      ? createTestWallet("http://localhost:8545")
+      : (await ethers.getSigners())[0];
+
+    // Get us some OVM_ETH:
+    if (network.ovm) {
+      OVM_ETH = getContractFactory("OVM_ETH")
+        .connect(l2Wallet)
+        .attach("0x4200000000000000000000000000000000000006") as ERC20;
+
+      const OVM_L1ETHGateway = getContractFactory("OVM_L1ETHGateway")
+        .connect(l1Wallet)
+        .attach("0x998abeb3e57409262ae5b751f60747921b33613e");
+
+      // Create a watcher:
+      watcher = new Watcher({
+        l1: {
+          provider: l1Wallet.provider,
+          messengerAddress: "0x59b670e9fA9D0A427751Af201D676719a970857b",
+        },
+        l2: {
+          provider: l2Wallet.provider,
+          messengerAddress: "0x4200000000000000000000000000000000000007",
+        },
+      });
+
+      // Deposit ETH to our L2 wallet:
+      await waitForL1ToL2Tx(
+        OVM_L1ETHGateway.connect(l1Wallet).depositTo(l2Wallet.address, {
+          value: ethers.utils.parseEther("5"),
+        }),
+        watcher
+      );
+    } else {
+      OVM_ETH = await createFactory<MockOVMETH__factory>(
+        network.ovm,
+        "MockOVMETH",
+        "mocks/"
+      )
+        .connect(l2Wallet)
+        .deploy();
+    }
 
     // Deploy registry on L2.
-    l2_NovaRegistry = await createOVMFactory<L2NovaRegistry__factory>(
+    l2_NovaRegistry = await createFactory<L2NovaRegistry__factory>(
+      network.ovm,
       "L2_NovaRegistry"
     )
       .connect(l2Wallet)
       .deploy(
-        l1_NovaExecutionManager.address,
-        "0x4200000000000000000000000000000000000006",
-        "0x4200000000000000000000000000000000000007"
+        OVM_ETH.address,
+        // TODO: Make this work with a mock cross domain messenger on L1.
+        network.ovm
+          ? watcher.l2.messengerAddress
+          : "0x0000000000000000000000000000000000000000"
       );
 
-    // Tell the execution manager about the registry's address on L2.
-    await wait(l1_NovaExecutionManager.init(l2_NovaRegistry.address));
+    // Deploy execution manager on L1.
+    l1_NovaExecutionManager = await createFactory<L1NovaExecutionManager__factory>(
+      false,
+      "L1_NovaExecutionManager"
+    )
+      .connect(l1Wallet)
+      .deploy(
+        l2_NovaRegistry.address,
+        // TODO: Mock xDomainMessenger on VM
+        network.ovm
+          ? watcher.l1.messengerAddress
+          : "0x0000000000000000000000000000000000000000"
+      );
+
+    // Tell the registry about the execution manager's L1 address.
+    await wait(
+      l2_NovaRegistry.connectExecutionManager(l1_NovaExecutionManager.address)
+    );
   });
 
   describe("L2_NovaRegistry", function () {
@@ -178,6 +218,7 @@ describe("Nova", function () {
     describe("exec", function () {
       it("should properly execute a valid request", async function () {
         const mockContract = await createFactory<MockContract__factory>(
+          false,
           "MockContract",
           "mocks/"
         )

@@ -2,27 +2,34 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "./utils/OVM_SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 
 contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
-    using SafeERC20 for IERC20;
+    using OVM_SafeERC20 for IERC20;
 
-    uint256 constant MIN_CANCEL_SECONDS = 300;
+    /// @notice The minimum delay between when `cancel` and `withdraw` can be called.
+    uint256 public constant MIN_CANCEL_SECONDS = 300;
 
-    IERC20 immutable ETH;
-    address immutable L1_NovaExecutionManager;
+    /// @notice The ERC20 users must use to pay for the L1 gas usage of request.
+    IERC20 public immutable ETH;
 
-    constructor(
-        address _L1_NovaExecutionManager,
-        address _ETH,
-        address _messenger
-    ) OVM_CrossDomainEnabled(_messenger) {
+    /// @notice The address of the only contract authorized to make cross domain calls to `execCompleted`.
+    address public L1_NovaExecutionManagerAddress;
+
+    /// @param _ETH An ERC20 ETH you would like users to pay for gas with.
+    /// @param _messenger The L2 xDomainMessenger contract you want to use to recieve messages.
+    constructor(address _ETH, address _messenger) OVM_CrossDomainEnabled(_messenger) {
         ETH = IERC20(_ETH);
-        L1_NovaExecutionManager = _L1_NovaExecutionManager;
+    }
+
+    /// @notice Can only be called once. Authorizes the `_L1_NovaExecutionManagerAddress` to make cross domain calls to `execCompleted`.
+    /// @param _L1_NovaExecutionManagerAddress The address to be authorized to make cross domain calls to `execCompleted`.
+    function connectExecutionManager(address _L1_NovaExecutionManagerAddress) external {
+        require(L1_NovaExecutionManagerAddress == address(0), "ALREADY_INITIALIZED");
+        L1_NovaExecutionManagerAddress = _L1_NovaExecutionManagerAddress;
     }
 
     /// @notice Emitted when `cancel` is called.
@@ -66,6 +73,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @dev Maps execHashes to the creator of each request.
     mapping(bytes32 => address) private requestCreators;
     /// @dev Maps execHashes to the nonce of each request.
+    /// @dev This is just for convience, does not need to be on-chain.
     mapping(bytes32 => uint72) private requestNonces;
     /// @dev Maps execHashes to the address of the strategy associated with the request.
     mapping(bytes32 => address) private requestStrategies;
@@ -144,12 +152,13 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         systemNonce += 1;
         execHash = keccak256(abi.encodePacked(systemNonce, strategy, l1calldata, gasPrice));
 
+        requestCreators[execHash] = msg.sender;
         requestStrategies[execHash] = strategy;
         requestCalldatas[execHash] = l1calldata;
         requestGasLimits[execHash] = gasLimit;
         requestGasPrices[execHash] = gasPrice;
+        // This is just for convience, does not need to be on-chain.
         requestNonces[execHash] = systemNonce;
-        requestCreators[execHash] = msg.sender;
 
         // Transfer in ETH to pay for max gas usage.
         ETH.safeTransferFrom(msg.sender, address(this), gasPrice * gasLimit);
@@ -295,7 +304,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         address rewardRecipient,
         uint256 gasUsed,
         bool reverted
-    ) external nonReentrant onlyFromCrossDomainAccount(L1_NovaExecutionManager) {
+    ) external nonReentrant onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
         (bool executable, ) = isExecutable(execHash);
         require(executable, "NOT_EXECUTABLE");
 
