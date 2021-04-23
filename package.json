@@ -7,7 +7,7 @@
     "full-test": "hardhat test --network optimism",
     "vm-test": "hardhat test",
     "test": "npm run vm-test && npm run full-test",
-    "coverage": "hardhat coverage",
+    "coverage": "hardhat coverage && npm run open-coverage-report",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
     "deploy": "hardhat deploy",
     "verify": "hardhat verify"

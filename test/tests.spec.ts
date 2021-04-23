@@ -151,6 +151,12 @@ describe("Nova", function () {
   });
 
   describe("L2_NovaRegistry", function () {
+    it("should not alllow connecting to another execution manager", async function () {
+      await l2_NovaRegistry.connectExecutionManager(
+        ethers.constants.AddressZero
+      ).should.be.reverted;
+    });
+
     describe("requestExec", function () {
       it("should allow a valid request", async function () {
         // Approve 100 wei as gas for the first request.
