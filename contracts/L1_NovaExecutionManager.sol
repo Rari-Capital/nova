@@ -22,6 +22,9 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
     address public immutable L2_NovaRegistryAddress;
 
+    /// @notice Maps execHashes to a boolean indicating whether the corresponding request has already been executed.
+    mapping(bytes32 => bool) public executed;
+
     /// @dev The address of the strategy that is currenlty being called.
     address private currentlyExecutingStrategy;
     /// @dev The address who called `exec`/`execWithRecipient`.
@@ -56,6 +59,9 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
 
         // Compute the execHash.
         bytes32 execHash = keccak256(abi.encodePacked(nonce, strategy, l1calldata, tx.gasprice));
+
+        // Mark the request as executed.
+        executed[execHash] = true;
 
         // Figure out how much gas this xDomain message is going to cost us.
         uint256 xDomainMessageGas =
