@@ -34,7 +34,9 @@ contract MockCrossDomainMessenger {
 
     function relayCurrentMessage() external {
         (bool success, bytes memory result) = currentMessage._target.call(currentMessage._message);
+
         require(success, _getRevertMsg(result));
+        delete currentMessage;
     }
 
     function _getRevertMsg(bytes memory _returnData) private pure returns (string memory) {
