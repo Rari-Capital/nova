@@ -80,7 +80,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @dev Maps execHashes to the calldata associated with the request.
     mapping(bytes32 => bytes) private requestCalldatas;
     /// @dev Maps execHashes to the gas limit a bot should use to execute the request.
-    mapping(bytes32 => uint256) private requestGasLimits;
+    mapping(bytes32 => uint64) private requestGasLimits;
     /// @dev Maps execHashes to the gas price a bot must use to execute the request.
     mapping(bytes32 => uint256) private requestGasPrices;
     /// @dev Maps execHashes to the 'bounty' tokens a bot will recieve for executing the request.
@@ -109,7 +109,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             // General request data:
             address strategy,
             bytes memory l1calldata,
-            uint256 gasLimit,
+            uint64 gasLimit,
             uint256 gasPrice,
             InputToken[] memory inputTokens,
             Bounty[] memory bounties,
@@ -144,7 +144,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     function requestExec(
         address strategy,
         bytes calldata l1calldata,
-        uint256 gasLimit,
+        uint64 gasLimit,
         uint256 gasPrice,
         InputToken[] calldata inputTokens,
         Bounty[] calldata bounties
@@ -187,7 +187,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     function requestExecWithTimeout(
         address strategy,
         bytes calldata l1calldata,
-        uint256 gasLimit,
+        uint64 gasLimit,
         uint256 gasPrice,
         InputToken[] calldata inputTokens,
         Bounty[] calldata bounties,
@@ -266,7 +266,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             abi.encodePacked(systemNonce, requestStrategies[execHash], requestCalldatas[execHash], gasPrice)
         );
 
-        uint256 gasLimit = requestGasLimits[execHash];
+        uint64 gasLimit = requestGasLimits[execHash];
 
         // Fill out data for the resubmitted request.
         requestStrategies[newExecHash] = requestStrategies[execHash];
@@ -293,7 +293,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         bytes32 execHash,
         address executor,
         address rewardRecipient,
-        uint256 gasUsed,
+        uint64 gasUsed,
         bool reverted
     ) external nonReentrant onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
         (bool executable, ) = isExecutable(execHash);
