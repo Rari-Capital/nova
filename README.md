@@ -2,5 +2,5 @@
 Cross-layer execution firmware.
 
 ## Info
-- View the specification in [**spec.md**](/spec.md)
+- Read the [docs](https://docs.rari.capital/nova)
 - Tweet [**@transmissions11**](https://twitter.com/transmissions11) for inquiries 
