@@ -1,5 +1,5 @@
 # Nova
-Nova is a <u>set of contracts</u> + <u>network of bots</u> that allow users and contracts to seamlessly perform actions on L1 <u>without leaving L2</u> in a trust-free and <u>composable</u> manner.
+Nova is a **set of contracts** + **network of bots<** that allow users and contracts to seamlessly perform actions on L1 **without leaving L2** in a trust-free and **composable** manner.
 
 ## More Info
 - Read the **[docs](https://docs.rari.capital/nova)**
