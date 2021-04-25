@@ -21,11 +21,10 @@ contract MockCrossDomainMessenger {
         uint32 _gasLimit
     ) external {
         uint256 startingGas = gasleft();
-        uint256 gasToConsume = _gasLimit / 32;
-
         currentMessage = xDomainMessage(_target, _message, _gasLimit, msg.sender);
 
-        // Mimic enqueue gas burn (https://github.com/ethereum-optimism/optimism/blob/master/packages/contracts/contracts/optimistic-ethereum/OVM/chain/OVM_CanonicalTransactionChain.sol)
+        // Mimic enqueue gas burn (https://github.com/ethereum-optimism/optimism/blob/master/packages/contracts/contracts/optimistic-ethereum/OVM/chain/OVM_CanonicalTransactionChain.sol) + sendMessage overhead.
+        uint256 gasToConsume = (_gasLimit / 32) + 74000;
         uint256 i;
         while (startingGas - gasleft() < gasToConsume) {
             i++;
