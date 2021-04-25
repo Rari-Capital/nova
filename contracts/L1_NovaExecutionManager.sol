@@ -25,10 +25,12 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @notice Maps execHashes to a boolean indicating whether the corresponding request has already been executed.
     mapping(bytes32 => bool) public executed;
 
+    /// @dev The execHash computed from the currently executing call to `exec`.
+    bytes32 public currentExecHash;
     /// @dev The address of the strategy that is currenlty being called.
-    address private currentlyExecutingStrategy;
+    address public currentlyExecutingStrategy;
     /// @dev The address who called `exec`/`execWithRecipient`.
-    address private currentExecutor;
+    address public currentExecutor;
 
     constructor(address _L2_NovaRegistryAddress, address _messenger) OVM_CrossDomainEnabled(_messenger) {
         L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
@@ -50,6 +52,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         require(!executed[execHash], "ALREADY_EXECUTED");
 
         // Initialize execution context.
+        currentExecHash = execHash;
         currentExecutor = msg.sender;
         currentlyExecutingStrategy = strategy;
 
@@ -60,6 +63,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         require(success || !isHardRevert(returnData), "HARD_REVERT");
 
         // Reset execution context.
+        delete execHash;
         delete currentlyExecutingStrategy;
         delete currentExecutor;
 
