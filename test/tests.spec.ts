@@ -5,7 +5,6 @@ chai.use(chaiAsPromised);
 chai.should();
 
 import { getContractFactory } from "@eth-optimism/contracts";
-import { Watcher } from "@eth-optimism/core-utils";
 
 import {
   createFactory,
@@ -29,6 +28,8 @@ import {
   MockContract,
   MockContract__factory,
 } from "../typechain";
+import { Watcher } from "../utils/watcher";
+import { BigNumber } from "ethers";
 
 function computeExecHash({
   nonce,
@@ -39,7 +40,7 @@ function computeExecHash({
   nonce: number;
   strategy: string;
   calldata: string;
-  gasPrice: number;
+  gasPrice: number | BigNumber;
 }) {
   return ethers.utils.solidityKeccak256(
     ["uint72", "address", "bytes", "uint256"],
@@ -58,8 +59,11 @@ describe("Nova", function () {
   let l1_NovaExecutionManager: L1NovaExecutionManager;
   let l2_NovaRegistry: L2NovaRegistry;
 
-  // OVM Contracts:
+  // OVM contracts:
   let OVM_ETH: ERC20;
+
+  // Demo contracts:
+  let mockContract: MockContract;
 
   before(async () => {
     l1Wallet = network.ovm
@@ -128,6 +132,15 @@ describe("Nova", function () {
       });
     }
 
+    // Deploy a test contract on L1.
+    mockContract = await createFactory<MockContract__factory>(
+      false,
+      "MockContract",
+      "mocks/"
+    )
+      .connect(l1Wallet)
+      .deploy();
+
     // Deploy registry on L2.
     l2_NovaRegistry = await createFactory<L2NovaRegistry__factory>(
       network.ovm,
@@ -150,6 +163,13 @@ describe("Nova", function () {
     );
   });
 
+  let testCallArguments: {
+    strategy: string;
+    calldata: string;
+    gasLimit: BigNumber;
+    gasPrice: BigNumber;
+  };
+
   describe("L2_NovaRegistry", function () {
     it("should not alllow connecting to another execution manager", async function () {
       await l2_NovaRegistry.connectExecutionManager(
@@ -159,17 +179,31 @@ describe("Nova", function () {
 
     describe("requestExec", function () {
       it("should allow a valid request", async function () {
-        // Approve 100 wei as gas for the first request.
-        await wait(OVM_ETH.approve(l2_NovaRegistry.address, 100));
+        testCallArguments = {
+          strategy: mockContract.address,
+          calldata: mockContract.interface.encodeFunctionData(
+            "thisFunctionWillNotRevert"
+          ),
+          gasLimit: await mockContract.estimateGas.thisFunctionWillNotRevert(),
+          gasPrice: await ethers.utils.parseUnits("10", "gwei"),
+        };
+
+        // Approve the proper amount of OVM_ETH.
+        await wait(
+          OVM_ETH.approve(
+            l2_NovaRegistry.address,
+            testCallArguments.gasLimit.mul(testCallArguments.gasPrice)
+          )
+        );
 
         // This will not revert because we have approved just enough wei.
         await l2_NovaRegistry
           .connect(l2Wallet)
           .requestExec(
-            "0x0000000000000000000000000000000000000000",
-            "0x00",
-            10,
-            10,
+            testCallArguments.strategy,
+            testCallArguments.calldata,
+            testCallArguments.gasLimit,
+            testCallArguments.gasPrice,
             [],
             []
           )
@@ -177,17 +211,19 @@ describe("Nova", function () {
           .withArgs(
             computeExecHash({
               nonce: 1,
-              strategy: "0x0000000000000000000000000000000000000000",
-              calldata: "0x00",
-              gasPrice: 10,
+              strategy: testCallArguments.strategy,
+              calldata: testCallArguments.calldata,
+              gasPrice: testCallArguments.gasPrice,
             }),
-            "0x0000000000000000000000000000000000000000"
+            testCallArguments.strategy
           );
 
         // Ensure the registry transferred in the ETH.
         await OVM_ETH.balanceOf(
           l2_NovaRegistry.address
-        ).should.eventually.equal(100);
+        ).should.eventually.equal(
+          testCallArguments.gasLimit.mul(testCallArguments.gasPrice)
+        );
       });
 
       it("should revert if not enough wei is approved to pay for gas", async function () {
@@ -232,18 +268,6 @@ describe("Nova", function () {
     });
 
     describe("exec", function () {
-      let mockContract: MockContract;
-
-      before(async function () {
-        mockContract = await createFactory<MockContract__factory>(
-          false,
-          "MockContract",
-          "mocks/"
-        )
-          .connect(l1Wallet)
-          .deploy();
-      });
-
       it("should properly execute a request that soft reverts", async function () {
         await l1_NovaExecutionManager.exec(
           // Nonce
@@ -283,6 +307,18 @@ describe("Nova", function () {
           // xDomain Gas Limit
           100000
         ).should.be.reverted;
+      });
+
+      it("will correctly execute a request on the registry and release the bounty on L2", async function () {
+        await waitForL1ToL2Tx(
+          l1_NovaExecutionManager.exec(
+            1,
+            testCallArguments.strategy,
+            testCallArguments.calldata,
+            100000
+          ),
+          watcher
+        );
       });
     });
   });

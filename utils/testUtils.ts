@@ -1,5 +1,7 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { ContractTransaction } from "ethers";
+import { Watcher } from "./watcher";
+import { MockCrossDomainMessenger__factory } from "../typechain";
 
 export const wait = async (tx: Promise<ContractTransaction>) => {
   const transaction = await tx;
@@ -28,9 +30,22 @@ export function createFactory<T>(
 
 export async function waitForL1ToL2Tx(
   tx: Promise<ContractTransaction>,
-  watcher: any
-) {
+  watcher: Watcher
+): Promise<ContractTransaction> {
   const { transaction } = await wait(tx);
-  const [msgHash] = await watcher.getMessageHashesFromL1Tx(transaction.hash);
-  await watcher.getL2TransactionReceipt(msgHash);
+
+  if (network.ovm) {
+    const [msgHash] = await watcher.getMessageHashesFromL1Tx(transaction.hash);
+    return watcher.getL2RelayTransaction(msgHash);
+  } else {
+    const MockCrossDomainMessenger = createFactory<MockCrossDomainMessenger__factory>(
+      false,
+      "MockCrossDomainMessenger",
+      "mocks/"
+    )
+      .connect((await ethers.getSigners())[0])
+      .attach(watcher.l1.messengerAddress);
+
+    return MockCrossDomainMessenger.relayCurrentMessage();
+  }
 }
