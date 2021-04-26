@@ -185,7 +185,7 @@ describe("Nova", function () {
             "thisFunctionWillNotRevert"
           ),
           gasLimit: await mockContract.estimateGas.thisFunctionWillNotRevert(),
-          gasPrice: await ethers.utils.parseUnits("10", "gwei"),
+          gasPrice: await ethers.utils.parseUnits("66", "gwei"),
         };
 
         // Approve the proper amount of OVM_ETH.
@@ -315,7 +315,8 @@ describe("Nova", function () {
             1,
             testCallArguments.strategy,
             testCallArguments.calldata,
-            100000
+            100000,
+            { gasPrice: testCallArguments.gasPrice }
           ),
           watcher
         );
