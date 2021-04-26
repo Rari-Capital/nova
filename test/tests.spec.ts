@@ -310,15 +310,40 @@ describe("Nova", function () {
       });
 
       it("will correctly execute a request on the registry and release the bounty on L2", async function () {
+        const preBalance = await OVM_ETH.balanceOf(l1Wallet.address);
+
         await waitForL1ToL2Tx(
-          l1_NovaExecutionManager.exec(
-            1,
-            testCallArguments.strategy,
-            testCallArguments.calldata,
-            100000,
-            { gasPrice: testCallArguments.gasPrice }
-          ),
+          l1_NovaExecutionManager
+            .connect(l1Wallet)
+            .exec(
+              1,
+              testCallArguments.strategy,
+              testCallArguments.calldata,
+              100000,
+              { gasPrice: testCallArguments.gasPrice }
+            ),
           watcher
+        )
+          .should.emit(l2_NovaRegistry, "ExecCompleted")
+          .withArgs(
+            computeExecHash({
+              nonce: 1,
+              strategy: testCallArguments.strategy,
+              calldata: testCallArguments.calldata,
+              gasPrice: testCallArguments.gasPrice,
+            }),
+            l1Wallet.address,
+            l1Wallet.address,
+            // This function will match everything (hard to assert on gas price)
+            () => {},
+            false
+          );
+
+        // Assert that the caller was refunded the proper gas.
+        await OVM_ETH.balanceOf(l1Wallet.address).should.eventually.equal(
+          preBalance.add(
+            testCallArguments.gasLimit.mul(testCallArguments.gasPrice)
+          )
         );
       });
     });
