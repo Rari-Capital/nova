@@ -63,7 +63,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         require(success || !isHardRevert(returnData), "HARD_REVERT");
 
         // Reset execution context.
-        delete execHash;
+        delete currentExecHash;
         delete currentlyExecutingStrategy;
         delete currentExecutor;
 
