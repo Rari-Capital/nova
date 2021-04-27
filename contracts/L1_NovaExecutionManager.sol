@@ -26,10 +26,13 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     mapping(bytes32 => bool) public executed;
 
     /// @dev The execHash computed from the currently executing call to `exec`.
+    /// @dev This will be reset after every execution.
     bytes32 public currentExecHash;
     /// @dev The address who called `exec`/`execWithRecipient`.
+    /// @dev This address will not be set to address(0) after an execution completes.
     address public currentExecutor;
     /// @dev The address of the strategy that is currenlty being called.
+    /// @dev This address will not be set to address(0) after an execution completes.
     address public currentlyExecutingStrategy;
 
     constructor(address _L2_NovaRegistryAddress, address _messenger) OVM_CrossDomainEnabled(_messenger) {
