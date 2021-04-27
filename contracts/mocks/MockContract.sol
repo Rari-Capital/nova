@@ -13,7 +13,7 @@ contract MockContract {
 
     function thisFunctionWillRevert() external {
         testNumber = 1337;
-        revert("Not a hard revert!");
+        revert("Not a hard revert! Not a hard revert! Not a hard revert! Not a hard revert! Not a hard revert!");
     }
 
     function thisFunctionWillHardRevert() external {
