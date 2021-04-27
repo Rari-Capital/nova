@@ -39,6 +39,15 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
     }
 
+    function exec(
+        uint72 nonce,
+        address strategy,
+        bytes calldata l1calldata,
+        uint32 xDomainMessageGasLimit
+    ) external {
+        execWithRecipient(nonce, strategy, l1calldata, xDomainMessageGasLimit, msg.sender);
+    }
+
     function execWithRecipient(
         uint72 nonce,
         address strategy,
@@ -63,7 +72,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         (bool success, bytes memory returnData) = strategy.call(l1calldata);
 
         // Revert if the strategy hard reverted.
-        require(success || !isHardRevert(returnData), "HARD_REVERT");
+        require(success || keccak256(returnData) == HARD_REVERT_HASH, "HARD_REVERT");
 
         // Mark the request as executed.
         executed[execHash] = true;
@@ -95,20 +104,6 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         );
     }
 
-    function exec(
-        uint72 nonce,
-        address strategy,
-        bytes calldata l1calldata,
-        uint32 xDomainMessageGasLimit
-    ) external {
-        execWithRecipient(nonce, strategy, l1calldata, xDomainMessageGasLimit, msg.sender);
-    }
-
-    function hardRevert() external pure {
-        // Call revert with the hard revert text.
-        revert(HARD_REVERT_TEXT);
-    }
-
     function transferFromBot(address token, uint256 amount) external {
         // Only the currently executing strategy is allowed to call this method.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
@@ -118,11 +113,8 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         IERC20(token).safeTransferFrom(currentExecutor, msg.sender, amount);
     }
 
-    function isHardRevert(bytes memory returnData) private pure returns (bool) {
-        // We know the reverting with the HARD_REVERT_TEXT results in returnData with a length of 100.
-        if (returnData.length != 100) return false;
-
-        // Check if the revert data matches the HARD_REVERT_HASH.
-        return keccak256(returnData) == HARD_REVERT_HASH;
+    function hardRevert() external pure {
+        // Call revert with the hard revert text.
+        revert(HARD_REVERT_TEXT);
     }
 }
