@@ -234,7 +234,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         requestTokenRemovalTimestamps[execHash] = 1;
 
         // Transfer the ETH which would have been used for gas back to the creator.
-        ETH.transfer(creator, requestGasPrices[execHash] * requestGasLimits[execHash]);
+        ETH.safeTransfer(creator, requestGasPrices[execHash] * requestGasLimits[execHash]);
 
         // Transfer input tokens back to the creator.
         for (uint256 i = 0; i < inputTokens.length; i++) {
