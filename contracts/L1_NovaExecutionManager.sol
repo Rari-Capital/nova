@@ -69,8 +69,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         executed[execHash] = true;
 
         // Reset execution context.
-        // We reset only one of the execution context variables because
-        // it will cost us less gas to use a previously set storage slot on all future runs.
+        // We reset only one of the execution context variables because it will cost us less gas to use a previously set storage slot on all future runs.
         delete currentExecHash;
 
         // Figure out how much gas this xDomain message is going to cost us.
