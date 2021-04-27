@@ -66,6 +66,8 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         executed[execHash] = true;
 
         // Reset execution context.
+        // We reset only one of the execution context variables because
+        // it will cost us less gas to use a previously set storage slot.
         delete currentExecHash;
 
         // Figure out how much gas this xDomain message is going to cost us.
@@ -107,6 +109,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
 
     function transferFromBot(address token, uint256 amount) external {
         // Only the currently executing strategy is allowed to call this method.
+        // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
         require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, "NOT_CURRENTLY_EXECUTING");
 
         // Transfer the token from the calling bot the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
