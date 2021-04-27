@@ -62,13 +62,11 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         // Revert if the strategy hard reverted.
         require(success || !isHardRevert(returnData), "HARD_REVERT");
 
-        // Reset execution context.
-        delete currentExecHash;
-        delete currentlyExecutingStrategy;
-        delete currentExecutor;
-
         // Mark the request as executed.
         executed[execHash] = true;
+
+        // Reset execution context.
+        delete currentExecHash;
 
         // Figure out how much gas this xDomain message is going to cost us.
         uint256 xDomainMessageGas =
@@ -109,7 +107,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
 
     function transferFromBot(address token, uint256 amount) external {
         // Only the currently executing strategy is allowed to call this method.
-        require(msg.sender == currentlyExecutingStrategy, "NOT_CURRENTLY_EXECUTING");
+        require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, "NOT_CURRENTLY_EXECUTING");
 
         // Transfer the token from the calling bot the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
         IERC20(token).safeTransferFrom(currentExecutor, msg.sender, amount);
