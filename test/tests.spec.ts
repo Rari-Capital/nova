@@ -5,6 +5,7 @@ chai.use(chaiAsPromised);
 chai.should();
 
 import { getContractFactory } from "@eth-optimism/contracts";
+import { OvmL1EthGatewayFactory } from "@eth-optimism/contracts/dist/types";
 
 import {
   createFactory,
@@ -79,7 +80,9 @@ describe("Nova", function () {
         .connect(l2Wallet)
         .attach("0x4200000000000000000000000000000000000006") as ERC20;
 
-      const OVM_L1ETHGateway = getContractFactory("OVM_L1ETHGateway")
+      const OVM_L1ETHGateway = (getContractFactory(
+        "OVM_L1ETHGateway"
+      ) as OvmL1EthGatewayFactory)
         .connect(l1Wallet)
         .attach("0x998abeb3e57409262ae5b751f60747921b33613e");
 
