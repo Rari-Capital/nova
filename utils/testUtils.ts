@@ -35,11 +35,9 @@ export async function waitForL1ToL2Tx(
   const { transaction } = await wait(tx);
 
   if (network.ovm) {
-    console.log("step 1");
     const [msgHash] = await watcher.getMessageHashesFromL1Tx(transaction.hash);
-    console.log("step 2");
+
     await watcher.getL2RelayTransaction(msgHash);
-    console.log("step 3");
   } else {
     const MockCrossDomainMessenger = createFactory<MockCrossDomainMessenger__factory>(
       false,
