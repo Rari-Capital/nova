@@ -305,15 +305,20 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         InputToken[] memory inputTokens = requestInputTokens[execHash];
         Bounty[] memory bounties = requestBounties[execHash];
 
-        // Transfer the ETH used for gas to the rewardRecipient.
-        ETH.transfer(
-            rewardRecipient,
-            requestGasPrices[execHash] *
-                (
-                    // Don't give them any more ETH than the gas limit
-                    gasUsed > requestGasLimits[execHash] ? requestGasLimits[execHash] : gasUsed
-                )
-        );
+        // Get the request's creator
+        address creator = requestCreators[execHash];
+
+        // Get the request's gas price and gas limit.
+        uint256 gasLimit = requestGasLimits[execHash];
+        uint256 gasPrice = requestGasPrices[execHash];
+
+        // Calculate the amount of ETH to pay for the gas used (capped at the gas limit).
+        uint256 gasPayment = gasPrice * (gasUsed > gasLimit ? gasLimit : gasUsed);
+
+        // Pay the recipient the gas payment.
+        ETH.safeTransfer(rewardRecipient, gasPayment);
+        // Refund the creator any unused gas
+        ETH.safeTransfer(creator, (gasLimit * gasPrice) - gasPayment);
 
         // Only transfer input tokens if the request didn't revert.
         if (!reverted) {
@@ -327,8 +332,6 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
                 bounties[i].token.safeTransfer(rewardRecipient, bounties[i].amount);
             }
         } else {
-            address creator = requestCreators[execHash];
-
             // Transfer input tokens back to the creator.
             for (uint256 i = 0; i < inputTokens.length; i++) {
                 inputTokens[i].l2Token.safeTransfer(creator, inputTokens[i].amount);
