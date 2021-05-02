@@ -5,6 +5,7 @@ pragma abicoder v2;
 import "ovm-safeerc20/OVM_SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "hardhat/console.sol";
 
@@ -54,11 +55,6 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     struct InputToken {
         IERC20 l2Token;
         address l1Token;
-        uint256 amount;
-    }
-
-    struct Bounty {
-        IERC20 token;
         uint256 amount;
     }
 
@@ -182,11 +178,11 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         bytes calldata l1calldata,
         uint64 gasLimit,
         uint256 gasPrice,
-        uint256 bountyWei,
+        uint256 tip,
         InputToken[] calldata inputTokens,
         uint256 autoCancelDelay
     ) external returns (bytes32 execHash) {
-        execHash = requestExec(strategy, l1calldata, gasLimit, gasPrice, bountyWei, inputTokens);
+        execHash = requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, inputTokens);
 
         cancel(execHash, autoCancelDelay);
     }
