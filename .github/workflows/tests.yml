@@ -9,21 +9,28 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Clone the Optimism Monorepo
-        working-directory: ../
-        run: git clone https://github.com/ethereum-optimism/optimism.git
+      # - name: Clone the Optimism Monorepo
+      #   working-directory: ../
+      #   run: git clone https://github.com/ethereum-optimism/optimism.git
 
-      - name: Build Optimism ops
-        working-directory: ../optimism/ops
-        run: ./scripts/build-ci.sh
+      # - name: Build Optimism ops
+      #   working-directory: ../optimism/ops
+      #   run: ./scripts/build-ci.sh
 
-      - name: Bring Optimism ops up and wait for the sequencer to be ready
-        working-directory: ../optimism/ops
-        run: docker-compose up -d && ./scripts/wait-for-sequencer.sh
+      # - name: Bring Optimism ops up and wait for the sequencer to be ready
+      #   working-directory: ../optimism/ops
+      #   run: docker-compose up -d && ./scripts/wait-for-sequencer.sh
+
+      # - name: Run the tests
+      #   run: |
+      #     npm install
+      #     npm run compile
+      #     npm run test
+      #     npm run coverage
 
       - name: Run the tests
         run: |
           npm install
           npm run compile
-          npm run test
+          npm run vm-test
           npm run coverage
