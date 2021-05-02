@@ -1,8 +1,8 @@
 <h1 align="center"> Nova </h1>
 
-<br/>
-
 Nova is a **set of contracts** & **network of bots** that empowers users/contracts to seamlessly interact with L1 contracts + liquidity **without leaving L2** in a trustless and **composable** manner.
+
+---
 
 <p align="center"> Deatiled developer docs are available at: https://docs.rari.capital/nova </h1>
 
