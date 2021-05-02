@@ -1,4 +1,4 @@
-# <h1 align="center"> Nova </h1>
+<h1 align="center"> Nova </h1>
 Nova is a **set of contracts** & **network of bots** that empowers users/contracts to seamlessly interact with L1 contracts + liquidity **without leaving L2** in a trustless and **composable** manner.
 
 ## Documentation
