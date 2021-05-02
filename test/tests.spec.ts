@@ -171,6 +171,7 @@ describe("Nova", function () {
     calldata: string;
     gasLimit: BigNumber;
     gasPrice: BigNumber;
+    tip: BigNumber;
   };
 
   describe("L2_NovaRegistry", function () {
@@ -189,13 +190,16 @@ describe("Nova", function () {
           ),
           gasLimit: await mockContract.estimateGas.thisFunctionWillNotRevert(),
           gasPrice: await ethers.utils.parseUnits("66", "gwei"),
+          tip: await ethers.utils.parseEther("0"),
         };
 
         // Approve the proper amount of OVM_ETH.
         await wait(
           OVM_ETH.approve(
             l2_NovaRegistry.address,
-            testCallArguments.gasLimit.mul(testCallArguments.gasPrice)
+            testCallArguments.gasLimit
+              .mul(testCallArguments.gasPrice)
+              .add(testCallArguments.tip)
           )
         );
 
@@ -207,7 +211,7 @@ describe("Nova", function () {
             testCallArguments.calldata,
             testCallArguments.gasLimit,
             testCallArguments.gasPrice,
-            [],
+            testCallArguments.tip,
             []
           )
           .should.emit(l2_NovaRegistry, "Request")
@@ -225,7 +229,9 @@ describe("Nova", function () {
         await OVM_ETH.balanceOf(
           l2_NovaRegistry.address
         ).should.eventually.equal(
-          testCallArguments.gasLimit.mul(testCallArguments.gasPrice)
+          testCallArguments.gasLimit
+            .mul(testCallArguments.gasPrice)
+            .add(testCallArguments.tip)
         );
       });
 
@@ -238,7 +244,7 @@ describe("Nova", function () {
             "0x00",
             10,
             10,
-            [],
+            0,
             []
           ).should.be.reverted;
       });
@@ -256,7 +262,6 @@ describe("Nova", function () {
         "execCompleted",
         [
           ethers.utils.keccak256("0x00"),
-          "0x0000000000000000000000000000000000000000",
           "0x0000000000000000000000000000000000000000",
           0,
           false,
@@ -335,7 +340,6 @@ describe("Nova", function () {
               calldata: testCallArguments.calldata,
               gasPrice: testCallArguments.gasPrice,
             }),
-            l1Wallet.address,
             l1Wallet.address,
             // This function will match everything (hard to assert on gas price)
             () => {},

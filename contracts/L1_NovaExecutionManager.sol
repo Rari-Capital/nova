@@ -17,7 +17,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     bytes32 private constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
 
     /// @dev The bytes length of an abi encoded execCompleted call.
-    uint256 public constant execCompletedMessageBytesLength = 164;
+    uint256 public constant execCompletedMessageBytesLength = 132;
 
     /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
     address public immutable L2_NovaRegistryAddress;
@@ -95,7 +95,6 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
             abi.encodeWithSelector(
                 L2_NovaRegistry(L2_NovaRegistryAddress).execCompleted.selector,
                 execHash,
-                msg.sender,
                 l2Recipient,
                 gasUsed,
                 !success

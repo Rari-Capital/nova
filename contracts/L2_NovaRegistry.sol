@@ -6,6 +6,7 @@ import "ovm-safeerc20/OVM_SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
+import "hardhat/console.sol";
 
 contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     using OVM_SafeERC20 for IERC20;
@@ -48,13 +49,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     event BumpGas(bytes32 indexed execHash, bytes32 indexed newExecHash, uint256 timestamp);
 
     /// @notice Emitted when `execCompleted` is called.
-    event ExecCompleted(
-        bytes32 indexed execHash,
-        address indexed executor,
-        address indexed rewardRecipient,
-        uint256 gasUsed,
-        bool reverted
-    );
+    event ExecCompleted(bytes32 indexed execHash, address indexed rewardRecipient, uint256 gasUsed, bool reverted);
 
     struct InputToken {
         IERC20 l2Token;
@@ -83,8 +78,8 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     mapping(bytes32 => uint64) private requestGasLimits;
     /// @dev Maps execHashes to the gas price a bot must use to execute the request.
     mapping(bytes32 => uint256) private requestGasPrices;
-    /// @dev Maps execHashes to the 'bounty' tokens a bot will recieve for executing the request.
-    mapping(bytes32 => Bounty[]) private requestBounties;
+    /// @dev Maps execHashes to the additional tip in wei bots will receive for executing them.
+    mapping(bytes32 => uint256) private requestTips;
     /// @dev Maps execHashes to the input tokens a bot must have to execute the request.
     mapping(bytes32 => InputToken[]) private requestInputTokens;
 
@@ -111,8 +106,8 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
             bytes memory l1calldata,
             uint64 gasLimit,
             uint256 gasPrice,
+            uint256 tip,
             InputToken[] memory inputTokens,
-            Bounty[] memory bounties,
             // Other data:
             uint72 nonce,
             address creator,
@@ -126,8 +121,8 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         l1calldata = requestCalldatas[execHash];
         gasLimit = requestGasLimits[execHash];
         gasPrice = requestGasPrices[execHash];
+        tip = requestTips[execHash];
         inputTokens = requestInputTokens[execHash];
-        bounties = requestBounties[execHash];
         nonce = requestNonces[execHash];
         creator = requestCreators[execHash];
         uncle = uncles[execHash];
@@ -138,30 +133,36 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @param strategy The address of the "strategy" contract on L1 a bot should call with `calldata`.
     /// @param l1calldata The abi encoded calldata a bot should call the `strategy` with on L1.
     /// @param gasLimit The gas limit a bot should use on L1.
-    /// @param gasPrice The gas price a bot should use on L1.
-    /// @param inputTokens An array of token amounts that a bot will need on L1 to execute the request (`l1Token`s) along with the equivalent tokens that will be returned on L2 (`l2Token`s). `inputTokens` will not be awarded if the `strategy` reverts on L1.
-    /// @param bounties An array of tokens that will be awarded to the bot who executes the request. Only 50% of the bounty will be paid to the bot if the `strategy` reverts on L1.
+    /// @param gasPrice The gas price (in wei) a bot should use on L1.
+    /// @param tip The additional wei to pay as a tip for any bot that executes this request.
+    /// @param inputTokens An array of 5 or less token amounts that a bot will need on L1 to execute the request (`l1Token`s) along with the equivalent tokens that will be returned on L2 (`l2Token`s). `inputTokens` will not be awarded if the `strategy` reverts on L1.
     function requestExec(
         address strategy,
         bytes calldata l1calldata,
         uint64 gasLimit,
         uint256 gasPrice,
-        InputToken[] calldata inputTokens,
-        Bounty[] calldata bounties
+        uint256 tip,
+        InputToken[] calldata inputTokens
     ) public nonReentrant returns (bytes32 execHash) {
+        // Do not allow more than 5 input tokens.
+        require(inputTokens.length <= 5, "TOO_MANY_INPUTS");
+
+        // Increment global nonce.
         systemNonce += 1;
+        // Compute execHash for this request.
         execHash = keccak256(abi.encodePacked(systemNonce, strategy, l1calldata, gasPrice));
 
+        // Store all critical request data.
         requestCreators[execHash] = msg.sender;
         requestStrategies[execHash] = strategy;
         requestCalldatas[execHash] = l1calldata;
         requestGasLimits[execHash] = gasLimit;
         requestGasPrices[execHash] = gasPrice;
-        // This is just for convience, does not need to be on-chain.
+        // Storing the nonce is just for convience; it does not need to be on-chain.
         requestNonces[execHash] = systemNonce;
 
-        // Transfer in ETH to pay for max gas usage.
-        ETH.safeTransferFrom(msg.sender, address(this), gasPrice * gasLimit);
+        // Transfer in ETH to pay for max gas usage + tip.
+        ETH.safeTransferFrom(msg.sender, address(this), (gasLimit * gasPrice) + tip);
 
         // Transfer input tokens in that the msg.sender has approved.
         for (uint256 i = 0; i < inputTokens.length; i++) {
@@ -169,14 +170,6 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
 
             // Copy over this index to the requestInputTokens mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
             requestInputTokens[execHash][i] = inputTokens[i];
-        }
-
-        // Transfer bounties in that the msg.sender has approved.
-        for (uint256 i = 0; i < bounties.length; i++) {
-            bounties[i].token.safeTransferFrom(msg.sender, address(this), bounties[i].amount);
-
-            // Copy over this index to the requestBounties mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
-            requestBounties[execHash][i] = bounties[i];
         }
 
         emit Request(execHash, strategy);
@@ -189,11 +182,11 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         bytes calldata l1calldata,
         uint64 gasLimit,
         uint256 gasPrice,
+        uint256 bountyWei,
         InputToken[] calldata inputTokens,
-        Bounty[] calldata bounties,
         uint256 autoCancelDelay
     ) external returns (bytes32 execHash) {
-        execHash = requestExec(strategy, l1calldata, gasLimit, gasPrice, inputTokens, bounties);
+        execHash = requestExec(strategy, l1calldata, gasLimit, gasPrice, bountyWei, inputTokens);
 
         cancel(execHash, autoCancelDelay);
     }
@@ -228,21 +221,16 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
 
         address creator = requestCreators[execHash];
         InputToken[] memory inputTokens = requestInputTokens[execHash];
-        Bounty[] memory bounties = requestBounties[execHash];
 
         // Store that the request has had its tokens removed.
         requestTokenRemovalTimestamps[execHash] = 1;
 
-        // Transfer the ETH which would have been used for gas back to the creator.
-        ETH.safeTransfer(creator, requestGasPrices[execHash] * requestGasLimits[execHash]);
+        // Transfer the ETH which would have been used for (gas + tip) back to the creator.
+        ETH.transfer(creator, (requestGasPrices[execHash] * requestGasLimits[execHash]) + requestTips[execHash]);
 
         // Transfer input tokens back to the creator.
         for (uint256 i = 0; i < inputTokens.length; i++) {
-            inputTokens[i].l2Token.safeTransfer(creator, inputTokens[i].amount);
-        }
-        // Transfer bounties back to the creator.
-        for (uint256 i = 0; i < bounties.length; i++) {
-            bounties[i].token.safeTransfer(creator, bounties[i].amount);
+            inputTokens[i].l2Token.transfer(creator, inputTokens[i].amount);
         }
 
         emit Withdraw(execHash);
@@ -291,7 +279,6 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
 
     function execCompleted(
         bytes32 execHash,
-        address executor,
         address rewardRecipient,
         uint64 gasUsed,
         bool reverted
@@ -299,65 +286,33 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         (bool executable, ) = isExecutable(execHash);
         require(executable, "NOT_EXECUTABLE");
 
-        // Store that the request has had its tokens removed.
-        requestTokenRemovalTimestamps[execHash] = 1;
-
         InputToken[] memory inputTokens = requestInputTokens[execHash];
-        Bounty[] memory bounties = requestBounties[execHash];
-
-        // Get the request's creator
-        address creator = requestCreators[execHash];
-
-        // Get the request's gas price and gas limit.
         uint256 gasLimit = requestGasLimits[execHash];
         uint256 gasPrice = requestGasPrices[execHash];
+        uint256 tip = requestTips[execHash];
 
-        // Calculate the amount of ETH to pay for the gas used (capped at the gas limit).
+        // The amount of ETH to pay for the gas used (capped at the gas limit).
         uint256 gasPayment = gasPrice * (gasUsed > gasLimit ? gasLimit : gasUsed);
+        // The amount of ETH to pay as the tip to the rewardRecepient.
+        uint256 recipientTip = reverted ? (tip * 7) / 10 : tip;
 
-        // Pay the recipient the gas payment.
-        ETH.safeTransfer(rewardRecipient, gasPayment);
-        // Refund the creator any unused gas
-        ETH.safeTransfer(creator, (gasLimit * gasPrice) - gasPayment);
+        // Refund the creator any unused gas + refund some of the tip if reverted
+        ETH.transfer(requestCreators[execHash], ((gasLimit * gasPrice) - gasPayment) + (tip - recipientTip));
+        // Pay the recipient the gas payment + the tip.
+        ETH.transfer(rewardRecipient, gasPayment + recipientTip);
 
         // Only transfer input tokens if the request didn't revert.
         if (!reverted) {
             // Transfer input tokens to the rewardRecipient.
             for (uint256 i = 0; i < inputTokens.length; i++) {
-                inputTokens[i].l2Token.safeTransfer(rewardRecipient, inputTokens[i].amount);
-            }
-
-            // Transfer full bounty back to the rewardRecipient.
-            for (uint256 i = 0; i < bounties.length; i++) {
-                bounties[i].token.safeTransfer(rewardRecipient, bounties[i].amount);
-            }
-        } else {
-            // Transfer input tokens back to the creator.
-            for (uint256 i = 0; i < inputTokens.length; i++) {
-                inputTokens[i].l2Token.safeTransfer(creator, inputTokens[i].amount);
-            }
-
-            // Transfer 70% of the bounty to the rewardRecipient and 30% back to the creator.
-            for (uint256 i = 0; i < bounties.length; i++) {
-                IERC20 token = bounties[i].token;
-                uint256 bountyFullAmount = bounties[i].amount;
-                uint256 recipientAmount = (bountyFullAmount * 7) / 10;
-
-                token.safeTransfer(
-                    rewardRecipient,
-                    // 70% goes to the rewardRecipient:
-                    recipientAmount
-                );
-
-                token.safeTransfer(
-                    creator,
-                    // Remainder goes to the creator:
-                    bountyFullAmount - recipientAmount
-                );
+                inputTokens[i].l2Token.transfer(rewardRecipient, inputTokens[i].amount);
             }
         }
 
-        emit ExecCompleted(execHash, executor, rewardRecipient, gasUsed, reverted);
+        // Store that the request has had its tokens removed.
+        requestTokenRemovalTimestamps[execHash] = 1;
+
+        emit ExecCompleted(execHash, rewardRecipient, gasUsed, reverted);
     }
 
     /// @notice Returns if the request is executable along with a timestamp of when that may change.
