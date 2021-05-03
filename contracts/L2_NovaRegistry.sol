@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
-import "hardhat/console.sol";
 
 contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     using OVM_SafeERC20 for IERC20;
