@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "🍣🌟",
   "scripts": {
-    "compile": "hardhat compile && hardhat compile --network optimism",
-    "full-test": "hardhat test --network optimism",
-    "vm-test": "hardhat test",
+    "compile": "hardhat compile --show-stack-traces && hardhat compile --show-stack-traces --network optimism",
+    "full-test": "hardhat test --show-stack-traces --network optimism",
+    "vm-test": "hardhat test --show-stack-traces ",
     "test": "npm run vm-test && npm run full-test",
     "coverage": "hardhat coverage && npm run open-coverage-report",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
