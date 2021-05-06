@@ -1,7 +1,15 @@
+import chai from "chai";
+import chaiAsPromised from "chai-as-promised";
+import { jestSnapshotPlugin } from "mocha-chai-jest-snapshot";
+chai.use(jestSnapshotPlugin());
+chai.use(chaiAsPromised);
+chai.should();
+
 import { ethers, network } from "hardhat";
 import { ContractTransaction } from "ethers";
 import { Watcher } from "./watcher";
 import { MockCrossDomainMessenger__factory } from "../typechain";
+import chalk from "chalk";
 
 export const wait = async (tx: Promise<ContractTransaction>) => {
   const transaction = await tx;
@@ -49,4 +57,36 @@ export async function waitForL1ToL2Tx(
 
     return MockCrossDomainMessenger.relayCurrentMessage();
   }
+}
+
+export async function snapshotGasCost(
+  x: Promise<ContractTransaction>
+): Promise<any> {
+  if (!network.ovm) {
+    const waited = await (await x).wait();
+
+    try {
+      waited.gasUsed.toNumber().should.toMatchSnapshot();
+
+      console.log(
+        chalk.yellow(
+          "(NO CHANGE) Below is consuming " +
+            waited.gasUsed.toString() +
+            " gas. "
+        )
+      );
+    } catch (e) {
+      console.log(chalk.red("(CHANGE) " + e.message));
+
+      if (process.env.CI) {
+        return Promise.reject(
+          new Error("reverted: Gas consumption changed from expected.")
+        );
+      } else {
+        return x;
+      }
+    }
+  }
+
+  return x;
 }

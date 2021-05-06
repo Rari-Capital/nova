@@ -72,7 +72,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         (bool success, bytes memory returnData) = strategy.call(l1calldata);
 
         // Revert if the strategy hard reverted.
-        require(success || keccak256(returnData) != HARD_REVERT_HASH, "HARD_REVERT");
+        require(keccak256(returnData) != HARD_REVERT_HASH, "HARD_REVERT");
 
         // Mark the request as executed.
         executed[execHash] = true;

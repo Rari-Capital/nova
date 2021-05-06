@@ -1,15 +1,10 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-
-chai.use(chaiAsPromised);
-chai.should();
-
 import { getContractFactory } from "@eth-optimism/contracts";
 import { OvmL1EthGatewayFactory } from "@eth-optimism/contracts/dist/types";
 
 import {
   createFactory,
   createTestWallet,
+  snapshotGasCost,
   wait,
   waitForL1ToL2Tx,
 } from "../utils/testUtils";
@@ -159,11 +154,6 @@ describe("Nova", function () {
     )
       .connect(l1Wallet)
       .deploy(l2_NovaRegistry.address, watcher.l1.messengerAddress);
-
-    // Tell the registry about the execution manager's L1 address.
-    await wait(
-      l2_NovaRegistry.connectExecutionManager(l1_NovaExecutionManager.address)
-    );
   });
 
   let testCallArguments: {
@@ -175,6 +165,13 @@ describe("Nova", function () {
   };
 
   describe("L2_NovaRegistry", function () {
+    it("should allow connecting to an execution manager once", async function () {
+      // Tell the registry about the execution manager's L1 address.
+      await snapshotGasCost(
+        l2_NovaRegistry.connectExecutionManager(l1_NovaExecutionManager.address)
+      ).should.not.be.reverted;
+    });
+
     it("should not alllow connecting to another execution manager", async function () {
       await l2_NovaRegistry
         .connectExecutionManager(ethers.constants.AddressZero)
@@ -204,16 +201,18 @@ describe("Nova", function () {
         );
 
         // This will not revert because we have approved just enough wei.
-        await l2_NovaRegistry
-          .connect(l2Wallet)
-          .requestExec(
-            testCallArguments.strategy,
-            testCallArguments.calldata,
-            testCallArguments.gasLimit,
-            testCallArguments.gasPrice,
-            testCallArguments.tip,
-            []
-          )
+        await snapshotGasCost(
+          l2_NovaRegistry
+            .connect(l2Wallet)
+            .requestExec(
+              testCallArguments.strategy,
+              testCallArguments.calldata,
+              testCallArguments.gasLimit,
+              testCallArguments.gasPrice,
+              testCallArguments.tip,
+              []
+            )
+        )
           .should.emit(l2_NovaRegistry, "Request")
           .withArgs(
             computeExecHash({
@@ -278,15 +277,17 @@ describe("Nova", function () {
 
     describe("exec", function () {
       it("should properly execute a request that soft reverts", async function () {
-        await l1_NovaExecutionManager.exec(
-          // Nonce
-          0,
-          // Strategy
-          mockContract.address,
-          // Calldata
-          mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
-          // xDomain Gas Limit
-          500000
+        await snapshotGasCost(
+          l1_NovaExecutionManager.exec(
+            // Nonce
+            0,
+            // Strategy
+            mockContract.address,
+            // Calldata
+            mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
+            // xDomain Gas Limit
+            500000
+          )
         ).should.not.be.reverted;
       });
 
