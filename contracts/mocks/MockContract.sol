@@ -5,13 +5,13 @@ pragma solidity 0.7.6;
 import "../L1_NovaExecutionManager.sol";
 
 contract MockContract {
-    function thisFunctionWillNotRevert() external {}
+    function thisFunctionWillNotRevert() external pure {}
 
-    function thisFunctionWillRevert() external {
+    function thisFunctionWillRevert() external pure {
         revert("Not a hard revert!");
     }
 
-    function thisFunctionWillHardRevert() external {
+    function thisFunctionWillHardRevert() external view {
         L1_NovaExecutionManager(msg.sender).hardRevert();
     }
 }

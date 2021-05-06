@@ -283,11 +283,7 @@ describe("Nova", function () {
           // Strategy
           mockContract.address,
           // Calldata
-          mockContract.interface.encodeFunctionData(
-            "thisFunctionWillNotRevert"
-          ),
-          // xDomain Gas Limit
-          500000
+          mockContract.interface.encodeFunctionData("thisFunctionWillNotRevert")
         ).should.not.be.reverted;
       });
 
@@ -301,9 +297,7 @@ describe("Nova", function () {
             // Calldata
             mockContract.interface.encodeFunctionData(
               "thisFunctionWillNotRevert"
-            ),
-            // xDomain Gas Limit
-            500000
+            )
           )
           .should.be.revertedWith("ALREADY_EXECUTED");
       });
@@ -318,9 +312,7 @@ describe("Nova", function () {
             // Calldata
             mockContract.interface.encodeFunctionData(
               "thisFunctionWillHardRevert"
-            ),
-            // xDomain Gas Limit
-            500000
+            )
           )
           .should.be.revertedWith("HARD_REVERT");
       });
@@ -333,24 +325,20 @@ describe("Nova", function () {
             // Strategy
             mockContract.address,
             // Calldata
-            mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
-            // xDomain Gas Limit
-            500000
+            mockContract.interface.encodeFunctionData("thisFunctionWillRevert")
           )
         ).should.not.be.reverted;
       });
 
       it("should properly execute a request", async function () {
         await snapshotGasCost(
-          l1_NovaExecutionManager
-            .connect(l1Wallet)
-            .exec(
-              1,
-              testCallArguments.strategy,
-              testCallArguments.calldata,
-              500000,
-              { gasPrice: testCallArguments.gasPrice }
-            )
+          l1_NovaExecutionManager.connect(l1Wallet).exec(
+            1,
+            testCallArguments.strategy,
+            testCallArguments.calldata,
+            // Must set our gas price or execHash will be wrong!
+            { gasPrice: testCallArguments.gasPrice }
+          )
         ).should.not.be.reverted;
       });
     });

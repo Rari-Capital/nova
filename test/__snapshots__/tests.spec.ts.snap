@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Nova L1_NovaExecutionManager exec should properly execute a request 1`] = `137323`;
+exports[`Nova L1_NovaExecutionManager exec should properly execute a request 1`] = `152643`;
 
-exports[`Nova L1_NovaExecutionManager exec should properly execute a request that soft reverts 1`] = `152540`;
+exports[`Nova L1_NovaExecutionManager exec should properly execute a request that soft reverts 1`] = `167812`;
 
 exports[`Nova L2_NovaRegistry requestExec should allow a valid request 1`] = `191068`;
 

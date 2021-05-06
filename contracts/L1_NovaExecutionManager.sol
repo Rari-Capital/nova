@@ -19,6 +19,9 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @dev The bytes length of an abi encoded execCompleted call.
     uint256 public constant execCompletedMessageBytesLength = 132;
 
+    /// @dev The xDomainGasLimit to use for the call to execCompleted.
+    uint32 public constant execCompletedGasLimit = 1_000_000;
+
     /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
     address public immutable L2_NovaRegistryAddress;
 
@@ -42,17 +45,15 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     function exec(
         uint72 nonce,
         address strategy,
-        bytes calldata l1calldata,
-        uint32 xDomainMessageGasLimit
+        bytes calldata l1calldata
     ) external {
-        execWithRecipient(nonce, strategy, l1calldata, xDomainMessageGasLimit, msg.sender);
+        execWithRecipient(nonce, strategy, l1calldata, msg.sender);
     }
 
     function execWithRecipient(
         uint72 nonce,
         address strategy,
         bytes calldata l1calldata,
-        uint32 xDomainMessageGasLimit,
         address l2Recipient
     ) public {
         uint256 startGas = gasleft();
@@ -84,7 +85,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         // Figure out how much gas this xDomain message is going to cost us.
         uint256 xDomainMessageGas =
             // ((estimated cost per calldata char) * (bytes length for an encoded call to execCompleted)) + ((cross domain gas limit) / (enqueue gas burn)) + (sendMessage overhead)
-            (50 * execCompletedMessageBytesLength) + (xDomainMessageGasLimit / 32) + 74000;
+            (50 * execCompletedMessageBytesLength) + (execCompletedGasLimit / 32) + 74000;
 
         // Figure out how much gas this call will take up in total: (Constant function call gas) + (Gas diff after calls) + (the amount of gas that will be burned via enqueue + storage/other message overhead)
         uint256 gasUsed = 21396 + (startGas - gasleft()) + xDomainMessageGas;
@@ -99,7 +100,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
                 gasUsed,
                 !success
             ),
-            xDomainMessageGasLimit
+            execCompletedGasLimit
         );
     }
 
