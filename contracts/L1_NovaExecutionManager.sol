@@ -84,7 +84,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         // Figure out how much gas this xDomain message is going to cost us.
         uint256 xDomainMessageGas =
             // ((estimated cost per calldata char) * (bytes length for an encoded call to execCompleted)) + ((cross domain gas limit) / (enqueue gas burn)) + (sendMessage overhead)
-            (48 * execCompletedMessageBytesLength) + (xDomainMessageGasLimit / 32) + 74000;
+            (50 * execCompletedMessageBytesLength) + (xDomainMessageGasLimit / 32) + 74000;
 
         // Figure out how much gas this call will take up in total: (Constant function call gas) + (Gas diff after calls) + (the amount of gas that will be burned via enqueue + storage/other message overhead)
         uint256 gasUsed = 21396 + (startGas - gasleft()) + xDomainMessageGas;
