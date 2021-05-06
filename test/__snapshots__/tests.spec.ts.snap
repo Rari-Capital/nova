@@ -4,6 +4,6 @@ exports[`Nova L1_NovaExecutionManager exec should properly execute a request 1`]
 
 exports[`Nova L1_NovaExecutionManager exec should properly execute a request that soft reverts 1`] = `167812`;
 
-exports[`Nova L2_NovaRegistry requestExec should allow a valid request 1`] = `191068`;
+exports[`Nova L2_NovaRegistry requestExec should allow a valid request 1`] = `191111`;
 
-exports[`Nova L2_NovaRegistry should allow connecting to an execution manager once 1`] = `44039`;
+exports[`Nova L2_NovaRegistry should allow connecting to an execution manager once 1`] = `43995`;
