@@ -83,3 +83,5 @@ typechain
 cache
 coverage.json
 typechain-ovm
+
+gasReporterOutput.json

@@ -286,7 +286,7 @@ describe("Nova", function () {
           // Calldata
           mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
           // xDomain Gas Limit
-          100000
+          500000
         ).should.not.be.reverted;
       });
 
@@ -317,7 +317,7 @@ describe("Nova", function () {
               "thisFunctionWillHardRevert"
             ),
             // xDomain Gas Limit
-            100000
+            500000
           )
           .should.be.revertedWith("HARD_REVERT");
       });
