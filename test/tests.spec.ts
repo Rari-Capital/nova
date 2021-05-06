@@ -176,9 +176,9 @@ describe("Nova", function () {
 
   describe("L2_NovaRegistry", function () {
     it("should not alllow connecting to another execution manager", async function () {
-      await l2_NovaRegistry.connectExecutionManager(
-        ethers.constants.AddressZero
-      ).should.be.reverted;
+      await l2_NovaRegistry
+        .connectExecutionManager(ethers.constants.AddressZero)
+        .should.be.revertedWith("ALREADY_INITIALIZED");
     });
 
     describe("requestExec", function () {
@@ -246,7 +246,8 @@ describe("Nova", function () {
             10,
             0,
             []
-          ).should.be.reverted;
+          )
+          .should.be.revertedWith("ds-math-sub-underflow");
       });
     });
   });
@@ -290,69 +291,73 @@ describe("Nova", function () {
       });
 
       it("shouldn't allow double executing", async function () {
-        await l1_NovaExecutionManager.exec(
-          // Nonce
-          0,
-          // Strategy
-          mockContract.address,
-          // Calldata
-          mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
-          // xDomain Gas Limit
-          100000
-        ).should.be.reverted;
+        await l1_NovaExecutionManager
+          .exec(
+            // Nonce
+            0,
+            // Strategy
+            mockContract.address,
+            // Calldata
+            mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
+            // xDomain Gas Limit
+            100000
+          )
+          .should.be.revertedWith("ALREADY_EXECUTED");
       });
 
       it("should properly handle a hard revert", async function () {
-        await l1_NovaExecutionManager.exec(
-          // Nonce
-          0,
-          // Strategy
-          mockContract.address,
-          // Calldata
-          mockContract.interface.encodeFunctionData(
-            "thisFunctionWillHardRevert"
-          ),
-          // xDomain Gas Limit
-          100000
-        ).should.be.reverted;
-      });
-
-      it("will correctly execute a request on the registry and release the bounty on L2", async function () {
-        const preBalance = await OVM_ETH.balanceOf(l1Wallet.address);
-
-        await waitForL1ToL2Tx(
-          l1_NovaExecutionManager
-            .connect(l1Wallet)
-            .exec(
-              1,
-              testCallArguments.strategy,
-              testCallArguments.calldata,
-              100000,
-              { gasPrice: testCallArguments.gasPrice }
+        await l1_NovaExecutionManager
+          .exec(
+            // Nonce
+            0,
+            // Strategy
+            mockContract.address,
+            // Calldata
+            mockContract.interface.encodeFunctionData(
+              "thisFunctionWillHardRevert"
             ),
-          watcher
-        )
-          .should.emit(l2_NovaRegistry, "ExecCompleted")
-          .withArgs(
-            computeExecHash({
-              nonce: 1,
-              strategy: testCallArguments.strategy,
-              calldata: testCallArguments.calldata,
-              gasPrice: testCallArguments.gasPrice,
-            }),
-            l1Wallet.address,
-            // This function will match everything (hard to assert on gas price)
-            () => {},
-            false
-          );
-
-        // Assert that the caller was refunded the proper gas.
-        await OVM_ETH.balanceOf(l1Wallet.address).should.eventually.equal(
-          preBalance.add(
-            testCallArguments.gasLimit.mul(testCallArguments.gasPrice)
+            // xDomain Gas Limit
+            100000
           )
-        );
+          .should.be.revertedWith("HARD_REVERT");
       });
+
+      // it("will correctly execute a request on the registry and release the bounty on L2", async function () {
+      //   const preBalance = await OVM_ETH.balanceOf(l1Wallet.address);
+
+      //   await waitForL1ToL2Tx(
+      //     l1_NovaExecutionManager
+      //       .connect(l1Wallet)
+      //       .exec(
+      //         1,
+      //         testCallArguments.strategy,
+      //         testCallArguments.calldata,
+      //         100000,
+      //         { gasPrice: testCallArguments.gasPrice }
+      //       ),
+      //     watcher
+      //   )
+      //     .should.emit(l2_NovaRegistry, "ExecCompleted")
+      //     .withArgs(
+      //       computeExecHash({
+      //         nonce: 1,
+      //         strategy: testCallArguments.strategy,
+      //         calldata: testCallArguments.calldata,
+      //         gasPrice: testCallArguments.gasPrice,
+      //       }),
+      //       l1Wallet.address,
+      //       // This function will match everything (hard to assert on gas price)
+      //       () => {},
+      //       false
+      //     );
+
+      //   // Assert that the caller was refunded the proper gas.
+      //   await OVM_ETH.balanceOf(l1Wallet.address).should.eventually.equal(
+      //     preBalance.add(
+      //       testCallArguments.gasLimit.mul(testCallArguments.gasPrice)
+      //     )
+      //   );
+      // });
     });
   });
 });

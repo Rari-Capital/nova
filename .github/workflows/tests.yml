@@ -3,7 +3,24 @@ name: Tests
 on: [push, pull_request]
 
 jobs:
-  integration:
+  vm:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run the tests
+        run: |
+          npm install
+          npm run compile
+          npm run vm-test
+
+      - name: Run codechecks
+        run: npx codechecks
+        env:
+          CC_SECRET: ${{ secrets.CC_SECRET }}
+
+  ovm:
     runs-on: ubuntu-latest
 
     steps:
@@ -11,7 +28,8 @@ jobs:
 
       - name: Clone the Optimism Monorepo
         working-directory: ../
-        run: git clone https://github.com/ethereum-optimism/optimism.git
+        # TODO: Update this to use master once revert reasons feature is merged.
+        run: git clone --branch feat/geth-revert-reasons https://github.com/ethereum-optimism/optimism.git
 
       - name: Build Optimism ops
         working-directory: ../optimism/ops
@@ -25,5 +43,4 @@ jobs:
         run: |
           npm install
           npm run compile
-          npm run test
-          npm run coverage
+          npm run full-test
