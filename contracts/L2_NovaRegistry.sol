@@ -281,7 +281,6 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         (bool executable, ) = isExecutable(execHash);
         require(executable, "NOT_EXECUTABLE");
 
-        InputToken[] memory inputTokens = requestInputTokens[execHash];
         uint256 gasLimit = requestGasLimits[execHash];
         uint256 gasPrice = requestGasPrices[execHash];
         uint256 tip = requestTips[execHash];
@@ -296,18 +295,27 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         // Pay the recipient the gas payment + the tip.
         ETH.transfer(rewardRecipient, gasPayment + recipientTip);
 
-        // Only transfer input tokens if the request didn't revert.
-        if (!reverted) {
-            // Transfer input tokens to the rewardRecipient.
-            for (uint256 i = 0; i < inputTokens.length; i++) {
-                inputTokens[i].l2Token.transfer(rewardRecipient, inputTokens[i].amount);
-            }
-        }
-
         // Store that the request has had its tokens removed.
         requestTokenRemovalTimestamps[execHash] = 1;
 
+        // Emit the event before we do our token transfer logic so it will be accounted for with gasleft().
         emit ExecCompleted(execHash, rewardRecipient, gasUsed, reverted);
+
+        // Only transfer input tokens if the request didn't revert.
+        if (!reverted) {
+            InputToken[] memory inputTokens = requestInputTokens[execHash];
+
+            // Calculate how much gas to allocate for each transfer (allocate evenly per inputToken but leave a buffer for safety).
+            uint256 perTransferGas = (gasleft() - 5000) / inputTokens.length;
+
+            // Loop over each input token to attempt to transfer it to the recipient.
+            for (uint256 i = 0; i < inputTokens.length; i++) {
+                try
+                    // Make a transfer with a specific amount of gas so we cant run out of gas, and wrap it in a try-catch so it can't revert.
+                    inputTokens[i].l2Token.transfer{gas: perTransferGas}(rewardRecipient, inputTokens[i].amount)
+                {} catch {}
+            }
+        }
     }
 
     /// @notice Returns if the request is executable along with a timestamp of when that may change.

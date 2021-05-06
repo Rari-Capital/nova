@@ -22,6 +22,10 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
     address public immutable L2_NovaRegistryAddress;
 
+    constructor(address _L2_NovaRegistryAddress, address _messenger) OVM_CrossDomainEnabled(_messenger) {
+        L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
+    }
+
     /// @notice Maps execHashes to a boolean indicating whether the corresponding request has already been executed.
     mapping(bytes32 => bool) public executed;
 
@@ -34,10 +38,6 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @dev The address of the strategy that is currenlty being called.
     /// @dev This will not be reset to address(0) after each execution completes.
     address public currentlyExecutingStrategy;
-
-    constructor(address _L2_NovaRegistryAddress, address _messenger) OVM_CrossDomainEnabled(_messenger) {
-        L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
-    }
 
     function exec(
         uint72 nonce,
