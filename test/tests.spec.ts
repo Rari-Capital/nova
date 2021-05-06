@@ -276,18 +276,18 @@ describe("Nova", function () {
     });
 
     describe("exec", function () {
-      it("should properly execute a request that soft reverts", async function () {
-        await snapshotGasCost(
-          l1_NovaExecutionManager.exec(
-            // Nonce
-            0,
-            // Strategy
-            mockContract.address,
-            // Calldata
-            mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
-            // xDomain Gas Limit
-            500000
-          )
+      it("should properly execute the first request", async function () {
+        await l1_NovaExecutionManager.exec(
+          // Nonce
+          0,
+          // Strategy
+          mockContract.address,
+          // Calldata
+          mockContract.interface.encodeFunctionData(
+            "thisFunctionWillNotRevert"
+          ),
+          // xDomain Gas Limit
+          500000
         ).should.not.be.reverted;
       });
 
@@ -299,9 +299,11 @@ describe("Nova", function () {
             // Strategy
             mockContract.address,
             // Calldata
-            mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
+            mockContract.interface.encodeFunctionData(
+              "thisFunctionWillNotRevert"
+            ),
             // xDomain Gas Limit
-            100000
+            500000
           )
           .should.be.revertedWith("ALREADY_EXECUTED");
       });
@@ -310,7 +312,7 @@ describe("Nova", function () {
         await l1_NovaExecutionManager
           .exec(
             // Nonce
-            0,
+            420,
             // Strategy
             mockContract.address,
             // Calldata
@@ -323,42 +325,34 @@ describe("Nova", function () {
           .should.be.revertedWith("HARD_REVERT");
       });
 
-      // it("will correctly execute a request on the registry and release the bounty on L2", async function () {
-      //   const preBalance = await OVM_ETH.balanceOf(l1Wallet.address);
+      it("should properly execute a request that soft reverts", async function () {
+        await snapshotGasCost(
+          l1_NovaExecutionManager.exec(
+            // Nonce
+            1337,
+            // Strategy
+            mockContract.address,
+            // Calldata
+            mockContract.interface.encodeFunctionData("thisFunctionWillRevert"),
+            // xDomain Gas Limit
+            500000
+          )
+        ).should.not.be.reverted;
+      });
 
-      //   await waitForL1ToL2Tx(
-      //     l1_NovaExecutionManager
-      //       .connect(l1Wallet)
-      //       .exec(
-      //         1,
-      //         testCallArguments.strategy,
-      //         testCallArguments.calldata,
-      //         100000,
-      //         { gasPrice: testCallArguments.gasPrice }
-      //       ),
-      //     watcher
-      //   )
-      //     .should.emit(l2_NovaRegistry, "ExecCompleted")
-      //     .withArgs(
-      //       computeExecHash({
-      //         nonce: 1,
-      //         strategy: testCallArguments.strategy,
-      //         calldata: testCallArguments.calldata,
-      //         gasPrice: testCallArguments.gasPrice,
-      //       }),
-      //       l1Wallet.address,
-      //       // This function will match everything (hard to assert on gas price)
-      //       () => {},
-      //       false
-      //     );
-
-      //   // Assert that the caller was refunded the proper gas.
-      //   await OVM_ETH.balanceOf(l1Wallet.address).should.eventually.equal(
-      //     preBalance.add(
-      //       testCallArguments.gasLimit.mul(testCallArguments.gasPrice)
-      //     )
-      //   );
-      // });
+      it("should properly execute a request", async function () {
+        await snapshotGasCost(
+          l1_NovaExecutionManager
+            .connect(l1Wallet)
+            .exec(
+              1,
+              testCallArguments.strategy,
+              testCallArguments.calldata,
+              500000,
+              { gasPrice: testCallArguments.gasPrice }
+            )
+        ).should.not.be.reverted;
+      });
     });
   });
 });
