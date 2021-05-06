@@ -21,7 +21,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   L2NovaRegistry__factory,
   L2NovaRegistry,
-  ERC20,
+  UniswapV2ERC20,
   MockOVMETH__factory,
   MockCrossDomainMessenger__factory,
   L1NovaExecutionManager,
@@ -61,7 +61,7 @@ describe("Nova", function () {
   let l2_NovaRegistry: L2NovaRegistry;
 
   // OVM contracts:
-  let OVM_ETH: ERC20;
+  let OVM_ETH: UniswapV2ERC20;
 
   // Demo contracts:
   let mockContract: MockContract;
@@ -78,7 +78,7 @@ describe("Nova", function () {
     if (network.ovm) {
       OVM_ETH = getContractFactory("OVM_ETH")
         .connect(l2Wallet)
-        .attach("0x4200000000000000000000000000000000000006") as ERC20;
+        .attach("0x4200000000000000000000000000000000000006");
 
       const OVM_L1ETHGateway = (getContractFactory(
         "OVM_L1ETHGateway"
