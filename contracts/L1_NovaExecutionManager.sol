@@ -124,12 +124,18 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
                 abi.encodeWithSelector(IERC20(token).transferFrom.selector, currentExecutor, msg.sender, amount)
             );
 
-        // Revert if the transferFrom call reverted.
+        // Hard revert if the transferFrom call reverted.
         require(success, HARD_REVERT_TEXT);
 
-        // If it returned something, revert if it is not a postiive bool.
+        // If it returned something, hard revert if it is not a postiive bool.
         if (returndata.length > 0) {
-            require(abi.decode(returndata, (bool)), HARD_REVERT_TEXT);
+            if (returndata.length == 32) {
+                // It returned a bool, hard revert if it is not a postiive bool.
+                require(abi.decode(returndata, (bool)), HARD_REVERT_TEXT);
+            } else {
+                // It returned some data that was not a bool, let's hard revert.
+                revert(HARD_REVERT_TEXT);
+            }
         }
     }
 
