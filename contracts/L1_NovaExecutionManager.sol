@@ -3,16 +3,13 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./L2_NovaRegistry.sol";
 
 contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
-    using SafeERC20 for IERC20;
-
     /// @dev The revert message text used to cause a hard revert.
-    string private constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
+    string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.
     bytes32 private constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
 
@@ -115,14 +112,25 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
     /// @param token The ER20-compliant token to transfer to the currently executing strategy.
     /// @param amount The amount of `token` (scaled by its decimals)  to transfer to the currently executing strategy.
-    function transferFromBot(IERC20 token, uint256 amount) external {
+    function transferFromBot(address token, uint256 amount) external {
         // Only the currently executing strategy is allowed to call this method.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
         require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, HARD_REVERT_TEXT);
 
-        // TODO: MAKE THIS HARD REVERT!!!!
         // Transfer the token from the calling bot the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
-        token.safeTransferFrom(currentExecutor, msg.sender, amount);
+        (bool success, bytes memory returndata) =
+            address(token).call(
+                // Encode a call to transferFrom.
+                abi.encodeWithSelector(IERC20(token).transferFrom.selector, currentExecutor, msg.sender, amount)
+            );
+
+        // Revert if the transferFrom call reverted.
+        require(success, HARD_REVERT_TEXT);
+
+        // If it returned something, revert if it is not a postiive bool.
+        if (returndata.length > 0) {
+            require(abi.decode(returndata, (bool)), HARD_REVERT_TEXT);
+        }
     }
 
     /// @notice Convience function that triggers a hard revert.
