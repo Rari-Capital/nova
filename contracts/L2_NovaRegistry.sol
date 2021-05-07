@@ -276,6 +276,11 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         emit BumpGas(execHash, newExecHash, switchTimestamp);
     }
 
+    /// @dev Distributes inputs/tips to the executor as a result of a successful execution. Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
+    /// @param execHash The computed execHash of the execution.
+    /// @param rewardRecipient The address the executor specified to be the recipient of the tokens on L2.
+    /// @param gasUsed The amount of gas used by the execution tx on L1.
+    /// @param reverted If the strategy reverted on L1 during execution.
     function execCompleted(
         bytes32 execHash,
         address rewardRecipient,
