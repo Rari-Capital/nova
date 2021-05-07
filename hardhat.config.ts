@@ -50,7 +50,11 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 999999,
+        runs: 1_000_000,
+      },
+
+      metadata: {
+        bytecodeHash: "none",
       },
 
       outputSelection: {
