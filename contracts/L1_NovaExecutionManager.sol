@@ -42,6 +42,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @dev This will not be reset to address(0) after each execution completes.
     address public currentlyExecutingStrategy;
 
+    /// @notice Convience function that `execWithRecipient` with all relevant arguments and sets the l2Recipient to msg.sender.
     function exec(
         uint72 nonce,
         address strategy,
@@ -50,6 +51,11 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         execWithRecipient(nonce, strategy, l1calldata, msg.sender);
     }
 
+    /// @notice Executes a request and sends tip/inputs to a specific address.
+    /// @param nonce The nonce of the request.
+    /// @param strategy The strategy requested in the request.
+    /// @param l1calldata The calldata associated with the request.
+    /// @param l2Recipient The address of the account on L2 to recieve the tip/inputs.
     function execWithRecipient(
         uint72 nonce,
         address strategy,
@@ -104,15 +110,22 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         );
     }
 
-    function transferFromBot(address token, uint256 amount) external {
+    /// @notice Transfers tokens the calling bot (the account that called execute) has approved to the execution manager for the currently executing strategy.
+    /// @notice Can only be called by the currently executing strategy (if there is one at all).
+    /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
+    /// @param token The ER20-compliant token to transfer to the currently executing strategy.
+    /// @param amount The amount of `token` (scaled by its decimals)  to transfer to the currently executing strategy.
+    function transferFromBot(IERC20 token, uint256 amount) external {
         // Only the currently executing strategy is allowed to call this method.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
         require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, HARD_REVERT_TEXT);
 
+        // TODO: MAKE THIS HARD REVERT!!!!
         // Transfer the token from the calling bot the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
-        IERC20(token).safeTransferFrom(currentExecutor, msg.sender, amount);
+        token.safeTransferFrom(currentExecutor, msg.sender, amount);
     }
 
+    /// @notice Convience function that triggers a hard revert.
     function hardRevert() external pure {
         // Call revert with the hard revert text.
         revert(HARD_REVERT_TEXT);
