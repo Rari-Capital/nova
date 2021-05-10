@@ -28,8 +28,7 @@ jobs:
 
       - name: Clone the Optimism Monorepo
         working-directory: ../
-        # TODO: Update this to use master once revert reasons feature is merged.
-        run: git clone --branch feat/geth-revert-reasons https://github.com/ethereum-optimism/optimism.git
+        run: git clone https://github.com/ethereum-optimism/optimism.git
 
       - name: Build Optimism ops
         working-directory: ../optimism/ops
