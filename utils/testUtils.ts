@@ -61,7 +61,7 @@ export async function waitForL1ToL2Tx(
 
 export async function snapshotGasCost(
   x: Promise<ContractTransaction>
-): Promise<any> {
+): Promise<ContractTransaction> {
   if (!network.ovm) {
     const waited = await (await x).wait();
 
