@@ -11,7 +11,8 @@
     "coverage": "hardhat coverage && npm run open-coverage-report",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
     "deploy": "hardhat deploy",
-    "verify": "hardhat verify"
+    "verify": "hardhat verify",
+    "clean": "rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm"
   },
   "author": "t11s",
   "license": "AGPL-3.0-only",

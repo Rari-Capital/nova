@@ -157,6 +157,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         requestCalldatas[execHash] = l1calldata;
         requestGasLimits[execHash] = gasLimit;
         requestGasPrices[execHash] = gasPrice;
+        requestTips[execHash] = tip;
         // Storing the nonce is just for convenience; it does not need to be on-chain.
         requestNonces[execHash] = systemNonce;
 
