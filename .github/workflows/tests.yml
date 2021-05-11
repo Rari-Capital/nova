@@ -9,11 +9,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Run the tests
+      - name: Run unit tests + tests with code coverage
         run: |
           npm install
           npm run compile
           npm run vm-test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          fail_ci_if_error: true
 
       - name: Run codechecks
         run: npx codechecks
@@ -38,14 +43,8 @@ jobs:
         working-directory: ../optimism/ops
         run: docker-compose up -d && ./scripts/wait-for-sequencer.sh
 
-      - name: Run unit tests + tests with coverage
+      - name: Run integration tests
         run: |
           npm install
           npm run compile
           npm run ovm-test
-          npm run coverage
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          fail_ci_if_error: true
