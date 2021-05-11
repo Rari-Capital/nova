@@ -3,11 +3,12 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./L2_NovaRegistry.sol";
 
-contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
+contract L1_NovaExecutionManager is OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @dev The revert message text used to cause a hard revert.
     string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.
@@ -58,7 +59,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         address strategy,
         bytes calldata l1calldata,
         address l2Recipient
-    ) public {
+    ) public nonReentrant {
         uint256 startGas = gasleft();
 
         // Compute the execHash.
@@ -112,7 +113,7 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
     /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
     /// @param token The ER20-compliant token to transfer to the currently executing strategy.
     /// @param amount The amount of `token` (scaled by its decimals)  to transfer to the currently executing strategy.
-    function transferFromRelayer(address token, uint256 amount) external {
+    function transferFromRelayer(address token, uint256 amount) external nonReentrant {
         // Only the currently executing strategy is allowed to call this method.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
         require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, HARD_REVERT_TEXT);
