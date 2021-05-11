@@ -107,17 +107,17 @@ contract L1_NovaExecutionManager is OVM_CrossDomainEnabled {
         );
     }
 
-    /// @notice Transfers tokens the calling bot (the account that called execute) has approved to the execution manager for the currently executing strategy.
+    /// @notice Transfers tokens from the relayer (the account that called execute) has approved to the execution manager for the currently executing strategy.
     /// @notice Can only be called by the currently executing strategy (if there is one at all).
     /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
     /// @param token The ER20-compliant token to transfer to the currently executing strategy.
     /// @param amount The amount of `token` (scaled by its decimals)  to transfer to the currently executing strategy.
-    function transferFromBot(address token, uint256 amount) external {
+    function transferFromRelayer(address token, uint256 amount) external {
         // Only the currently executing strategy is allowed to call this method.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
         require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, HARD_REVERT_TEXT);
 
-        // Transfer the token from the calling bot the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
+        // Transfer the token from the relayer the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
         (bool success, bytes memory returndata) =
             address(token).call(
                 // Encode a call to transferFrom.

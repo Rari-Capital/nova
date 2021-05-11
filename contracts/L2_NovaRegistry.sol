@@ -51,11 +51,11 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @notice Emitted when `execCompleted` is called.
     event ExecCompleted(bytes32 indexed execHash, address indexed rewardRecipient, uint256 gasUsed, bool reverted);
 
-    /// @notice A token/amount pair that a bot will need on L1 to execute the request (and will be returned to them on L2).
+    /// @notice A token/amount pair that a relayer will need on L1 to execute the request (and will be returned to them on L2).
     /// @param l2Token The token on L2 to transfer to the executor upon a successful execution.
     /// @param amount The amount of the `l2Token` to the executor upon a successful execution (scaled by the `l2Token`'s decimals).
-    /// @dev Bots may have to reference a registry/list of some sort to determine the equivalent L1 token they will need.
-    /// @dev The decimal scheme may not align between the L1 and L2 tokens, a bot should check via off-chain logic.
+    /// @dev Relayers may have to reference a registry/list of some sort to determine the equivalent L1 token they will need.
+    /// @dev The decimal scheme may not align between the L1 and L2 tokens, a relayer should check via off-chain logic.
     struct InputToken {
         IERC20 l2Token;
         uint256 amount;
@@ -73,13 +73,13 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     mapping(bytes32 => address) private requestStrategies;
     /// @dev Maps execHashes to the calldata associated with the request.
     mapping(bytes32 => bytes) private requestCalldatas;
-    /// @dev Maps execHashes to the gas limit a bot should use to execute the request.
+    /// @dev Maps execHashes to the gas limit a relayer should use to execute the request.
     mapping(bytes32 => uint64) private requestGasLimits;
-    /// @dev Maps execHashes to the gas price a bot must use to execute the request.
+    /// @dev Maps execHashes to the gas price a relayer must use to execute the request.
     mapping(bytes32 => uint256) private requestGasPrices;
-    /// @dev Maps execHashes to the additional tip in wei bots will receive for executing them.
+    /// @dev Maps execHashes to the additional tip in wei relayers will receive for executing them.
     mapping(bytes32 => uint256) private requestTips;
-    /// @dev Maps execHashes to the input tokens a bot must have to execute the request.
+    /// @dev Maps execHashes to the input tokens a relayer must have to execute the request.
     mapping(bytes32 => InputToken[]) private requestInputTokens;
 
     /// @dev Maps execHashes to a timestamp representing when the request has/will have its tokens removed (via bumpGas/withdraw/execCompleted).
@@ -88,7 +88,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     mapping(bytes32 => uint256) private requestTokenRemovalTimestamps;
 
     /// @dev Maps execHashes to a timestamp representing when the request is fully canceled and the creator can withdraw their bounties/inputs.
-    /// @dev Bots should not attempt to execute a request if the current time has passed its cancel timestamp.
+    /// @dev Relayers should not attempt to execute a request if the current time has passed its cancel timestamp.
     mapping(bytes32 => uint256) private requestCancelTimestamps;
 
     /// @dev Maps execHashes which represent resubmitted requests (via bumpGas) to their corresponding "uncled" request's execHash.
@@ -129,12 +129,12 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         (executable, changeTimestamp) = isExecutable(execHash);
     }
 
-    /// @param strategy The address of the "strategy" contract on L1 a bot should call with `calldata`.
-    /// @param l1calldata The abi encoded calldata a bot should call the `strategy` with on L1.
-    /// @param gasLimit The gas limit a bot should use on L1.
-    /// @param gasPrice The gas price (in wei) a bot should use on L1.
-    /// @param tip The additional wei to pay as a tip for any bot that executes this request.
-    /// @param inputTokens An array of 5 or less token/amount pairs that a bot will need on L1 to execute the request (and will be returned to them on L2). `inputTokens` will not be awarded if the `strategy` reverts on L1.
+    /// @param strategy The address of the "strategy" contract on L1 a relayer should call with `calldata`.
+    /// @param l1calldata The abi encoded calldata a relayer should call the `strategy` with on L1.
+    /// @param gasLimit The gas limit a relayer should use on L1.
+    /// @param gasPrice The gas price (in wei) a relayer should use on L1.
+    /// @param tip The additional wei to pay as a tip for any relayer that executes this request.
+    /// @param inputTokens An array of 5 or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2). `inputTokens` will not be awarded if the `strategy` reverts on L1.
     function requestExec(
         address strategy,
         bytes calldata l1calldata,
