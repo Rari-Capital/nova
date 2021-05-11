@@ -9,12 +9,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Run unit tests + tests with code coverage
+      - name: Run unit tests
         run: |
           npm install
           npm run compile
           npm run vm-test
-          CI= npm run coverage
+
+      - name: Run unit tests with coverage
+        run: CI= npm run coverage # Unset CI variable so the gas changes don't fail the step
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
