@@ -80,7 +80,7 @@ export async function snapshotGasCost(
         chalk.red(
           "(CHANGE) " +
             e.message
-              .replace("expected", "it used")
+              .replace("expected", "used")
               .replace("to equal", "gas, but the snapshot expected it to use") +
             " gas"
         )
@@ -88,10 +88,8 @@ export async function snapshotGasCost(
 
       if (process.env.CI) {
         return Promise.reject(
-          new Error("reverted: Gas consumption changed from expected.")
+          "reverted: Gas consumption changed from expected."
         );
-      } else {
-        return x;
       }
     }
   }
