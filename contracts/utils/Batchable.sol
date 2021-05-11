@@ -15,6 +15,7 @@ contract Batchable {
             // Slice the sighash.
             _returnData := add(_returnData, 0x04)
         }
+
         return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 
