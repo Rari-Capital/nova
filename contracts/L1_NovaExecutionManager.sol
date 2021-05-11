@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./L2_NovaRegistry.sol";
+import "./utils/Batchable.sol";
 
-contract L1_NovaExecutionManager is OVM_CrossDomainEnabled, ReentrancyGuard {
+contract L1_NovaExecutionManager is OVM_CrossDomainEnabled, ReentrancyGuard, Batchable {
     /// @dev The revert message text used to cause a hard revert.
     string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.

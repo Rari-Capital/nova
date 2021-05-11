@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
+import "./utils/Batchable.sol";
 
-contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
+contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled, Batchable {
     using OVM_SafeERC20 for IERC20;
 
     /// @notice The minimum delay between when `cancel` and `withdraw` can be called.
