@@ -202,7 +202,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         require(requestCreators[execHash] == msg.sender, "NOT_CREATOR");
         require(withdrawDelaySeconds >= MIN_CANCEL_SECONDS, "DELAY_TOO_SMALL");
 
-        // Set the delay timestamp to int(current timestamp + the delay)
+        // Set the delay timestamp to (current timestamp + the delay)
         uint256 timestamp = block.timestamp + withdrawDelaySeconds;
         requestCancelTimestamps[execHash] = timestamp;
 
