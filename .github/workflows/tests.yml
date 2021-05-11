@@ -38,7 +38,7 @@ jobs:
         working-directory: ../optimism/ops
         run: docker-compose up -d && ./scripts/wait-for-sequencer.sh
 
-      - name: Run the tests
+      - name: Run unit tests + tests with coverage
         run: |
           npm install
           npm run compile
