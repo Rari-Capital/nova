@@ -76,7 +76,15 @@ export async function snapshotGasCost(
         )
       );
     } catch (e) {
-      console.log(chalk.red("(CHANGE) " + e.message));
+      console.log(
+        chalk.red(
+          "(CHANGE) " +
+            e.message
+              .replace("expected", "it used")
+              .replace("to equal", "gas, but the snapshot expected it to use") +
+            " gas"
+        )
+      );
 
       if (process.env.CI) {
         return Promise.reject(
