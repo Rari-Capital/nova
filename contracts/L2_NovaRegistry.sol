@@ -67,7 +67,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
     /// @dev Maps execHashes to the creator of each request.
     mapping(bytes32 => address) private requestCreators;
     /// @dev Maps execHashes to the nonce of each request.
-    /// @dev This is just for convience, does not need to be on-chain.
+    /// @dev This is just for convenience, does not need to be on-chain.
     mapping(bytes32 => uint72) private requestNonces;
     /// @dev Maps execHashes to the address of the strategy associated with the request.
     mapping(bytes32 => address) private requestStrategies;
@@ -157,7 +157,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled {
         requestCalldatas[execHash] = l1calldata;
         requestGasLimits[execHash] = gasLimit;
         requestGasPrices[execHash] = gasPrice;
-        // Storing the nonce is just for convience; it does not need to be on-chain.
+        // Storing the nonce is just for convenience; it does not need to be on-chain.
         requestNonces[execHash] = systemNonce;
 
         // Transfer in ETH to pay for max gas usage + tip.
