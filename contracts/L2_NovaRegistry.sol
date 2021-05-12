@@ -7,9 +7,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
-import "./utils/Batchable.sol";
+import "./external/Multicall.sol";
+import "./external/DSAuth.sol";
 
-contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled, Batchable {
+contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
     using OVM_SafeERC20 for IERC20;
 
     /// @notice The minimum delay between when `cancel` and `withdraw` can be called.
@@ -143,7 +144,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled, Batchable {
         uint256 gasPrice,
         uint256 tip,
         InputToken[] calldata inputTokens
-    ) public nonReentrant returns (bytes32 execHash) {
+    ) public nonReentrant auth returns (bytes32 execHash) {
         // Do not allow more than 5 input tokens.
         require(inputTokens.length <= 5, "TOO_MANY_INPUTS");
 
@@ -196,7 +197,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled, Batchable {
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to cancel.
     /// @param withdrawDelaySeconds The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_CANCEL_SECONDS`.
-    function cancel(bytes32 execHash, uint256 withdrawDelaySeconds) public {
+    function cancel(bytes32 execHash, uint256 withdrawDelaySeconds) public auth {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
         require(requestCancelTimestamps[execHash] == 0, "ALREADY_CANCELED");
@@ -214,7 +215,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled, Batchable {
     /// @notice The creator of the request associated with `execHash` must call `cancel` and wait the `withdrawDelaySeconds` they specified before calling `withdraw`.
     /// @notice Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to withdraw from.
-    function withdraw(bytes32 execHash) external nonReentrant {
+    function withdraw(bytes32 execHash) external nonReentrant auth {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
         (bool canceled, ) = isCanceled(execHash);
@@ -242,7 +243,7 @@ contract L2_NovaRegistry is ReentrancyGuard, OVM_CrossDomainEnabled, Batchable {
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
-    function bumpGas(bytes32 execHash, uint256 gasPrice) external returns (bytes32 newExecHash) {
+    function bumpGas(bytes32 execHash, uint256 gasPrice) external auth returns (bytes32 newExecHash) {
         (bool executable, ) = isExecutable(execHash);
         require(executable, "NOT_EXECUTABLE");
         uint256 previousGasPrice = requestGasPrices[execHash];
