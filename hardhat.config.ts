@@ -67,8 +67,8 @@ const config: HardhatUserConfig = {
 
   preprocess: {
     eachLine: removeConsoleLog(
-      (bre) =>
-        bre.network.name !== "hardhat" && bre.network.name !== "localhost"
+      (hre) =>
+        hre.network.name !== "hardhat" && hre.network.name !== "localhost"
     ),
   },
 
@@ -78,6 +78,10 @@ const config: HardhatUserConfig = {
 
   typechain: {
     target: "ethers-v5",
+  },
+
+  paths: {
+    tests: process.argv.includes("optimism") ? "test/integration" : "test/unit",
   },
 
   mocha: {

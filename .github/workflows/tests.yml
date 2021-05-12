@@ -13,7 +13,7 @@ jobs:
         run: |
           npm install
           npm run compile
-          npm run vm-test
+          npm run unit-tests
 
       - name: Run unit tests with coverage
         run: CI= npm run coverage # Unset CI variable so the gas changes don't fail the step
@@ -50,4 +50,4 @@ jobs:
         run: |
           npm install
           npm run compile
-          npm run ovm-test
+          npm run integration-tests

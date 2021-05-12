@@ -4,10 +4,9 @@
   "description": "🍣🌟",
   "scripts": {
     "compile": "hardhat compile && hardhat compile --network optimism",
-    "ovm-test": "hardhat test --network optimism",
-    "vm-test": "hardhat test",
+    "integration-tests": "hardhat test --network optimism",
+    "unit-tests": "hardhat test",
     "gas-changed": "UPDATE_SNAPSHOT=1 CI=true hardhat test && npx codechecks",
-    "test": "npm run vm-test && npm run ovm-test",
     "coverage": "hardhat coverage && npm run open-coverage-report",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
     "deploy": "hardhat deploy",

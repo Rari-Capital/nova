@@ -7,7 +7,7 @@ import {
   snapshotGasCost,
   wait,
   waitForL1ToL2Tx,
-} from "../utils/testUtils";
+} from "../../utils/testUtils";
 
 import { ethers, network } from "hardhat";
 import { Wallet } from "@ethersproject/wallet";
@@ -23,8 +23,8 @@ import {
   L1NovaExecutionManager__factory,
   MockContract,
   MockContract__factory,
-} from "../typechain";
-import { Watcher } from "../utils/watcher";
+} from "../../typechain";
+import { Watcher } from "../../utils/watcher";
 import { BigNumber } from "ethers";
 
 function computeExecHash({
@@ -62,6 +62,10 @@ describe("Nova", function () {
   let mockContract: MockContract;
 
   before(async () => {
+    l2Wallet = network.ovm
+      ? createTestWallet("http://localhost:8545")
+      : (await ethers.getSigners())[0];
+
     l1Wallet = network.ovm
       ? createTestWallet("http://localhost:9545")
       : (await ethers.getSigners())[0];
