@@ -29,9 +29,6 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
     }
 
-    /// @notice Maps execHashes to a boolean indicating whether the corresponding request has already been executed.
-    mapping(bytes32 => bool) public executed;
-
     /// @dev The execHash computed from the currently executing call to `exec`.
     /// @dev This will be reset after every execution.
     bytes32 public currentExecHash;
@@ -67,9 +64,6 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // Compute the execHash.
         bytes32 execHash = keccak256(abi.encodePacked(nonce, strategy, l1calldata, tx.gasprice));
 
-        // Prevent double executing.
-        require(!executed[execHash], "ALREADY_EXECUTED");
-
         // Initialize execution context.
         currentExecHash = execHash;
         currentExecutor = msg.sender;
@@ -80,9 +74,6 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
 
         // Revert if the strategy hard reverted.
         require(keccak256(returnData) != HARD_REVERT_HASH, "HARD_REVERT");
-
-        // Mark the request as executed.
-        executed[execHash] = true;
 
         // Reset execution context.
         // We reset only one of the execution context variables because it will cost us less gas to use a previously set storage slot on all future runs.

@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a minimal exec 1`] = `157329`;
+exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a minimal exec 1`] = `134931`;
 
-exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a stateful exec 1`] = `177350`;
+exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a stateful exec 1`] = `154952`;
 
-exports[`L1_NovaExecutionManager exec/execWithRecipient soft revert should not exec to revert 1`] = `172509`;
+exports[`L1_NovaExecutionManager exec/execWithRecipient soft revert should not exec to revert 1`] = `150111`;
