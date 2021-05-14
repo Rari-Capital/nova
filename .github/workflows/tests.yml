@@ -9,7 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/cache@v2
+      - name: Cache node_modules
+        id: node-cache
+        uses: actions/cache@v2
         with:
           path: "**/node_modules"
           key: node-modules-${{ hashFiles('package-lock.json') }}
