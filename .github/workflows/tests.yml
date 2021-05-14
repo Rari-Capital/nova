@@ -18,10 +18,10 @@ jobs:
       - name: Run unit tests with coverage
         run: CI= npm run coverage # Unset CI variable so the gas changes don't fail the step
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+      - name: Upload report to Coveralls
+        uses: coverallsapp/github-action@master
         with:
-          fail_ci_if_error: true
+          github-token: ${{ secrets.GITHUB_TOKEN }} # This is passed by Github, don't worry about setting this.
 
       - name: Run codechecks
         run: npx codechecks
