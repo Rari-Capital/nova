@@ -153,6 +153,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Compute execHash for this request.
         execHash = keccak256(abi.encodePacked(systemNonce, strategy, l1calldata, gasPrice));
 
+        emit Request(execHash, strategy);
+
         // Store all critical request data.
         requestCreators[execHash] = msg.sender;
         requestStrategies[execHash] = strategy;
@@ -173,8 +175,6 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
             // Copy over this index to the requestInputTokens mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
             requestInputTokens[execHash][i] = inputTokens[i];
         }
-
-        emit Request(execHash, strategy);
     }
 
     /// @notice Calls `requestExec` with all relevant parameters along with calling `cancel` with the `autoCancelDelay` argument.
@@ -221,6 +221,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         (bool canceled, ) = isCanceled(execHash);
         require(canceled, "NOT_CANCELED");
 
+        emit Withdraw(execHash);
+
         address creator = requestCreators[execHash];
         InputToken[] memory inputTokens = requestInputTokens[execHash];
 
@@ -234,8 +236,6 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         for (uint256 i = 0; i < inputTokens.length; i++) {
             inputTokens[i].l2Token.transfer(creator, inputTokens[i].amount);
         }
-
-        emit Withdraw(execHash);
     }
 
     /// @notice Resubmit a request with a higher gas price.
@@ -273,10 +273,10 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         uint256 switchTimestamp = MIN_CANCEL_SECONDS + block.timestamp;
         requestTokenRemovalTimestamps[execHash] = switchTimestamp;
 
+        emit BumpGas(execHash, newExecHash, switchTimestamp);
+
         // Transfer in additional ETH to pay for the new gas limit.
         ETH.safeTransferFrom(msg.sender, address(this), (gasPrice - previousGasPrice) * gasLimit);
-
-        emit BumpGas(execHash, newExecHash, switchTimestamp);
     }
 
     /// @dev Distributes inputs/tips to the executor as a result of a successful execution. Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
@@ -310,7 +310,6 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Store that the request has had its tokens removed.
         requestTokenRemovalTimestamps[execHash] = 1;
 
-        // Emit the event before we do our token transfer logic so it will be accounted for with gasleft().
         emit ExecCompleted(execHash, rewardRecipient, gasUsed, reverted);
 
         // Only transfer input tokens if the request didn't revert.

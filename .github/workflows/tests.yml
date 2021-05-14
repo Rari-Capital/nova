@@ -23,7 +23,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }} # This is passed by Github, don't worry about setting this.
 
-      - name: Run codechecks
+      - name: Run Codechecks
         run: npx codechecks
         env:
           CC_SECRET: ${{ secrets.CC_SECRET }}

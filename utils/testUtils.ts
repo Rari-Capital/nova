@@ -6,17 +6,26 @@ chai.use(chaiAsPromised);
 chai.should();
 
 import { ethers, network } from "hardhat";
-import { ContractTransaction } from "ethers";
-import { Watcher } from "./watcher";
-import { MockCrossDomainMessenger__factory } from "../typechain";
+import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
+
 import chalk from "chalk";
 
-export const wait = async (tx: Promise<ContractTransaction>) => {
-  const transaction = await tx;
-  const receipt = await transaction.wait();
-
-  return { transaction, receipt };
-};
+export function computeExecHash({
+  nonce,
+  strategy,
+  calldata,
+  gasPrice,
+}: {
+  nonce: number;
+  strategy: string;
+  calldata: string;
+  gasPrice: number | BigNumber;
+}) {
+  return ethers.utils.solidityKeccak256(
+    ["uint72", "address", "bytes", "uint256"],
+    [nonce, strategy, calldata, gasPrice]
+  );
+}
 
 export const createTestWallet = (
   rpc: string,
@@ -36,42 +45,19 @@ export function createFactory<T>(
   return new ethers.ContractFactory(artifact.abi, artifact.bytecode) as any;
 }
 
-export async function waitForL1ToL2Tx(
-  tx: Promise<ContractTransaction>,
-  watcher: Watcher
-): Promise<ContractTransaction> {
-  const { transaction } = await wait(tx);
-
-  if (network.ovm) {
-    const [msgHash] = await watcher.getMessageHashesFromL1Tx(transaction.hash);
-
-    await watcher.getL2RelayTransaction(msgHash);
-  } else {
-    const MockCrossDomainMessenger = createFactory<MockCrossDomainMessenger__factory>(
-      false,
-      "MockCrossDomainMessenger",
-      "mocks/"
-    )
-      .connect((await ethers.getSigners())[0])
-      .attach(watcher.l1.messengerAddress);
-
-    return MockCrossDomainMessenger.relayCurrentMessage();
-  }
-}
-
 export async function snapshotGasCost(
   x: Promise<ContractTransaction>
 ): Promise<ContractTransaction> {
   if (!network.ovm) {
-    const waited = await (await x).wait();
+    let receipt: ContractReceipt = await (await x).wait();
 
     try {
-      waited.gasUsed.toNumber().should.toMatchSnapshot();
+      receipt.gasUsed.toNumber().should.toMatchSnapshot();
 
       console.log(
         chalk.yellow(
           "(NO CHANGE) Below is consuming " +
-            waited.gasUsed.toString() +
+            receipt.gasUsed.toString() +
             " gas. "
         )
       );

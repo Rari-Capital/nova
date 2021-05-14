@@ -15,12 +15,12 @@ abstract contract DSAuth {
         emit LogSetOwner(msg.sender);
     }
 
-    function setOwner(address owner_) public auth {
+    function setOwner(address owner_) external auth {
         owner = owner_;
         emit LogSetOwner(owner);
     }
 
-    function setAuthority(DSAuthority authority_) public auth {
+    function setAuthority(DSAuthority authority_) external auth {
         authority = authority_;
         emit LogSetAuthority(address(authority));
     }

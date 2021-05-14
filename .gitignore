@@ -84,4 +84,5 @@ cache
 coverage.json
 typechain-ovm
 
+.DS_Store
 gasReporterOutput.json
