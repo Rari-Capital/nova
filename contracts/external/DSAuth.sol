@@ -2,7 +2,7 @@
 pragma solidity >=0.4.23;
 
 /// @notice Provides a flexible and updatable auth pattern which is completely separate from application logic.
-/// @author DappHub (https://github.com/dapphub/ds-guard)
+/// @author DappHub (https://github.com/dapphub/ds-auth)
 abstract contract DSAuth {
     event LogSetAuthority(address indexed authority);
     event LogSetOwner(address indexed owner);

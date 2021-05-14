@@ -9,6 +9,7 @@ import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./L2_NovaRegistry.sol";
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
+import "hardhat/console.sol";
 
 contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
     /// @dev The revert message text used to cause a hard revert.
@@ -106,7 +107,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
     /// @param token The ER20-compliant token to transfer to the currently executing strategy.
     /// @param amount The amount of `token` (scaled by its decimals)  to transfer to the currently executing strategy.
-    function transferFromRelayer(address token, uint256 amount) external nonReentrant auth {
+    function transferFromRelayer(address token, uint256 amount) external auth {
         // Only the currently executing strategy is allowed to call this method.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
         require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, HARD_REVERT_TEXT);
@@ -115,7 +116,12 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         (bool success, bytes memory returndata) =
             address(token).call(
                 // Encode a call to transferFrom.
-                abi.encodeWithSelector(IERC20(token).transferFrom.selector, currentExecutor, msg.sender, amount)
+                abi.encodeWithSelector(
+                    IERC20(token).transferFrom.selector,
+                    currentExecutor,
+                    currentlyExecutingStrategy,
+                    amount
+                )
             );
 
         // Hard revert if the transferFrom call reverted.
