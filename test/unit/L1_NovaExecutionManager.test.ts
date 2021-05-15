@@ -212,7 +212,9 @@ describe("L1_NovaExecutionManager", function () {
         1,
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert")
-      ).should.be.revertedWith("HARD_REVERT");
+      ).should.be.revertedWith(
+        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
+      );
     });
 
     it("soft revert should not exec to revert", async function () {
@@ -273,6 +275,19 @@ describe("L1_NovaExecutionManager", function () {
 
       await MockERC20.balanceOf(MockStrategy.address).should.eventually.equal(
         weiAmount
+      );
+    });
+
+    it("will hard revert if tokens were not approved", async function () {
+      await L1_NovaExecutionManager.exec(
+        4,
+        MockStrategy.address,
+        MockStrategy.interface.encodeFunctionData(
+          "thisFunctionWillTransferFromRelayer",
+          [MockERC20.address, ethers.utils.parseEther("9999999")]
+        )
+      ).should.be.revertedWith(
+        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
       );
     });
 
