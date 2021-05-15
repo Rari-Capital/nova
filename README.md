@@ -8,4 +8,33 @@ Nova is a **set of contracts** & **network of relayers** that empowers users/con
 
 ---
 
-![image](https://user-images.githubusercontent.com/26209401/116805216-c5e9ef80-aad9-11eb-81c8-06dcb2468c9c.png)
+<img align="right" src="https://user-images.githubusercontent.com/26209401/116805216-c5e9ef80-aad9-11eb-81c8-06dcb2468c9c.png" alt="drawing" width="600"/>
+
+## Unit Tests
+
+```bash
+npm run unit-tests
+```
+
+## Unit Tests With Coverage
+
+```bash
+npm run coverage
+```
+
+## Integration Tests
+[You must start up an instance of Optimism's "ops" repo before running integration tests.](https://github.com/ethereum-optimism/optimism/tree/develop/ops)
+
+```bash
+npm run integration-tests
+```
+
+## Fuzz With Echidna
+[You must install Echidna before fuzzing.](https://github.com/crytic/echidna#installation)
+
+```bash
+npm run fuzz {{CONTRACT_NAME}}
+```
+Replace `{{CONTRACT_NAME}}` with the name of a contract that is fuzzed in `contracts/echidna`. A full list can be found here:
+
+https://github.com/Rari-Capital/nova/blob/c2c74fa8b3790b55e7933dbf1f19cb4214406b9b/.github/workflows/tests.yml#L82-L84
