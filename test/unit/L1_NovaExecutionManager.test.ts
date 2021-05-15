@@ -275,5 +275,36 @@ describe("L1_NovaExecutionManager", function () {
         weiAmount
       );
     });
+
+    it("will not allow anyone to call if not executing", async function () {
+      L1_NovaExecutionManager.transferFromRelayer(
+        MockERC20.address,
+        0
+      ).should.be.revertedWith("NOT_EXECUTING");
+    });
+
+    it("will not allow a random contract to call during execution", async function () {
+      const [deployer] = signers;
+
+      const preBalance = await MockERC20.balanceOf(deployer.address);
+
+      const weiAmount = ethers.utils.parseEther("420");
+
+      await MockERC20.approve(L1_NovaExecutionManager.address, weiAmount);
+
+      await L1_NovaExecutionManager.exec(
+        4,
+        MockStrategy.address,
+        MockStrategy.interface.encodeFunctionData(
+          "thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens",
+          [MockERC20.address, weiAmount]
+        )
+      ).should.not.emit(MockERC20, "Transfer");
+
+      // Balance should not change.
+      await MockERC20.balanceOf(deployer.address).should.eventually.equal(
+        preBalance
+      );
+    });
   });
 });

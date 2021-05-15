@@ -110,7 +110,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     function transferFromRelayer(address token, uint256 amount) external auth {
         // Only the currently executing strategy is allowed to call this method.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
-        require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, HARD_REVERT_TEXT);
+        require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, "NOT_EXECUTING");
 
         // Transfer the token from the relayer the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
         (bool success, bytes memory returndata) =

@@ -2,8 +2,8 @@
 
 exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a minimal exec 1`] = `142710`;
 
-exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a stateful exec 1`] = `162753`;
+exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a stateful exec 1`] = `162775`;
 
 exports[`L1_NovaExecutionManager exec/execWithRecipient soft revert should not exec to revert 1`] = `157912`;
 
-exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `187395`;
+exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `187333`;
