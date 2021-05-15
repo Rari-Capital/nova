@@ -107,6 +107,9 @@ jobs:
         if: steps.node-cache.outputs.cache-hit != 'true'
         run: npm install
 
+      - name: Compile contracts
+        run: npm run compile
+
       - name: Install pip3
         run: |
           python -m pip install --upgrade pip
