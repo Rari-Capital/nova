@@ -116,12 +116,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         (bool success, bytes memory returndata) =
             address(token).call(
                 // Encode a call to transferFrom.
-                abi.encodeWithSelector(
-                    IERC20(token).transferFrom.selector,
-                    currentExecutor,
-                    currentlyExecutingStrategy,
-                    amount
-                )
+                abi.encodeWithSelector(IERC20(token).transferFrom.selector, currentExecutor, msg.sender, amount)
             );
 
         // Hard revert if the transferFrom call reverted.

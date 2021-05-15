@@ -1,4 +1,4 @@
-import { createFactory, snapshotGasCost } from "../../utils/testUtils";
+import { getFactory, snapshotGasCost } from "../../utils/testUtils";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -15,6 +15,9 @@ import {
   SimpleDSGuard,
   SimpleDSGuard__factory,
   MockERC20__factory,
+  NoReturnValueERC20__factory,
+  BadReturnValueERC20__factory,
+  ReturnFalseERC20__factory,
 } from "../../typechain";
 
 describe("L1_NovaExecutionManager", function () {
@@ -33,47 +36,27 @@ describe("L1_NovaExecutionManager", function () {
 
   describe("constructor/setup", function () {
     it("should properly deploy mocks", async function () {
-      const [deployer] = signers;
+      MockERC20 = await (
+        await getFactory<MockERC20__factory>("MockERC20")
+      ).deploy();
 
-      MockERC20 = await createFactory<MockERC20__factory>(
-        false,
-        "MockERC20",
-        "mocks/"
-      )
-        .connect(deployer)
-        .deploy();
+      MockStrategy = await (
+        await getFactory<MockStrategy__factory>("MockStrategy")
+      ).deploy();
 
-      MockStrategy = await createFactory<MockStrategy__factory>(
-        false,
-        "MockStrategy",
-        "mocks/"
-      )
-        .connect(deployer)
-        .deploy();
-
-      MockCrossDomainMessenger =
-        await createFactory<MockCrossDomainMessenger__factory>(
-          false,
-          "MockCrossDomainMessenger",
-          "mocks/"
+      MockCrossDomainMessenger = await (
+        await getFactory<MockCrossDomainMessenger__factory>(
+          "MockCrossDomainMessenger"
         )
-          .connect(deployer)
-          .deploy();
+      ).deploy();
     });
 
     it("should properly deploy the execution manager", async function () {
-      const [deployer] = signers;
-
-      L1_NovaExecutionManager =
-        await createFactory<L1NovaExecutionManager__factory>(
-          false,
+      L1_NovaExecutionManager = await (
+        await getFactory<L1NovaExecutionManager__factory>(
           "L1_NovaExecutionManager"
         )
-          .connect(deployer)
-          .deploy(
-            ethers.constants.AddressZero,
-            MockCrossDomainMessenger.address
-          );
+      ).deploy(ethers.constants.AddressZero, MockCrossDomainMessenger.address);
     });
 
     it("should properly use constructor arguments", async function () {
@@ -94,9 +77,8 @@ describe("L1_NovaExecutionManager", function () {
 
       // Make sure execCompletedMessageBytesLength is correct.
       await L1_NovaExecutionManager.execCompletedMessageBytesLength().should.eventually.equal(
-        ((await createFactory<L2NovaRegistry__factory>(
-          false,
-          "L2_NovaRegistry"
+        ((await (
+          await getFactory<L2NovaRegistry__factory>("L2_NovaRegistry")
         ).interface.encodeFunctionData("execCompleted", [
           ethers.utils.keccak256("0x00"),
           ethers.constants.AddressZero,
@@ -110,15 +92,9 @@ describe("L1_NovaExecutionManager", function () {
 
     describe("simpleDSGuard", function () {
       it("should properly deploy a SimpleDSGuard", async function () {
-        const [deployer] = signers;
-
-        SimpleDSGuard = await createFactory<SimpleDSGuard__factory>(
-          false,
-          "SimpleDSGuard",
-          "external/"
-        )
-          .connect(deployer)
-          .deploy();
+        SimpleDSGuard = await (
+          await getFactory<SimpleDSGuard__factory>("SimpleDSGuard")
+        ).deploy();
       });
 
       it("should properly init the owner", async function () {
@@ -285,6 +261,55 @@ describe("L1_NovaExecutionManager", function () {
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [MockERC20.address, ethers.utils.parseEther("9999999")]
+        )
+      ).should.be.revertedWith(
+        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
+      );
+    });
+
+    it("will properly handle a transferFrom with no return value", async function () {
+      const NoReturnValueERC20 = await (
+        await getFactory<NoReturnValueERC20__factory>("NoReturnValueERC20")
+      ).deploy();
+
+      await L1_NovaExecutionManager.exec(
+        5,
+        MockStrategy.address,
+        MockStrategy.interface.encodeFunctionData(
+          "thisFunctionWillTransferFromRelayer",
+          [NoReturnValueERC20.address, 0]
+        )
+      ).should.not.be.reverted;
+    });
+
+    it("will hard revert if transferFrom returns a non-bool", async function () {
+      const BadReturnValueERC20 = await (
+        await getFactory<BadReturnValueERC20__factory>("BadReturnValueERC20")
+      ).deploy();
+
+      await L1_NovaExecutionManager.exec(
+        6,
+        MockStrategy.address,
+        MockStrategy.interface.encodeFunctionData(
+          "thisFunctionWillTransferFromRelayer",
+          [BadReturnValueERC20.address, 0]
+        )
+      ).should.be.revertedWith(
+        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
+      );
+    });
+
+    it("will hard revert if transferFrom returns false without reverting", async function () {
+      const ReturnFalseERC20 = await (
+        await getFactory<ReturnFalseERC20__factory>("ReturnFalseERC20")
+      ).deploy();
+
+      await L1_NovaExecutionManager.exec(
+        7,
+        MockStrategy.address,
+        MockStrategy.interface.encodeFunctionData(
+          "thisFunctionWillTransferFromRelayer",
+          [ReturnFalseERC20.address, 0]
         )
       ).should.be.revertedWith(
         await L1_NovaExecutionManager.HARD_REVERT_TEXT()

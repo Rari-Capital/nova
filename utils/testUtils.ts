@@ -34,15 +34,15 @@ export const createTestWallet = (
   return new ethers.Wallet(key, new ethers.providers.JsonRpcProvider(rpc));
 };
 
-export function createFactory<T>(
-  isOVM: boolean,
-  name: string,
-  path?: string
-): T {
-  const artifact = require(`../artifacts${isOVM ? "-ovm" : ""}/contracts/${
+export function getOVMFactory<T>(name: string, path?: string): T {
+  const artifact = require(`../artifacts-ovm/contracts/${
     path ?? ""
   }${name}.sol/${name}.json`);
   return new ethers.ContractFactory(artifact.abi, artifact.bytecode) as any;
+}
+
+export function getFactory<T>(name: string): Promise<T> {
+  return ethers.getContractFactory(name) as any;
 }
 
 export async function snapshotGasCost(
