@@ -5,8 +5,4 @@ seqLen: 3
 testLimit: 500000
 timeout: 3600 # 1 hour
 
-cryticArgs:
-  [
-    "--solc-remaps",
-    "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/ @eth-optimism/contracts/=node_modules/@eth-optimism/contracts/ ovm-safeerc20/=node_modules/ovm-safeerc20/",
-  ]
+cryticArgs: ["--compile-force-framework", "Hardhat"]
