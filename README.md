@@ -22,7 +22,7 @@ npm run unit-tests
 npm run coverage
 ```
 
-## Update Gas Snapshot
+## Update Gas Snapshots
 
 ```bash
 npm run gas-changed
