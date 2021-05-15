@@ -3,9 +3,9 @@ pragma solidity >=0.4.23;
 
 import "./DSAuth.sol";
 
-/// @notice Permissions whitelist with a medium level of granularity.
+/// @notice Permissions whitelist with a reasonable level of granularity.
 /// @author Rari Capital + DappHub (https://github.com/dapphub/ds-guard)
-contract MinimalDSGuard is DSAuth, DSAuthority {
+contract SimpleDSGuard is DSAuth, DSAuthority {
     event LogPermit(bytes32 indexed src, bytes32 indexed sig);
 
     event LogForbid(bytes32 indexed src, bytes32 indexed sig);
@@ -21,36 +21,35 @@ contract MinimalDSGuard is DSAuth, DSAuthority {
     ) external view override returns (bool) {
         bytes32 src = bytes32(bytes20(src_));
 
-        return acl[src][sig] || acl[src][ANY] || acl[ANY][sig] || acl[ANY][ANY];
+        return acl[ANY][sig] || acl[src][sig] || acl[src][ANY] || acl[ANY][ANY];
     }
 
     // Permit //
-
-    function permitBytes(bytes32 src, bytes32 sig) public auth {
+    function permitBytes(bytes32 src, bytes4 sig) public auth {
         acl[src][sig] = true;
         emit LogPermit(src, sig);
     }
 
-    function permit(address src, bytes32 sig) external {
-        permitBytes(bytes32(bytes20(src)), sig);
+    function permitAnySource(bytes4 sig) external {
+        permitBytes(ANY, sig);
     }
 
-    function permitAnySource(bytes32 sig) external {
-        permitBytes(ANY, sig);
+    function permit(address src, bytes4 sig) external {
+        permitBytes(bytes32(bytes20(src)), sig);
     }
 
     // Forbid //
 
-    function forbidBytes(bytes32 src, bytes32 sig) public auth {
+    function forbidBytes(bytes32 src, bytes4 sig) public auth {
         acl[src][sig] = false;
         emit LogForbid(src, sig);
     }
 
-    function forbid(address src, bytes32 sig) external {
-        permitBytes(bytes32(bytes20(src)), sig);
+    function forbidAnySource(bytes4 sig) external {
+        forbidBytes(ANY, sig);
     }
 
-    function forbidAnySource(bytes32 sig) external {
-        forbidBytes(ANY, sig);
+    function forbid(address src, bytes4 sig) external {
+        forbidBytes(bytes32(bytes20(src)), sig);
     }
 }

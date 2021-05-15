@@ -12,8 +12,8 @@ import {
   MockStrategy__factory,
   MockCrossDomainMessenger__factory,
   MockERC20,
-  MinimalDSGuard,
-  MinimalDSGuard__factory,
+  SimpleDSGuard,
+  SimpleDSGuard__factory,
   MockERC20__factory,
 } from "../../typechain";
 
@@ -24,7 +24,7 @@ describe("L1_NovaExecutionManager", function () {
   });
 
   let L1_NovaExecutionManager: L1NovaExecutionManager;
-  let MinimalDSGuard: MinimalDSGuard;
+  let SimpleDSGuard: SimpleDSGuard;
 
   /// Mocks
   let MockERC20: MockERC20;
@@ -108,13 +108,13 @@ describe("L1_NovaExecutionManager", function () {
       );
     });
 
-    describe("minimalDSGuard", function () {
-      it("should properly deploy a MinimalDSGuard", async function () {
+    describe("simpleDSGuard", function () {
+      it("should properly deploy a SimpleDSGuard", async function () {
         const [deployer] = signers;
 
-        MinimalDSGuard = await createFactory<MinimalDSGuard__factory>(
+        SimpleDSGuard = await createFactory<SimpleDSGuard__factory>(
           false,
-          "MinimalDSGuard",
+          "SimpleDSGuard",
           "external/"
         )
           .connect(deployer)
@@ -124,33 +124,34 @@ describe("L1_NovaExecutionManager", function () {
       it("should properly init the owner", async function () {
         const [deployer] = signers;
 
-        await MinimalDSGuard.owner().should.eventually.equal(deployer.address);
+        await SimpleDSGuard.owner().should.eventually.equal(deployer.address);
       });
 
-      it("should allow setting the authorization of all functions to ANY", async function () {
-        // TODO ONLY AUTH SPECIFIC FUNCTIONS
-
-        await MinimalDSGuard.permitBytes(
-          await MinimalDSGuard.ANY(),
-          await MinimalDSGuard.ANY()
-        ).should.not.be.reverted;
-
-        await MinimalDSGuard.canCall(
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
+      it("should properly permit authorization for specific functions", async function () {
+        await SimpleDSGuard.permitAnySource(
           L1_NovaExecutionManager.interface.getSighash(
-            L1_NovaExecutionManager.interface.functions[
-              "exec(uint72,address,bytes)"
-            ]
+            "execWithRecipient(uint72,address,bytes,address)"
           )
-        ).should.eventually.equal(true);
+        );
+
+        await SimpleDSGuard.permitAnySource(
+          L1_NovaExecutionManager.interface.getSighash(
+            "exec(uint72,address,bytes)"
+          )
+        );
+
+        await SimpleDSGuard.permitAnySource(
+          L1_NovaExecutionManager.interface.getSighash(
+            "transferFromRelayer(address,uint256)"
+          )
+        );
       });
 
       it("should allow setting the owner to null", async function () {
-        await MinimalDSGuard.setOwner(ethers.constants.AddressZero).should.not
-          .be.reverted;
+        await SimpleDSGuard.setOwner(ethers.constants.AddressZero).should.not.be
+          .reverted;
 
-        await MinimalDSGuard.owner().should.eventually.equal(
+        await SimpleDSGuard.owner().should.eventually.equal(
           ethers.constants.AddressZero
         );
       });
@@ -165,13 +166,17 @@ describe("L1_NovaExecutionManager", function () {
         );
       });
 
-      it("should allow connecting to the MinimalDSGuard", async function () {
+      it("should allow connecting to the SimpleDSGuard", async function () {
         await L1_NovaExecutionManager.authority().should.eventually.equal(
           ethers.constants.AddressZero
         );
 
-        await L1_NovaExecutionManager.setAuthority(MinimalDSGuard.address)
-          .should.not.be.reverted;
+        await L1_NovaExecutionManager.setAuthority(SimpleDSGuard.address).should
+          .not.be.reverted;
+
+        await L1_NovaExecutionManager.authority().should.eventually.equal(
+          SimpleDSGuard.address
+        );
       });
 
       it("should allow setting the owner to null", async function () {
