@@ -54,7 +54,7 @@ contract Echidna_SimpleDSGuard {
         assert(!guard.canCall(user2, address(0), sig));
     }
 
-    function permit_and_forbid_source_to_call_any_sig_should_notaffect_other_sigs(
+    function permit_and_forbid_source_to_call_any_sig_should_not_affect_other_sigs(
         bytes4 sig,
         bytes4 otherSig,
         address user1
