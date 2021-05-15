@@ -11,6 +11,7 @@
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
     "deploy": "hardhat deploy",
     "verify": "hardhat verify",
+    "fuzz": "echidna-test contracts/echidna --config contracts/echidna/config.yaml",
     "clean": "rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm"
   },
   "author": "t11s",

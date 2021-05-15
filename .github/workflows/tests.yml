@@ -45,6 +45,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Cache node_modules
+        id: node-cache
+        uses: actions/cache@v2
+        with:
+          path: "**/node_modules"
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-cache.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: Compile contracts
+        run: npm run compile
+
       - name: Clone the Optimism Monorepo
         working-directory: ../
         run: git clone https://github.com/ethereum-optimism/optimism.git
@@ -58,7 +72,52 @@ jobs:
         run: docker-compose up -d && ./scripts/wait-for-sequencer.sh
 
       - name: Run integration tests
+        run: npm run integration-tests
+
+  echidna:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Cache node_modules
+        id: node-cache
+        uses: actions/cache@v2
+        with:
+          path: "**/node_modules"
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-cache.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: Install pip3
         run: |
-          npm install
-          npm run compile
-          npm run integration-tests
+          python -m pip install --upgrade pip
+      - name: Install slither
+        run: |
+          pip3 install slither-analyzer
+      - name: Install solc-select
+        run: |
+          pip3 install solc-select
+      - name: Set solc v0.7.6
+        run: |
+          solc-select install 0.7.6
+          solc-select use 0.7.6
+      - name: Install echidna
+        run: |
+          sudo wget -O /tmp/echidna-test.tar.gz https://github.com/crytic/echidna/releases/download/v1.7.1/echidna-test-1.7.1-Ubuntu-18.04.tar.gz
+          sudo tar -xf /tmp/echidna-test.tar.gz -C /usr/bin
+          sudo chmod +x /usr/bin/echidna-test
+      - name: Fuzz tests
+        run: npm run fuzz
