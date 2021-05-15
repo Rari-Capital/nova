@@ -120,4 +120,4 @@ jobs:
           sudo tar -xf /tmp/echidna-test.tar.gz -C /usr/bin
           sudo chmod +x /usr/bin/echidna-test
       - name: Fuzz tests
-        run: npm run fuzz
+        run: npm run fuzz --check-asserts

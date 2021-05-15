@@ -3,5 +3,5 @@ coverage: false
 codeSize: 0x60000
 corpusDir: contracts/echidna/echidna_corpus
 seqLen: 1
-testLimit: 100000
+testLimit: 500000
 timeout: 3600 # 1 hour
