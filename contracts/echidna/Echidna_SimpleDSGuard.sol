@@ -4,7 +4,7 @@ pragma solidity 0.7.6;
 import "../external/SimpleDSGuard.sol";
 
 contract Echidna_SimpleDSGuard {
-    SimpleDSGuard guard;
+    SimpleDSGuard internal guard;
 
     constructor() {
         guard = new SimpleDSGuard();
@@ -15,7 +15,7 @@ contract Echidna_SimpleDSGuard {
         bytes4 sig,
         address user2
     ) public {
-        if (user1 == user2) {
+        if (user1 == user2 || sig == guard.ANY() || user1 == address(bytes20(guard.ANY()))) {
             return;
         }
 
@@ -24,6 +24,7 @@ contract Echidna_SimpleDSGuard {
         assert(guard.canCall(user1, address(0), sig));
         // Does not conflict with other users:
         assert(!guard.canCall(user2, address(0), sig));
+        // Does not conflict with other signatures:
 
         guard.forbid(user1, sig);
         // Works as expected:
@@ -37,7 +38,7 @@ contract Echidna_SimpleDSGuard {
         bytes4 sig,
         address user2
     ) public {
-        if (user1 == user2) {
+        if (user1 == user2 || user1 == address(bytes20(guard.ANY()))) {
             return;
         }
 
@@ -59,20 +60,20 @@ contract Echidna_SimpleDSGuard {
         bytes4 otherSig,
         address user1
     ) public {
-        if (otherSig == sig) {
+        if (otherSig == sig || sig == guard.ANY()) {
             return;
         }
 
         guard.permitAnySource(sig);
         // Works as expected:
         assert(guard.canCall(user1, address(0), sig));
-        // Does not conflict with other users:
+        // Does not conflict with other sigs:
         assert(!guard.canCall(user1, address(0), otherSig));
 
         guard.forbidAnySource(sig);
         // Works as expected:
         assert(!guard.canCall(user1, address(0), sig));
-        // Does not conflict with other users:
+        // Does not conflict with other sigs:
         assert(!guard.canCall(user1, address(0), otherSig));
     }
 }
