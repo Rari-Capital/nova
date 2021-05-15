@@ -10,7 +10,7 @@ contract SimpleDSGuard is DSAuth, DSAuthority {
 
     event LogForbid(bytes32 indexed src, bytes32 indexed sig);
 
-    bytes4 public constant ANY = bytes4(bytes32(uint256(-1)));
+    bytes4 public constant ANY = 0xffffffff;
 
     mapping(bytes32 => mapping(bytes4 => bool)) acl;
 
@@ -31,12 +31,16 @@ contract SimpleDSGuard is DSAuth, DSAuthority {
         emit LogPermit(src, sig);
     }
 
-    function permit(address src, bytes4 sig) external {
+    function permit(address src, bytes4 sig) public {
         permitBytes(bytes32(bytes20(src)), sig);
     }
 
     function permitAnySource(bytes4 sig) external {
         permitBytes(ANY, sig);
+    }
+
+    function permitSourceToCallAny(address src) external {
+        permit(src, ANY);
     }
 
     // Forbid //
@@ -46,11 +50,15 @@ contract SimpleDSGuard is DSAuth, DSAuthority {
         emit LogForbid(src, sig);
     }
 
-    function forbid(address src, bytes4 sig) external {
+    function forbid(address src, bytes4 sig) public {
         forbidBytes(bytes32(bytes20(src)), sig);
     }
 
     function forbidAnySource(bytes4 sig) external {
         forbidBytes(ANY, sig);
+    }
+
+    function forbidSourceToCallAny(address src) external {
+        forbid(src, ANY);
     }
 }
