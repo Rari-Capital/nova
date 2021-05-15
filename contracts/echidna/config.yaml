@@ -1,7 +1,12 @@
 checkAsserts: true
 coverage: false
-codeSize: 0x60000
 corpusDir: contracts/echidna/echidna_corpus
-seqLen: 1
+seqLen: 3
 testLimit: 500000
 timeout: 3600 # 1 hour
+
+cryticArgs:
+  [
+    "--solc-remaps",
+    "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/ @eth-optimism/contracts/=node_modules/@eth-optimism/contracts/ ovm-safeerc20/=node_modules/ovm-safeerc20/",
+  ]

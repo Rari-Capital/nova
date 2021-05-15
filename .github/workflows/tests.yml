@@ -76,6 +76,12 @@ jobs:
 
   echidna:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        testName:
+          - L1_NovaExecutionManager
+          - SimpleDSGuard
 
     steps:
       - uses: actions/checkout@v2
@@ -119,5 +125,5 @@ jobs:
           sudo wget -O /tmp/echidna-test.tar.gz https://github.com/crytic/echidna/releases/download/v1.7.1/echidna-test-1.7.1-Ubuntu-18.04.tar.gz
           sudo tar -xf /tmp/echidna-test.tar.gz -C /usr/bin
           sudo chmod +x /usr/bin/echidna-test
-      - name: Fuzz tests
-        run: npm run fuzz -- --check-asserts
+      - name: Fuzz ${{ matrix.testName }}
+        run: npm run fuzz ${{ matrix.testName }}
