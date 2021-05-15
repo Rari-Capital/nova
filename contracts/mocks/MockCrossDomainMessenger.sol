@@ -9,11 +9,7 @@ contract MockCrossDomainMessenger {
         address sender;
     }
 
-    xDomainMessage currentMessage;
-
-    function xDomainMessageSender() external view returns (address) {
-        return currentMessage.sender;
-    }
+    xDomainMessage public currentMessage;
 
     function sendMessage(
         address _target,
@@ -29,23 +25,5 @@ contract MockCrossDomainMessenger {
         while (startingGas - gasleft() < gasToConsume) {
             i++;
         }
-    }
-
-    function relayCurrentMessage() external {
-        (bool success, bytes memory result) = currentMessage._target.call(currentMessage._message);
-
-        require(success, _getRevertMsg(result));
-        delete currentMessage;
-    }
-
-    function _getRevertMsg(bytes memory _returnData) private pure returns (string memory) {
-        // If the _res length is less than 68, then the transaction failed silently (without a revert message)
-        if (_returnData.length < 68) return "Transaction reverted silently";
-
-        assembly {
-            // Slice the sighash.
-            _returnData := add(_returnData, 0x04)
-        }
-        return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 }
