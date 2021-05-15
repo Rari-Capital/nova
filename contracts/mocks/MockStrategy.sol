@@ -30,6 +30,14 @@ contract MockStrategy {
         L1_NovaExecutionManager(msg.sender).transferFromRelayer(token, amount);
     }
 
+    function thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
+        address executionManager,
+        address token,
+        uint256 amount
+    ) external {
+        L1_NovaExecutionManager(executionManager).transferFromRelayer(token, amount);
+    }
+
     function thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(address token, uint256 amount)
         external
     {

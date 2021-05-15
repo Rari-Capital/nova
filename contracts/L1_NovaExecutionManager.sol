@@ -9,7 +9,6 @@ import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./L2_NovaRegistry.sol";
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
-import "hardhat/console.sol";
 
 contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
     /// @dev The revert message text used to cause a hard revert.
@@ -38,7 +37,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     address public currentExecutor;
     /// @dev The address of the strategy that is currenlty being called.
     /// @dev This will not be reset to address(0) after each execution completes.
-    address public currentlyExecutingStrategy;
+    address private currentlyExecutingStrategy;
 
     /// @notice Convience function that `execWithRecipient` with all relevant arguments and sets the l2Recipient to msg.sender.
     function exec(
@@ -110,7 +109,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     function transferFromRelayer(address token, uint256 amount) external auth {
         // Only the currently executing strategy is allowed to call this method.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
-        require(currentExecHash.length > 0 && msg.sender == currentlyExecutingStrategy, "NOT_EXECUTING");
+        require(msg.sender == currentlyExecutingStrategy && currentExecHash != "", "NOT_EXECUTING");
 
         // Transfer the token from the relayer the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
         (bool success, bytes memory returndata) =

@@ -317,9 +317,17 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will not allow anyone to call if not executing", async function () {
-      L1_NovaExecutionManager.transferFromRelayer(
+      await L1_NovaExecutionManager.transferFromRelayer(
         MockERC20.address,
         0
+      ).should.be.revertedWith("NOT_EXECUTING");
+    });
+
+    it("will not allow the prevous strategy to call if not executing", async function () {
+      await MockStrategy.thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
+        L1_NovaExecutionManager.address,
+        MockERC20.address,
+        1
       ).should.be.revertedWith("NOT_EXECUTING");
     });
 
