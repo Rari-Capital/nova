@@ -22,6 +22,12 @@ npm run unit-tests
 npm run coverage
 ```
 
+## Update Gas Snapshot
+
+```bash
+npm run gas-changed
+```
+
 ## Integration Tests
 [You must start up an instance of Optimism's "ops" repo before running integration tests.](https://github.com/ethereum-optimism/optimism/tree/develop/ops)
 
