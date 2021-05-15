@@ -8,7 +8,7 @@ Nova is a **set of contracts** & **network of relayers** that empowers users/con
 
 ---
 
-<img align="right" src="https://user-images.githubusercontent.com/26209401/116805216-c5e9ef80-aad9-11eb-81c8-06dcb2468c9c.png" alt="drawing" width="600"/>
+<img align="right" src="https://user-images.githubusercontent.com/26209401/116805216-c5e9ef80-aad9-11eb-81c8-06dcb2468c9c.png" alt="drawing" width="500"/>
 
 ## Unit Tests
 
