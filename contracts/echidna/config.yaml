@@ -1,5 +1,5 @@
 checkAsserts: true
-coverage: true
+coverage: false
 codeSize: 0x60000
 corpusDir: contracts/echidna/echidna_corpus
 seqLen: 1
