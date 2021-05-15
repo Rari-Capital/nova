@@ -12,7 +12,7 @@ contract SimpleDSGuard is DSAuth, DSAuthority {
 
     bytes4 public constant ANY = 0xffffffff;
 
-    mapping(bytes32 => mapping(bytes4 => bool)) acl;
+    mapping(bytes32 => mapping(bytes4 => bool)) internal acl;
 
     function canCall(
         address src_,
@@ -24,15 +24,26 @@ contract SimpleDSGuard is DSAuth, DSAuthority {
         return acl[ANY][sig] || acl[src][sig] || acl[src][ANY] || acl[ANY][ANY];
     }
 
-    // Permit //
+    // Internal Utils //
 
-    function permitBytes(bytes32 src, bytes4 sig) public auth {
+    function permitBytes(bytes32 src, bytes4 sig) internal auth {
         acl[src][sig] = true;
         emit LogPermit(src, sig);
     }
 
+    function forbidBytes(bytes32 src, bytes4 sig) internal auth {
+        acl[src][sig] = false;
+        emit LogForbid(src, sig);
+    }
+
+    function addressToBytes32(address src) internal pure returns (bytes32) {
+        return bytes32(bytes20(src));
+    }
+
+    // Permit Public API //
+
     function permit(address src, bytes4 sig) public {
-        permitBytes(bytes32(bytes20(src)), sig);
+        permitBytes(addressToBytes32(src), sig);
     }
 
     function permitAnySource(bytes4 sig) external {
@@ -43,15 +54,10 @@ contract SimpleDSGuard is DSAuth, DSAuthority {
         permit(src, ANY);
     }
 
-    // Forbid //
-
-    function forbidBytes(bytes32 src, bytes4 sig) public auth {
-        acl[src][sig] = false;
-        emit LogForbid(src, sig);
-    }
+    // Forbid Public API //
 
     function forbid(address src, bytes4 sig) public {
-        forbidBytes(bytes32(bytes20(src)), sig);
+        forbidBytes(addressToBytes32(src), sig);
     }
 
     function forbidAnySource(bytes4 sig) external {
