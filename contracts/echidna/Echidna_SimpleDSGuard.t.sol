@@ -25,7 +25,6 @@ contract Echidna_SimpleDSGuard {
         assert(guard.canCall(user1, address(0), sig));
         // Does not conflict with other users:
         assert(!guard.canCall(user2, address(0), sig));
-        // Does not conflict with other signatures:
 
         guard.forbid(user1, sig);
         // Works as expected:
