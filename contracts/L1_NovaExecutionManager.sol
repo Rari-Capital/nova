@@ -41,7 +41,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
 
     /// @notice Convience function that `execWithRecipient` with all relevant arguments and sets the l2Recipient to msg.sender.
     function exec(
-        uint72 nonce,
+        uint256 nonce,
         address strategy,
         bytes calldata l1calldata
     ) external {
@@ -54,7 +54,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @param l1calldata The calldata associated with the request.
     /// @param l2Recipient The address of the account on L2 to recieve the tip/inputs.
     function execWithRecipient(
-        uint72 nonce,
+        uint256 nonce,
         address strategy,
         bytes calldata l1calldata,
         address l2Recipient

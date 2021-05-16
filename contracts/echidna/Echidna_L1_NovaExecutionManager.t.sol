@@ -27,7 +27,7 @@ contract Echidna_L1_NovaExecutionManager {
     }
 
     function exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
-        uint72 nonce,
+        uint256 nonce,
         address strategy,
         bytes calldata l1calldata
     ) public {

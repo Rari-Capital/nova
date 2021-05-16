@@ -22,7 +22,7 @@ export function computeExecHash({
   gasPrice: number | BigNumber;
 }) {
   return ethers.utils.solidityKeccak256(
-    ["uint72", "address", "bytes", "uint256"],
+    ["uint256", "address", "bytes", "uint256"],
     [nonce, strategy, calldata, gasPrice]
   );
 }

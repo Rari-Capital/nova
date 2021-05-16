@@ -106,13 +106,13 @@ describe("L1_NovaExecutionManager", function () {
       it("should properly permit authorization for specific functions", async function () {
         await SimpleDSGuard.permitAnySource(
           L1_NovaExecutionManager.interface.getSighash(
-            "execWithRecipient(uint72,address,bytes,address)"
+            "execWithRecipient(uint256,address,bytes,address)"
           )
         );
 
         await SimpleDSGuard.permitAnySource(
           L1_NovaExecutionManager.interface.getSighash(
-            "exec(uint72,address,bytes)"
+            "exec(uint256,address,bytes)"
           )
         );
 

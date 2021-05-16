@@ -64,13 +64,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     }
 
     /// @dev The most recent nonce assigned to an execution request.
-    uint72 private systemNonce;
+    uint256 private systemNonce;
 
     /// @dev Maps execHashes to the creator of each request.
     mapping(bytes32 => address) private requestCreators;
     /// @dev Maps execHashes to the nonce of each request.
     /// @dev This is just for convenience, does not need to be on-chain.
-    mapping(bytes32 => uint72) private requestNonces;
+    mapping(bytes32 => uint256) private requestNonces;
     /// @dev Maps execHashes to the address of the strategy associated with the request.
     mapping(bytes32 => address) private requestStrategies;
     /// @dev Maps execHashes to the calldata associated with the request.
@@ -110,7 +110,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
             uint256 tip,
             InputToken[] memory inputTokens,
             // Other data:
-            uint72 nonce,
+            uint256 nonce,
             address creator,
             bytes32 uncle,
             // Can be fetched via `isExecutable`:
