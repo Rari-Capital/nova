@@ -17,7 +17,7 @@ contract Echidna_L2_NovaRegistry {
         mockCrossDomainMessenger = new MockCrossDomainMessenger();
         mockETH = new MockERC20();
         registry = new L2_NovaRegistry(address(mockETH), address(mockCrossDomainMessenger));
-        registry.connectExecutionManager(address(1));
+        registry.connectExecutionManager(L2_NovaRegistryAddress);
     }
 
     function should_never_be_able_to_reconnect_execution_manager(address fake) public {
