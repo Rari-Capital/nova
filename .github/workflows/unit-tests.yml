@@ -1,0 +1,40 @@
+name: Unit Tests
+
+on: [push, pull_request]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache node_modules
+        id: node-cache
+        uses: actions/cache@v2
+        with:
+          path: "**/node_modules"
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-cache.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: Compile contracts
+        run: npm run compile
+
+      - name: Run unit tests
+        run: npm run unit-tests
+
+      - name: Run unit tests with coverage
+        run: CI= npm run coverage # Unset CI variable so the gas changes don't fail the step
+
+      - name: Upload report to Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }} # This is passed by Github, don't worry about setting this.
+
+      - name: Run Codechecks
+        run: npx codechecks
+        env:
+          CC_SECRET: ${{ secrets.CC_SECRET }}
