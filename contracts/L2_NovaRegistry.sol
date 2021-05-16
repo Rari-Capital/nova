@@ -28,10 +28,10 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         ETH = IERC20(_ETH);
     }
 
-    /// @notice Can only be called once. Authorizes the `_L1_NovaExecutionManagerAddress` to make cross domain calls to `execCompleted`.
+    /// @notice Authorizes the `_L1_NovaExecutionManagerAddress` to make cross domain calls to `execCompleted`.
+    /// @notice Each call to `connectExecutionManager` overrides the previous value, you cannot have multiple authorized execution managers at once.
     /// @param _L1_NovaExecutionManagerAddress The address to be authorized to make cross domain calls to `execCompleted`.
-    function connectExecutionManager(address _L1_NovaExecutionManagerAddress) external {
-        require(L1_NovaExecutionManagerAddress == address(0), "ALREADY_INITIALIZED");
+    function connectExecutionManager(address _L1_NovaExecutionManagerAddress) external auth {
         L1_NovaExecutionManagerAddress = _L1_NovaExecutionManagerAddress;
     }
 

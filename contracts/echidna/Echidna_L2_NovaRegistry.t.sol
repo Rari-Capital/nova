@@ -11,22 +11,16 @@ contract Echidna_L2_NovaRegistry {
     MockCrossDomainMessenger internal mockCrossDomainMessenger;
     MockERC20 internal mockETH;
 
-    address internal constant L2_NovaRegistryAddress = address(1);
-
     constructor() {
         mockCrossDomainMessenger = new MockCrossDomainMessenger();
         mockETH = new MockERC20();
         registry = new L2_NovaRegistry(address(mockETH), address(mockCrossDomainMessenger));
-        registry.connectExecutionManager(L2_NovaRegistryAddress);
+        registry.connectExecutionManager(address(1));
     }
 
-    function should_never_be_able_to_reconnect_execution_manager(address fake) public {
-        try registry.connectExecutionManager(fake) {
-            // If the call succeeded, something is wrong:
-            assert(false);
-        } catch Error(string memory reason) {
-            /// If the called errored, it should be a ALREADY_INITIALIZED error. If not, something is wrong:
-            assert(keccak256(abi.encodePacked(reason)) == keccak256("ALREADY_INITIALIZED"));
-        }
+    function should_always_be_able_connect_execution_manager(address newExecutionManager) public {
+        registry.connectExecutionManager(newExecutionManager);
+
+        assert(registry.L1_NovaExecutionManagerAddress() == newExecutionManager);
     }
 }
