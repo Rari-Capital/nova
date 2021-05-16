@@ -81,6 +81,7 @@ jobs:
       matrix:
         testName:
           - L1_NovaExecutionManager
+          - L2_NovaRegistry
           - SimpleDSGuard
 
     steps:
