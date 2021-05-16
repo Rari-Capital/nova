@@ -7,6 +7,14 @@ contract MockCrossDomainMessenger {
     uint32 public latestGasLimit;
     address public latestSender;
 
+    function xDomainMessageSender() external view returns (address) {
+        return latestSender;
+    }
+
+    function setSender(address newSender) public {
+        latestSender = newSender;
+    }
+
     function sendMessage(
         address _target,
         bytes memory _message,
@@ -24,10 +32,6 @@ contract MockCrossDomainMessenger {
         while (startingGas - gasleft() < gasToConsume) {
             i++;
         }
-    }
-
-    function xDomainMessageSender() external view returns (address) {
-        return latestSender;
     }
 
     function relayCurrentMessage() external {
