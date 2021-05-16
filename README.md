@@ -1,10 +1,12 @@
-<h1 align="center">Nova<br><a href='https://coveralls.io/github/Rari-Capital/nova?branch=master'><img src='https://coveralls.io/repos/github/Rari-Capital/nova/badge.svg?branch=master' alt='Coverage Status' /></a> <a href="https://github.com/Rari-Capital/nova/actions/workflows/tests.yml"><img src="https://github.com/Rari-Capital/nova/actions/workflows/tests.yml/badge.svg"/></a></h1>  
+# Nova
+
+[![Coverage Status](https://coveralls.io/repos/github/Rari-Capital/nova/badge.svg?branch=master)](https://coveralls.io/github/Rari-Capital/nova?branch=master) [![Fuzz Tests](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml) [![Integration Tests](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml) [![Unit Tests](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml) 
 
 Nova is a **set of contracts** & **network of relayers** that empowers users/contracts to seamlessly interact with L1 contracts + liquidity **without leaving L2** in a trustless and **composable** manner.
 
 ---
 
-<p align="center"> Deatiled developer docs are available at: https://docs.rari.capital/nova </h1>
+<p align="center"><b> Detailed developer docs are available at: https://docs.rari.capital/nova </b></h1>
 
 ---
 
