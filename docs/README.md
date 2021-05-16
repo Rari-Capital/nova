@@ -12,7 +12,7 @@
 
 - The execution manager will call a specific strategy contract which can send tokens up to L2 via a bridge.
 
-- After executing a request, the Nova Execution Manager sends a confirmation up to L2 to unlock the bounty for the relayer.
+- After executing a request, the Nova xecution manager sends a confirmation up to L2 to unlock the bounty for the relayer.
 
 ## L2_NovaRegistry
 
