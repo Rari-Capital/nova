@@ -6,7 +6,7 @@ Nova is a **set of contracts** & **network of relayers** that empowers users/con
 
 ---
 
-<p align="center"><b> Deatiled developer docs are available at: https://docs.rari.capital/nova </b></h1>
+<p align="center"><b> Detailed developer docs are available at: https://docs.rari.capital/nova </b></h1>
 
 ---
 
