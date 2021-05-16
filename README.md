@@ -45,4 +45,4 @@ npm run fuzz {{CONTRACT_NAME}}
 ```
 Replace `{{CONTRACT_NAME}}` with the name of a contract that is fuzzed in `contracts/echidna`. A full list can be found here:
 
-https://github.com/Rari-Capital/nova/blob/master/.github/workflows/tests.yml#L82-L84
+https://github.com/Rari-Capital/nova/blob/3dd8d319dd045aeaedcacfeb337ccbed2d66354c/.github/workflows/fuzz.yml#L12-L14
