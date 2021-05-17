@@ -42,7 +42,7 @@ struct InputToken {
 function requestExec(address strategy, bytes calldata l1calldata, uint256 gasLimit, uint256 gasPrice, uint256 tip, InputToken[] calldata inputTokens) public returns (bytes32 execHash)
 ```
 
-This function allows a user to request a strategy to be executed.
+This function allows a user/contract to request a strategy to be executed.
 
 It will first increment the contract's nonce (which is to prevent duplicate execution requests from having the same `execHash`) then transfer in all the `InputToken`s (**all must be approved to the registry by the caller**), and the amount of ETH neccessary to pay for the max amount of gas used + the tip.
 
