@@ -207,7 +207,7 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("respects the deadline", async function () {
-      L1_NovaExecutionManager.exec(
+      await L1_NovaExecutionManager.exec(
         3,
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
