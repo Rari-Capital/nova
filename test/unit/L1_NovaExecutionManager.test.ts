@@ -206,10 +206,20 @@ describe("L1_NovaExecutionManager", function () {
       ).should.not.be.reverted;
     });
 
+    it("respects the deadline", async function () {
+      L1_NovaExecutionManager.exec(
+        3,
+        MockStrategy.address,
+        MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        // Set a deadline 5 seconds in the past
+        Math.floor(Date.now() / 1000) - 5
+      ).should.be.revertedWith("PAST_DEADLINE");
+    });
+
     it("should properly execute a minimal exec", async function () {
       await snapshotGasCost(
         L1_NovaExecutionManager.exec(
-          2,
+          4,
           MockStrategy.address,
           MockStrategy.interface.encodeFunctionData(
             "thisFunctionWillNotRevert"
@@ -222,7 +232,7 @@ describe("L1_NovaExecutionManager", function () {
     it("should properly execute a stateful exec", async function () {
       await snapshotGasCost(
         L1_NovaExecutionManager.exec(
-          3,
+          5,
           MockStrategy.address,
           MockStrategy.interface.encodeFunctionData(
             "thisFunctionWillModifyState"
@@ -245,7 +255,7 @@ describe("L1_NovaExecutionManager", function () {
 
       await snapshotGasCost(
         L1_NovaExecutionManager.exec(
-          4,
+          6,
           MockStrategy.address,
           MockStrategy.interface.encodeFunctionData(
             "thisFunctionWillTransferFromRelayer",
@@ -264,7 +274,7 @@ describe("L1_NovaExecutionManager", function () {
 
     it("will hard revert if tokens were not approved", async function () {
       await L1_NovaExecutionManager.exec(
-        4,
+        7,
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
@@ -282,7 +292,7 @@ describe("L1_NovaExecutionManager", function () {
       ).deploy();
 
       await L1_NovaExecutionManager.exec(
-        5,
+        8,
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
@@ -298,7 +308,7 @@ describe("L1_NovaExecutionManager", function () {
       ).deploy();
 
       await L1_NovaExecutionManager.exec(
-        6,
+        9,
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
@@ -316,7 +326,7 @@ describe("L1_NovaExecutionManager", function () {
       ).deploy();
 
       await L1_NovaExecutionManager.exec(
-        7,
+        10,
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",

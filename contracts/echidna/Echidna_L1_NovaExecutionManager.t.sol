@@ -29,16 +29,20 @@ contract Echidna_L1_NovaExecutionManager {
     function exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
         uint256 nonce,
         address strategy,
-        bytes calldata l1calldata
+        bytes calldata l1calldata,
+        uint256 deadline
     ) public {
-        executionManager.exec(nonce, strategy, l1calldata, type(uint256).max);
+        try executionManager.exec(nonce, strategy, l1calldata, deadline) {
+            // ExecHash should always be reset:
+            assert(executionManager.currentExecHash() == "");
 
-        // ExecHash should always be reset:
-        assert(executionManager.currentExecHash() == "");
-
-        // xDomain constants should always be as expected:
-        assert(mockCrossDomainMessenger.latestTarget() == L2_NovaRegistryAddress);
-        assert(mockCrossDomainMessenger.latestSender() == address(executionManager));
-        assert(mockCrossDomainMessenger.latestGasLimit() == executionManager.execCompletedGasLimit());
+            // xDomain constants should always be as expected:
+            assert(mockCrossDomainMessenger.latestTarget() == L2_NovaRegistryAddress);
+            assert(mockCrossDomainMessenger.latestSender() == address(executionManager));
+            assert(mockCrossDomainMessenger.latestGasLimit() == executionManager.execCompletedGasLimit());
+        } catch {
+            // If it reverted, it should be because the deadline was in the past, if not, something is wrong:
+            assert(deadline < block.timestamp);
+        }
     }
 }
