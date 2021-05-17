@@ -253,7 +253,7 @@ This function returns the current "executor" (address that made the current call
 function transferFromExecutor(address token, uint256 amount) external
 ```
 
-This function transfers tokens the calling relayer (the account that called `execute`) has approved to the execution manager to the currently executing `strategy`.
+This function transfers tokens the calling relayer (the account that called `exec`/`execWithRecipient`) has approved to the execution manager to the currently executing `strategy`.
 
 ::: danger
 Only the currently executing `strategy` can call this function.
