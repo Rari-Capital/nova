@@ -102,7 +102,7 @@ A user cannot call this function unless they have already called `cancel` and wa
 function bumpGas(bytes32 execHash, uint256 gasPrice) external returns (bytes32 newExecHash)
 ```
 
-`bumpGas` allows a user to increase the gas price for their execution request without having to `cancel`, `withdraw` and call `requestExec` again. Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (this is known as the "uncled" request) and enabling an updated version of the request (this is known as the resubmitted request which can be found under `newExecHash`).
+`bumpGas` allows a user/contract to increase the gas price for their request without having to `cancel`, `withdraw` and call `requestExec` again. Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (this is known as the "uncled" request) and enabling an updated version of the request (this is known as the resubmitted request which can be found under `newExecHash`).
 
 ::: danger
 A relayer can still execute the uncled request associated with the `execHash` up until the delay has passed.
