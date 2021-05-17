@@ -324,7 +324,7 @@ An important property of Nova is that it is censorship resistant. There is no si
 
 However, considering that many of these requests will come with a tip that makes the request profitable beyond the maximum gas it takes to execute them, it is natural for multiple relayers to engage in PGAs to extract profit from as many strategies that they can.
 
-The profits from these PGAs don't go to the Nova platform or users who request execution, they go to **miners** who contribute no value to the protocol.
+The profits from these PGAs don't go to the Nova protocol or users who request execution, they go to **miners/arb-bots** who contribute no value to the protocol.
 
 ### MEV Auctions (MEVA)
 
