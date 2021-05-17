@@ -2,7 +2,7 @@ checkAsserts: true
 coverage: false
 corpusDir: contracts/echidna/echidna_corpus
 seqLen: 3
-testLimit: 50000
+testLimit: 100000
 timeout: 19800 # 5.5 hours
 
 cryticArgs: # If we add more dependencies they will need to be added as symlinks here!
