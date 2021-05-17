@@ -31,7 +31,7 @@ contract Echidna_L1_NovaExecutionManager {
         address strategy,
         bytes calldata l1calldata
     ) public {
-        executionManager.exec(nonce, strategy, l1calldata);
+        executionManager.exec(nonce, strategy, l1calldata, type(uint256).max);
 
         // ExecHash should always be reset:
         assert(executionManager.currentExecHash() == "");

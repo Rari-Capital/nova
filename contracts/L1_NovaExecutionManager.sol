@@ -43,9 +43,17 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     function exec(
         uint256 nonce,
         address strategy,
-        bytes calldata l1calldata
+        bytes calldata l1calldata,
+        uint256 deadline
     ) external {
-        execWithRecipient(nonce, strategy, l1calldata, msg.sender);
+        execWithRecipient(nonce, strategy, l1calldata, msg.sender, deadline);
+    }
+
+    /// @dev Validates if a deadline timestamp is beyond the current block's timestamp.
+    /// @param deadline Timestamp after which the transaction will revert.
+    modifier validateDeadline(uint256 deadline) {
+        require(block.timestamp <= deadline, "PAST_DEADLINE");
+        _;
     }
 
     /// @notice Executes a request and sends tip/inputs to a specific address.
@@ -53,12 +61,14 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @param strategy The strategy requested in the request.
     /// @param l1calldata The calldata associated with the request.
     /// @param l2Recipient The address of the account on L2 to recieve the tip/inputs.
+    /// @param deadline Timestamp after which the transaction will revert.
     function execWithRecipient(
         uint256 nonce,
         address strategy,
         bytes calldata l1calldata,
-        address l2Recipient
-    ) public nonReentrant auth {
+        address l2Recipient,
+        uint256 deadline
+    ) public validateDeadline(deadline) nonReentrant auth {
         uint256 startGas = gasleft();
 
         // Compute the execHash.

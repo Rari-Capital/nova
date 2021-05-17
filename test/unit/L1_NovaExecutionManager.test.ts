@@ -106,13 +106,13 @@ describe("L1_NovaExecutionManager", function () {
       it("should properly permit authorization for specific functions", async function () {
         await SimpleDSGuard.permitAnySource(
           L1_NovaExecutionManager.interface.getSighash(
-            "execWithRecipient(uint256,address,bytes,address)"
+            "execWithRecipient(uint256,address,bytes,address, uint256)"
           )
         );
 
         await SimpleDSGuard.permitAnySource(
           L1_NovaExecutionManager.interface.getSighash(
-            "exec(uint256,address,bytes)"
+            "exec(uint256,address,bytes, uint256)"
           )
         );
 
@@ -179,7 +179,8 @@ describe("L1_NovaExecutionManager", function () {
       await L1_NovaExecutionManager.exec(
         0,
         MockStrategy.address,
-        MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert")
+        MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        9999999999999
       ).should.not.be.reverted;
     });
 
@@ -187,7 +188,8 @@ describe("L1_NovaExecutionManager", function () {
       await L1_NovaExecutionManager.exec(
         1,
         MockStrategy.address,
-        MockStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert")
+        MockStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert"),
+        9999999999999
       ).should.be.revertedWith(
         await L1_NovaExecutionManager.HARD_REVERT_TEXT()
       );
@@ -198,7 +200,8 @@ describe("L1_NovaExecutionManager", function () {
         L1_NovaExecutionManager.exec(
           2,
           MockStrategy.address,
-          MockStrategy.interface.encodeFunctionData("thisFunctionWillRevert")
+          MockStrategy.interface.encodeFunctionData("thisFunctionWillRevert"),
+          9999999999999
         )
       ).should.not.be.reverted;
     });
@@ -208,7 +211,10 @@ describe("L1_NovaExecutionManager", function () {
         L1_NovaExecutionManager.exec(
           2,
           MockStrategy.address,
-          MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert")
+          MockStrategy.interface.encodeFunctionData(
+            "thisFunctionWillNotRevert"
+          ),
+          9999999999999
         )
       ).should.not.be.reverted;
     });
@@ -220,7 +226,8 @@ describe("L1_NovaExecutionManager", function () {
           MockStrategy.address,
           MockStrategy.interface.encodeFunctionData(
             "thisFunctionWillModifyState"
-          )
+          ),
+          9999999999999
         )
       ).should.not.be.reverted;
 
@@ -243,7 +250,8 @@ describe("L1_NovaExecutionManager", function () {
           MockStrategy.interface.encodeFunctionData(
             "thisFunctionWillTransferFromRelayer",
             [MockERC20.address, weiAmount]
-          )
+          ),
+          9999999999999
         )
       )
         .should.emit(MockERC20, "Transfer")
@@ -261,7 +269,8 @@ describe("L1_NovaExecutionManager", function () {
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [MockERC20.address, ethers.utils.parseEther("9999999")]
-        )
+        ),
+        9999999999999
       ).should.be.revertedWith(
         await L1_NovaExecutionManager.HARD_REVERT_TEXT()
       );
@@ -278,7 +287,8 @@ describe("L1_NovaExecutionManager", function () {
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [NoReturnValueERC20.address, 0]
-        )
+        ),
+        9999999999999
       ).should.not.be.reverted;
     });
 
@@ -293,7 +303,8 @@ describe("L1_NovaExecutionManager", function () {
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [BadReturnValueERC20.address, 0]
-        )
+        ),
+        9999999999999
       ).should.be.revertedWith(
         await L1_NovaExecutionManager.HARD_REVERT_TEXT()
       );
@@ -310,7 +321,8 @@ describe("L1_NovaExecutionManager", function () {
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [ReturnFalseERC20.address, 0]
-        )
+        ),
+        9999999999999
       ).should.be.revertedWith(
         await L1_NovaExecutionManager.HARD_REVERT_TEXT()
       );
@@ -346,7 +358,8 @@ describe("L1_NovaExecutionManager", function () {
         MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens",
           [MockERC20.address, weiAmount]
-        )
+        ),
+        9999999999999
       ).should.not.emit(MockERC20, "Transfer");
 
       // Balance should not change.
