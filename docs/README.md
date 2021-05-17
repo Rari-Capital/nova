@@ -315,7 +315,7 @@ function swapExactTokensForTokens(
 ## Future MEV Extraction Mechanism
 
 ::: danger NOT IMPLEMENTED (YET)
-The mechanism explained below is not currently implemented, but will be in a future iteration of Nova.
+The mechanism explained below is not currently implemented, but will be in a future iteration of the Nova protocol.
 :::
 
 ### Background
