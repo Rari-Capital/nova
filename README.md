@@ -4,9 +4,11 @@
 
 Nova is a **set of contracts** & **network of relayers** that empowers users/contracts to seamlessly interact with L1 contracts + liquidity **without leaving L2** in a trustless and **composable** manner.
 
----
+## Resources
 
-<p align="center"><b> Detailed developer docs are available at: https://docs.rari.capital/nova </b></h1>
+- **[Developer docs + integration guide](https://docs.rari.capital/nova)**
+
+- [Technical specification/whitepaper](/docs/spec.md)
 
 ---
 
