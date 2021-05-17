@@ -14,6 +14,8 @@
 
 - After executing a request, the Nova execution manager sends a confirmation up to L2 to unlock the bounty for the relayer.
 
+**[Read our whitepaper/technical specification to learn more!](https://github.com/rari-capital/nova/blob/master/docs/spec.md)**
+
 ## L2_NovaRegistry
 
 This is the "user facing" contract of Nova. Users can use this contract to [request execution of different strategies](#request-execution), [cancel their requests](#cancel-execution-request), [withdraw their tokens](#withdraw-tip-input-tokens), and [bump the gas price of their requests](#bump-request-gas-price).
