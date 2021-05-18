@@ -2,7 +2,7 @@
 pragma solidity 0.7.6;
 
 /// @notice Utility base to compute a Nova execHash from a nonce, strategy address, calldata and gas price.
-abstract contract NovaExecHash {
+abstract contract ComputeNovaExecHash {
     /// @notice Computes a Nova execHash from a nonce, strategy address, calldata and gas price.
     /// @return A Nova execHash.
     function computeExecHash(
