@@ -10,7 +10,7 @@ abstract contract NovaExecHash {
         address strategy,
         bytes memory l1calldata,
         uint256 gasPrice
-    ) internal pure returns (bytes32) {
+    ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(nonce, strategy, l1calldata, gasPrice));
     }
 }
