@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
+import "./libraries/NovaExecHash.sol";
 
 contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
     using OVM_SafeERC20 for IERC20;
@@ -67,69 +68,34 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     uint256 private systemNonce;
 
     /// @dev Maps execHashes to the creator of each request.
-    mapping(bytes32 => address) private requestCreators;
+    mapping(bytes32 => address) public getRequestCreator;
+    /// @dev Maps execHashes to the address of the strategy associated with the request.
+    mapping(bytes32 => address) public getRequestStrategy;
+    /// @dev Maps execHashes to the calldata associated with the request.
+    mapping(bytes32 => bytes) public getRequestCalldata;
+    /// @dev Maps execHashes to the gas limit a relayer should use to execute the request.
+    mapping(bytes32 => uint64) public getRequestGasLimit;
+    /// @dev Maps execHashes to the gas price a relayer must use to execute the request.
+    mapping(bytes32 => uint256) public getRequestGasPrice;
+    /// @dev Maps execHashes to the additional tip in wei relayers will receive for executing them.
+    mapping(bytes32 => uint256) public getRequestTip;
+    /// @dev Maps execHashes to the input tokens a relayer must have to execute the request.
+    mapping(bytes32 => InputToken[]) public getRequestInputTokens;
     /// @dev Maps execHashes to the nonce of each request.
     /// @dev This is just for convenience, does not need to be on-chain.
-    mapping(bytes32 => uint256) private requestNonces;
-    /// @dev Maps execHashes to the address of the strategy associated with the request.
-    mapping(bytes32 => address) private requestStrategies;
-    /// @dev Maps execHashes to the calldata associated with the request.
-    mapping(bytes32 => bytes) private requestCalldatas;
-    /// @dev Maps execHashes to the gas limit a relayer should use to execute the request.
-    mapping(bytes32 => uint64) private requestGasLimits;
-    /// @dev Maps execHashes to the gas price a relayer must use to execute the request.
-    mapping(bytes32 => uint256) private requestGasPrices;
-    /// @dev Maps execHashes to the additional tip in wei relayers will receive for executing them.
-    mapping(bytes32 => uint256) private requestTips;
-    /// @dev Maps execHashes to the input tokens a relayer must have to execute the request.
-    mapping(bytes32 => InputToken[]) private requestInputTokens;
+    mapping(bytes32 => uint256) public getRequestNonce;
+
+    /// @dev Maps execHashes to a timestamp representing when the request has/will have its tokens unlocked, meaning the creator can withdraw their bounties/inputs.
+    mapping(bytes32 => uint256) public getRequestTokenUnlockTimestamp;
 
     /// @dev Maps execHashes to a timestamp representing when the request has/will have its tokens removed (via bumpGas/withdraw/execCompleted).
     /// @dev If the request has had its tokens removed via withdraw or execCompleted it will have a timestamp of 1.
     /// @dev If the request will have its tokens removed in the future (via bumpGas) it will be a standard timestamp.
-    mapping(bytes32 => uint256) private requestTokenRemovalTimestamps;
-
-    /// @dev Maps execHashes to a timestamp representing when the request is fully canceled and the creator can withdraw their bounties/inputs.
-    /// @dev Relayers should not attempt to execute a request if the current time has passed its cancel timestamp.
-    mapping(bytes32 => uint256) private requestCancelTimestamps;
+    mapping(bytes32 => uint256) public getRequestTokenRemovalTimestamp;
 
     /// @dev Maps execHashes which represent resubmitted requests (via bumpGas) to their corresponding "uncled" request's execHash.
     /// @dev An uncled request is a request that has had its tokens removed via `bumpGas` in favor of a resubmitted request generated in the transaction.
-    mapping(bytes32 => bytes32) private uncles;
-
-    /// @notice Returns all relevant data about a specific request.
-    function getRequestData(bytes32 execHash)
-        external
-        view
-        returns (
-            // General request data:
-            address strategy,
-            bytes memory l1calldata,
-            uint64 gasLimit,
-            uint256 gasPrice,
-            uint256 tip,
-            InputToken[] memory inputTokens,
-            // Other data:
-            uint256 nonce,
-            address creator,
-            bytes32 uncle,
-            // Can be fetched via `isExecutable`:
-            bool executable,
-            uint256 changeTimestamp
-        )
-    {
-        strategy = requestStrategies[execHash];
-        l1calldata = requestCalldatas[execHash];
-        gasLimit = requestGasLimits[execHash];
-        gasPrice = requestGasPrices[execHash];
-        tip = requestTips[execHash];
-        inputTokens = requestInputTokens[execHash];
-        nonce = requestNonces[execHash];
-        creator = requestCreators[execHash];
-        uncle = uncles[execHash];
-
-        (executable, changeTimestamp) = isExecutable(execHash);
-    }
+    mapping(bytes32 => bytes32) public getRequestUncle;
 
     /// @param strategy The address of the "strategy" contract on L1 a relayer should call with `calldata`.
     /// @param l1calldata The abi encoded calldata a relayer should call the `strategy` with on L1.
@@ -151,19 +117,24 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Increment global nonce.
         systemNonce += 1;
         // Compute execHash for this request.
-        execHash = keccak256(abi.encodePacked(systemNonce, strategy, l1calldata, gasPrice));
+        execHash = NovaExecHash.compute({
+            nonce: systemNonce,
+            strategy: strategy,
+            l1calldata: l1calldata,
+            gasPrice: gasPrice
+        });
 
         emit Request(execHash, strategy);
 
         // Store all critical request data.
-        requestCreators[execHash] = msg.sender;
-        requestStrategies[execHash] = strategy;
-        requestCalldatas[execHash] = l1calldata;
-        requestGasLimits[execHash] = gasLimit;
-        requestGasPrices[execHash] = gasPrice;
-        requestTips[execHash] = tip;
+        getRequestCreator[execHash] = msg.sender;
+        getRequestStrategy[execHash] = strategy;
+        getRequestCalldata[execHash] = l1calldata;
+        getRequestGasLimit[execHash] = gasLimit;
+        getRequestGasPrice[execHash] = gasPrice;
+        getRequestTip[execHash] = tip;
         // Storing the nonce is just for convenience; it does not need to be on-chain.
-        requestNonces[execHash] = systemNonce;
+        getRequestNonce[execHash] = systemNonce;
 
         // Transfer in ETH to pay for max gas usage + tip.
         ETH.safeTransferFrom(msg.sender, address(this), (gasLimit * gasPrice) + tip);
@@ -173,7 +144,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
             inputTokens[i].l2Token.safeTransferFrom(msg.sender, address(this), inputTokens[i].amount);
 
             // Copy over this index to the requestInputTokens mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
-            requestInputTokens[execHash][i] = inputTokens[i];
+            getRequestInputTokens[execHash][i] = inputTokens[i];
         }
     }
 
@@ -200,13 +171,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     function cancel(bytes32 execHash, uint256 withdrawDelaySeconds) public auth {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
-        require(requestCancelTimestamps[execHash] == 0, "ALREADY_CANCELED");
-        require(requestCreators[execHash] == msg.sender, "NOT_CREATOR");
+        require(getRequestTokenUnlockTimestamp[execHash] == 0, "ALREADY_UNLOCKED");
+        require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
         require(withdrawDelaySeconds >= MIN_CANCEL_SECONDS, "DELAY_TOO_SMALL");
 
         // Set the delay timestamp to (current timestamp + the delay)
         uint256 timestamp = block.timestamp + withdrawDelaySeconds;
-        requestCancelTimestamps[execHash] = timestamp;
+        getRequestTokenUnlockTimestamp[execHash] = timestamp;
 
         emit Cancel(execHash, timestamp);
     }
@@ -223,14 +194,14 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
 
         emit Withdraw(execHash);
 
-        address creator = requestCreators[execHash];
-        InputToken[] memory inputTokens = requestInputTokens[execHash];
+        address creator = getRequestCreator[execHash];
+        InputToken[] memory inputTokens = getRequestInputTokens[execHash];
 
         // Store that the request has had its tokens removed.
-        requestTokenRemovalTimestamps[execHash] = 1;
+        getRequestTokenRemovalTimestamp[execHash] = 1;
 
         // Transfer the ETH which would have been used for (gas + tip) back to the creator.
-        ETH.transfer(creator, (requestGasPrices[execHash] * requestGasLimits[execHash]) + requestTips[execHash]);
+        ETH.transfer(creator, (getRequestGasPrice[execHash] * getRequestGasLimit[execHash]) + getRequestTip[execHash]);
 
         // Transfer input tokens back to the creator.
         for (uint256 i = 0; i < inputTokens.length; i++) {
@@ -246,37 +217,44 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     function bumpGas(bytes32 execHash, uint256 gasPrice) external auth returns (bytes32 newExecHash) {
         (bool executable, ) = isExecutable(execHash);
         require(executable, "NOT_EXECUTABLE");
-        uint256 previousGasPrice = requestGasPrices[execHash];
-        require(requestCreators[execHash] == msg.sender, "NOT_CREATOR");
+
+        uint256 previousGasPrice = getRequestGasPrice[execHash];
+
+        require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
         require(gasPrice > previousGasPrice, "LESS_THAN_PREVIOUS_GAS_PRICE");
+
+        address previousStrategy = getRequestStrategy[execHash];
+        bytes memory previousCalldata = getRequestCalldata[execHash];
+        uint64 previousGasLimit = getRequestGasLimit[execHash];
 
         // Generate a new execHash for the resubmitted request.
         systemNonce += 1;
-        newExecHash = keccak256(
-            abi.encodePacked(systemNonce, requestStrategies[execHash], requestCalldatas[execHash], gasPrice)
-        );
-
-        uint64 gasLimit = requestGasLimits[execHash];
+        newExecHash = NovaExecHash.compute({
+            nonce: systemNonce,
+            strategy: previousStrategy,
+            l1calldata: previousCalldata,
+            gasPrice: gasPrice
+        });
 
         // Fill out data for the resubmitted request.
-        requestStrategies[newExecHash] = requestStrategies[execHash];
-        requestCalldatas[newExecHash] = requestCalldatas[execHash];
-        requestGasLimits[newExecHash] = gasLimit;
-        requestGasPrices[newExecHash] = gasPrice;
-        requestNonces[execHash] = systemNonce;
-        requestCreators[newExecHash] = msg.sender;
+        getRequestCreator[newExecHash] = msg.sender;
+        getRequestStrategy[newExecHash] = previousStrategy;
+        getRequestCalldata[newExecHash] = previousCalldata;
+        getRequestGasLimit[newExecHash] = previousGasLimit;
+        getRequestGasPrice[newExecHash] = gasPrice;
+        getRequestNonce[execHash] = systemNonce;
 
         // Map the resubmitted request to its uncle.
-        uncles[newExecHash] = execHash;
+        getRequestUncle[newExecHash] = execHash;
 
         // Set the uncled request to expire in MIN_CANCEL_SECONDS.
         uint256 switchTimestamp = MIN_CANCEL_SECONDS + block.timestamp;
-        requestTokenRemovalTimestamps[execHash] = switchTimestamp;
+        getRequestTokenRemovalTimestamp[execHash] = switchTimestamp;
 
         emit BumpGas(execHash, newExecHash, switchTimestamp);
 
         // Transfer in additional ETH to pay for the new gas limit.
-        ETH.safeTransferFrom(msg.sender, address(this), (gasPrice - previousGasPrice) * gasLimit);
+        ETH.safeTransferFrom(msg.sender, address(this), (gasPrice - previousGasPrice) * previousGasLimit);
     }
 
     /// @dev Distributes inputs/tips to the executor as a result of a successful execution. Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
@@ -293,9 +271,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         (bool executable, ) = isExecutable(execHash);
         require(executable, "NOT_EXECUTABLE");
 
-        uint256 gasLimit = requestGasLimits[execHash];
-        uint256 gasPrice = requestGasPrices[execHash];
-        uint256 tip = requestTips[execHash];
+        uint256 gasLimit = getRequestGasLimit[execHash];
+        uint256 gasPrice = getRequestGasPrice[execHash];
+        uint256 tip = getRequestTip[execHash];
 
         // The amount of ETH to pay for the gas used (capped at the gas limit).
         uint256 gasPayment = gasPrice * (gasUsed > gasLimit ? gasLimit : gasUsed);
@@ -303,18 +281,18 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         uint256 recipientTip = reverted ? (tip * 7) / 10 : tip;
 
         // Refund the creator any unused gas + refund some of the tip if reverted
-        ETH.transfer(requestCreators[execHash], ((gasLimit * gasPrice) - gasPayment) + (tip - recipientTip));
+        ETH.transfer(getRequestCreator[execHash], ((gasLimit * gasPrice) - gasPayment) + (tip - recipientTip));
         // Pay the recipient the gas payment + the tip.
         ETH.transfer(rewardRecipient, gasPayment + recipientTip);
 
         // Store that the request has had its tokens removed.
-        requestTokenRemovalTimestamps[execHash] = 1;
+        getRequestTokenRemovalTimestamp[execHash] = 1;
 
         emit ExecCompleted(execHash, rewardRecipient, gasUsed, reverted);
 
         // Only transfer input tokens if the request didn't revert.
         if (!reverted) {
-            InputToken[] memory inputTokens = requestInputTokens[execHash];
+            InputToken[] memory inputTokens = getRequestInputTokens[execHash];
 
             // Calculate how much gas to allocate for each transfer (allocate evenly per inputToken but leave a buffer for safety).
             uint256 perTransferGas = (gasleft() - 5000) / inputTokens.length;
@@ -333,7 +311,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @return executable A boolean indicating if the request is executable.
     /// @return changeTimestamp A timestamp indicating when the request might switch from being executable to unexecutable (or vice-versa). Will be 0 if there is no change expected. It will be a timestamp if the request will be enabled soon (it's a resubmitted version of an uncled request) or the request is being canceled soon.
     function isExecutable(bytes32 execHash) public view returns (bool executable, uint256 changeTimestamp) {
-        if (requestCreators[execHash] == address(0)) {
+        if (getRequestCreator[execHash] == address(0)) {
             // This isn't a valid execHash!
             executable = false;
             changeTimestamp = 0;
@@ -352,10 +330,10 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @return tokensRemoved A boolean indicating if the request has been canceled.
     /// @return changeTimestamp A timestamp indicating when the request might have its tokens removed or added. Will be 0 if there is no removal/addition expected. It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request).
     function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
-        uint256 removalTimestamp = requestTokenRemovalTimestamps[execHash];
+        uint256 removalTimestamp = getRequestTokenRemovalTimestamp[execHash];
 
         if (removalTimestamp == 0) {
-            bytes32 uncle = uncles[execHash];
+            bytes32 uncle = getRequestUncle[execHash];
 
             // Check if this request is a resubmitted version of an uncled request.
             if (uncle.length == 0) {
@@ -365,7 +343,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
             } else {
                 // This is a resubmitted version of a uncled request, so we have to check if the uncle has had its tokens removed,
                 // if so, this request has its tokens.
-                uint256 uncleDeathTimestamp = requestTokenRemovalTimestamps[uncle];
+                uint256 uncleDeathTimestamp = getRequestTokenRemovalTimestamp[uncle];
 
                 if (uncleDeathTimestamp == 1) {
                     // The uncle request has had its tokens removed early.
@@ -390,7 +368,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @return canceled A boolean indicating if the request has been canceled.
     /// @return changeTimestamp A timestamp indicating when the request might be canceled. Will be 0 if there is no cancel expected. It will be a timestamp if a cancel has been requested.
     function isCanceled(bytes32 execHash) public view returns (bool canceled, uint256 changeTimestamp) {
-        uint256 cancelTimestamp = requestCancelTimestamps[execHash];
+        uint256 cancelTimestamp = getRequestTokenUnlockTimestamp[execHash];
 
         if (cancelTimestamp == 0) {
             // There has been no cancel attempt.
