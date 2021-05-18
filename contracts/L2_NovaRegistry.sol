@@ -36,23 +36,23 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, Reentr
         L1_NovaExecutionManagerAddress = _L1_NovaExecutionManagerAddress;
     }
 
-    /// @notice Emitted when `cancel` is called.
-    /// @param timestamp When the cancel will set into effect and the creator will be able to withdraw.
-    event Cancel(bytes32 indexed execHash, uint256 timestamp);
+    /// @notice Emitted when `requestExec` is called.
+    event Request(bytes32 indexed execHash, address indexed strategy);
+
+    /// @notice Emitted when `execCompleted` is called.
+    event ExecCompleted(bytes32 indexed execHash, address indexed rewardRecipient, uint256 gasUsed, bool reverted);
 
     /// @notice Emitted when `withdraw` is called.
     event Withdraw(bytes32 indexed execHash);
 
-    /// @notice Emitted when `requestExec` is called.
-    event Request(bytes32 indexed execHash, address indexed strategy);
+    /// @notice Emitted when `cancel` is called.
+    /// @param timestamp When the cancel will set into effect and the creator will be able to withdraw.
+    event Cancel(bytes32 indexed execHash, uint256 timestamp);
 
     /// @notice Emitted when `bumpGas` is called.
     /// @param newExecHash The execHash of the resubmitted request (copy of its uncle with an updated gasPrice).
     /// @param timestamp When the uncled request (`execHash`) will have its tokens transfered to the resubmitted request (`newExecHash`).
     event BumpGas(bytes32 indexed execHash, bytes32 indexed newExecHash, uint256 timestamp);
-
-    /// @notice Emitted when `execCompleted` is called.
-    event ExecCompleted(bytes32 indexed execHash, address indexed rewardRecipient, uint256 gasUsed, bool reverted);
 
     /// @notice A token/amount pair that a relayer will need on L1 to execute the request (and will be returned to them on L2).
     /// @param l2Token The token on L2 to transfer to the executor upon a successful execution.
@@ -67,36 +67,44 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, Reentr
     /// @notice The most recent nonce assigned to an execution request.
     uint256 public systemNonce;
 
-    /// @dev Maps execHashes to the creator of each request.
+    /// @notice Maps execHashes to the creator of each request.
     mapping(bytes32 => address) public getRequestCreator;
-    /// @dev Maps execHashes to the address of the strategy associated with the request.
+    /// @notice Maps execHashes to the address of the strategy associated with the request.
     mapping(bytes32 => address) public getRequestStrategy;
-    /// @dev Maps execHashes to the calldata associated with the request.
+    /// @notice Maps execHashes to the calldata associated with the request.
     mapping(bytes32 => bytes) public getRequestCalldata;
-    /// @dev Maps execHashes to the gas limit a relayer should use to execute the request.
+    /// @notice Maps execHashes to the gas limit a relayer should use to execute the request.
     mapping(bytes32 => uint64) public getRequestGasLimit;
-    /// @dev Maps execHashes to the gas price a relayer must use to execute the request.
+    /// @notice Maps execHashes to the gas price a relayer must use to execute the request.
     mapping(bytes32 => uint256) public getRequestGasPrice;
-    /// @dev Maps execHashes to the additional tip in wei relayers will receive for executing them.
+    /// @notice Maps execHashes to the additional tip in wei relayers will receive for executing them.
     mapping(bytes32 => uint256) public getRequestTip;
-    /// @dev Maps execHashes to the input tokens a relayer must have to execute the request.
-    mapping(bytes32 => InputToken[]) public getRequestInputTokens;
-    /// @dev Maps execHashes to the nonce of each request.
-    /// @dev This is just for convenience, does not need to be on-chain.
+
+    /// @notice Maps execHashes to the input tokens a relayer must have to execute the request.
+    mapping(bytes32 => InputToken[]) public requestInputTokens;
+
+    function getRequestInputTokens(bytes32 execHash) external view returns (InputToken[] memory) {
+        return requestInputTokens[execHash];
+    }
+
+    /// @notice Maps execHashes to the nonce of each request.
+    /// @notice This is just for convenience, does not need to be on-chain.
     mapping(bytes32 => uint256) public getRequestNonce;
 
-    /// @dev Maps execHashes to a timestamp representing when the request has/will have its tokens unlocked, meaning the creator can withdraw their bounties/inputs.
+    /// @notice Maps execHashes to a timestamp representing when the request has/will have its tokens unlocked, meaning the creator can withdraw their bounties/inputs.
     mapping(bytes32 => uint256) public getRequestTokenUnlockTimestamp;
 
-    /// @dev Maps execHashes to a timestamp representing when the request has/will have its tokens removed (via bumpGas/withdraw/execCompleted).
-    /// @dev If the request has had its tokens removed via withdraw or execCompleted it will have a timestamp of 1.
-    /// @dev If the request will have its tokens removed in the future (via bumpGas) it will be a standard timestamp.
+    /// @notice Maps execHashes to a timestamp representing when the request has/will have its tokens removed (via bumpGas/withdraw/execCompleted).
+    /// @notice If the request has had its tokens removed via withdraw or execCompleted it will have a timestamp of 1.
+    /// @notice If the request will have its tokens removed in the future (via bumpGas) it will be a standard timestamp.
     mapping(bytes32 => uint256) public getRequestTokenRemovalTimestamp;
 
-    /// @dev Maps execHashes which represent resubmitted requests (via bumpGas) to their corresponding "uncled" request's execHash.
-    /// @dev An uncled request is a request that has had its tokens removed via `bumpGas` in favor of a resubmitted request generated in the transaction.
+    /// @notice Maps execHashes which represent resubmitted requests (via bumpGas) to their corresponding "uncled" request's execHash.
+    /// @notice An uncled request is a request that has had its tokens removed via `bumpGas` in favor of a resubmitted request generated in the transaction.
     mapping(bytes32 => bytes32) public getRequestUncle;
 
+    /// @notice Request `strategy` to be executed with `l1calldata`.
+    /// @notice The caller must approve `(gasPrice * gasLimit) + tip` of `ETH` before calling.
     /// @param strategy The address of the "strategy" contract on L1 a relayer should call with `calldata`.
     /// @param l1calldata The abi encoded calldata a relayer should call the `strategy` with on L1.
     /// @param gasLimit The gas limit a relayer should use on L1.
@@ -144,7 +152,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, Reentr
             inputTokens[i].l2Token.safeTransferFrom(msg.sender, address(this), inputTokens[i].amount);
 
             // Copy over this index to the requestInputTokens mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
-            getRequestInputTokens[execHash][i] = inputTokens[i];
+            requestInputTokens[execHash][i] = inputTokens[i];
         }
     }
 
@@ -195,7 +203,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, Reentr
         emit Withdraw(execHash);
 
         address creator = getRequestCreator[execHash];
-        InputToken[] memory inputTokens = getRequestInputTokens[execHash];
+        InputToken[] memory inputTokens = requestInputTokens[execHash];
 
         // Store that the request has had its tokens removed.
         getRequestTokenRemovalTimestamp[execHash] = 1;
@@ -292,7 +300,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, Reentr
 
         // Only transfer input tokens if the request didn't revert.
         if (!reverted) {
-            InputToken[] memory inputTokens = getRequestInputTokens[execHash];
+            InputToken[] memory inputTokens = requestInputTokens[execHash];
 
             // Calculate how much gas to allocate for each transfer (allocate evenly per inputToken but leave a buffer for safety).
             uint256 perTransferGas = (gasleft() - 5000) / inputTokens.length;
