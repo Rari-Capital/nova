@@ -74,7 +74,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, NovaExecHash
 
         // Compute the execHash.
         bytes32 execHash =
-            computeNovaExecHash({nonce: nonce, strategy: strategy, l1calldata: l1calldata, gasPrice: tx.gasprice});
+            computeExecHash({nonce: nonce, strategy: strategy, l1calldata: l1calldata, gasPrice: tx.gasprice});
 
         // Initialize execution context.
         currentExecHash = execHash;

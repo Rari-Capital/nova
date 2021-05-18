@@ -5,7 +5,7 @@ pragma solidity 0.7.6;
 abstract contract NovaExecHash {
     /// @notice Computes a Nova execHash from a nonce, strategy address, calldata and gas price.
     /// @return A Nova execHash.
-    function computeNovaExecHash(
+    function computeExecHash(
         uint256 nonce,
         address strategy,
         bytes memory l1calldata,
