@@ -9,9 +9,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
-import "./libraries/NovaExecHash.sol";
+import "./NovaExecHash.sol";
 
-contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
+contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, ReentrancyGuard, Multicall {
     using OVM_SafeERC20 for IERC20;
 
     /// @notice The minimum delay between when `cancel` and `withdraw` can be called.
@@ -117,7 +117,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Increment global nonce.
         systemNonce += 1;
         // Compute execHash for this request.
-        execHash = NovaExecHash.compute({
+        execHash = computeNovaExecHash({
             nonce: systemNonce,
             strategy: strategy,
             l1calldata: l1calldata,
@@ -229,7 +229,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
 
         // Generate a new execHash for the resubmitted request.
         systemNonce += 1;
-        newExecHash = NovaExecHash.compute({
+        newExecHash = computeNovaExecHash({
             nonce: systemNonce,
             strategy: previousStrategy,
             l1calldata: previousCalldata,
