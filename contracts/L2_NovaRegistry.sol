@@ -64,8 +64,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, Reentr
         uint256 amount;
     }
 
-    /// @dev The most recent nonce assigned to an execution request.
-    uint256 private systemNonce;
+    /// @notice The most recent nonce assigned to an execution request.
+    uint256 public systemNonce;
 
     /// @dev Maps execHashes to the creator of each request.
     mapping(bytes32 => address) public getRequestCreator;
