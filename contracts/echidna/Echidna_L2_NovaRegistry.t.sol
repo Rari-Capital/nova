@@ -48,6 +48,15 @@ contract Echidna_L2_NovaRegistry {
             registry.requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0))
         returns (bytes32 execHash) {
             assert(execHash == registry.computeExecHash(registry.systemNonce(), strategy, l1calldata, gasPrice));
+
+            assert(registry.getRequestCreator(execHash) == address(this));
+            assert(registry.getRequestStrategy(execHash) == strategy);
+            assert(keccak256(registry.getRequestCalldata(execHash)) == keccak256(l1calldata));
+            assert(registry.getRequestGasLimit(execHash) == gasLimit);
+            assert(registry.getRequestGasPrice(execHash) == gasPrice);
+            assert(registry.getRequestTip(execHash) == tip);
+            assert(registry.getRequestNonce(execHash) == registry.systemNonce());
+            assert(registry.getRequestInputTokens(execHash).length == 0);
         } catch {
             assert(false);
         }
