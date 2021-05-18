@@ -9,9 +9,9 @@ import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./L2_NovaRegistry.sol";
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
-import "./NovaExecHash.sol";
+import "./ComputeNovaExecHash.sol";
 
-contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, ReentrancyGuard, Multicall {
+contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ComputeNovaExecHash, ReentrancyGuard, Multicall {
     /// @dev The revert message text used to cause a hard revert.
     string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.

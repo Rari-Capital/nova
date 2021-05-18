@@ -9,9 +9,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
-import "./NovaExecHash.sol";
+import "./ComputeNovaExecHash.sol";
 
-contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, ReentrancyGuard, Multicall {
+contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ComputeNovaExecHash, ReentrancyGuard, Multicall {
     using OVM_SafeERC20 for IERC20;
 
     /// @notice The minimum delay between when `cancel` and `withdraw` can be called.
