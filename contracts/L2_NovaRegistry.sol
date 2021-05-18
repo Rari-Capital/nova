@@ -117,7 +117,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, Reentr
         // Increment global nonce.
         systemNonce += 1;
         // Compute execHash for this request.
-        execHash = computeNovaExecHash({
+        execHash = computeExecHash({
             nonce: systemNonce,
             strategy: strategy,
             l1calldata: l1calldata,
@@ -229,7 +229,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, NovaExecHash, Reentr
 
         // Generate a new execHash for the resubmitted request.
         systemNonce += 1;
-        newExecHash = computeNovaExecHash({
+        newExecHash = computeExecHash({
             nonce: systemNonce,
             strategy: previousStrategy,
             l1calldata: previousCalldata,
