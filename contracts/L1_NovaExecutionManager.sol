@@ -9,9 +9,9 @@ import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./L2_NovaRegistry.sol";
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
-import "./ComputeNovaExecHash.sol";
+import "./libraries/NovaExecHashLib.sol";
 
-contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ComputeNovaExecHash, ReentrancyGuard, Multicall {
+contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
     /// @dev The revert message text used to cause a hard revert.
     string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.
@@ -74,7 +74,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ComputeNovaE
 
         // Compute the execHash.
         bytes32 execHash =
-            computeExecHash({nonce: nonce, strategy: strategy, l1calldata: l1calldata, gasPrice: tx.gasprice});
+            NovaExecHashLib.compute({nonce: nonce, strategy: strategy, l1calldata: l1calldata, gasPrice: tx.gasprice});
 
         // Initialize execution context.
         currentExecHash = execHash;
