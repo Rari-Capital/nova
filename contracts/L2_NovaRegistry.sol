@@ -14,8 +14,8 @@ import "./libraries/NovaExecHashLib.sol";
 contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
     using OVM_SafeERC20 for IERC20;
 
-    /// @notice The minimum delay between when `cancel` and `withdraw` can be called.
-    uint256 public constant MIN_CANCEL_SECONDS = 300;
+    /// @notice The minimum delay between when `unlock` and `withdraw` can be called.
+    uint256 public constant MIN_UNLOCK_DELAY_SECONDS = 300;
 
     /// @notice The ERC20 users must use to pay for the L1 gas usage of request.
     IERC20 public immutable ETH;
@@ -45,14 +45,14 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @notice Emitted when `withdraw` is called.
     event Withdraw(bytes32 indexed execHash);
 
-    /// @notice Emitted when `cancel` is called.
-    /// @param timestamp When the cancel will set into effect and the creator will be able to withdraw.
-    event Cancel(bytes32 indexed execHash, uint256 timestamp);
+    /// @notice Emitted when `unlock` is called.
+    /// @param unlockTimestamp When the unlock will set into effect and the creator will be able to withdraw.
+    event Unlock(bytes32 indexed execHash, uint256 unlockTimestamp);
 
     /// @notice Emitted when `bumpGas` is called.
     /// @param newExecHash The execHash of the resubmitted request (copy of its uncle with an updated gasPrice).
-    /// @param timestamp When the uncled request (`execHash`) will have its tokens transfered to the resubmitted request (`newExecHash`).
-    event BumpGas(bytes32 indexed execHash, bytes32 indexed newExecHash, uint256 timestamp);
+    /// @param changeTimestamp When the uncled request (`execHash`) will have its tokens transfered to the resubmitted request (`newExecHash`).
+    event BumpGas(bytes32 indexed execHash, bytes32 indexed newExecHash, uint256 changeTimestamp);
 
     /// @notice A token/amount pair that a relayer will need on L1 to execute the request (and will be returned to them on L2).
     /// @param l2Token The token on L2 to transfer to the executor upon a successful execution.
@@ -156,8 +156,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         }
     }
 
-    /// @notice Calls `requestExec` with all relevant parameters along with calling `cancel` with the `autoCancelDelay` argument.
-    /// @dev See `requestExec` and `cancel` for more information.
+    /// @notice Calls `requestExec` with all relevant parameters along with calling `unlock` with the `autoUnlockDelay` argument.
+    /// @dev See `requestExec` and `unlock` for more information.
     function requestExecWithTimeout(
         address strategy,
         bytes calldata l1calldata,
@@ -165,40 +165,40 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         uint256 gasPrice,
         uint256 tip,
         InputToken[] calldata inputTokens,
-        uint256 autoCancelDelay
+        uint256 autoUnlockDelay
     ) external returns (bytes32 execHash) {
         execHash = requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, inputTokens);
 
-        cancel(execHash, autoCancelDelay);
+        unlock(execHash, autoUnlockDelay);
     }
 
-    /// @notice Cancels a request with a delay. Once the delay has passed anyone may call `withdraw` on behalf of the user to recieve their bounties/input tokens back.
+    /// @notice Unlocks a request's tokens with a delay. Once the delay has passed anyone may call `withdraw` on behalf of the user to recieve their bounties/input tokens back.
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
-    /// @param execHash The unique hash of the request to cancel.
-    /// @param withdrawDelaySeconds The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_CANCEL_SECONDS`.
-    function cancel(bytes32 execHash, uint256 withdrawDelaySeconds) public auth {
+    /// @param execHash The unique hash of the request to unlock.
+    /// @param withdrawDelaySeconds The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
+    function unlock(bytes32 execHash, uint256 withdrawDelaySeconds) public auth {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
         require(getRequestTokenUnlockTimestamp[execHash] == 0, "ALREADY_UNLOCKED");
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
-        require(withdrawDelaySeconds >= MIN_CANCEL_SECONDS, "DELAY_TOO_SMALL");
+        require(withdrawDelaySeconds >= MIN_UNLOCK_DELAY_SECONDS, "DELAY_TOO_SMALL");
 
         // Set the delay timestamp to (current timestamp + the delay)
         uint256 timestamp = block.timestamp + withdrawDelaySeconds;
         getRequestTokenUnlockTimestamp[execHash] = timestamp;
 
-        emit Cancel(execHash, timestamp);
+        emit Unlock(execHash, timestamp);
     }
 
-    /// @notice Withdraws tokens (input/gas/bounties) from a canceled strategy.
-    /// @notice The creator of the request associated with `execHash` must call `cancel` and wait the `withdrawDelaySeconds` they specified before calling `withdraw`.
+    /// @notice Withdraws tokens (input/gas/bounties) from an unlocked request.
+    /// @notice The creator of the request associated with `execHash` must call `unlock` and wait the `withdrawDelaySeconds` they specified before calling `withdraw`.
     /// @notice Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to withdraw from.
     function withdraw(bytes32 execHash) external nonReentrant auth {
+        (bool tokensUnlocked, ) = areTokensUnlocked(execHash);
+        require(tokensUnlocked, "NOT_UNLOCKED");
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
-        (bool canceled, ) = isCanceled(execHash);
-        require(canceled, "NOT_CANCELED");
 
         emit Withdraw(execHash);
 
@@ -218,19 +218,32 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     }
 
     /// @notice Resubmit a request with a higher gas price.
-    /// @notice This will "uncle" the `execHash` which means after `MIN_CANCEL_SECONDS` it will be disabled and the `newExecHash` will be enabled.
+    /// @notice This will "uncle" the `execHash` which means after `MIN_UNLOCK_DELAY_SECONDS` it will be disabled and the `newExecHash` will be enabled.
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
     function bumpGas(bytes32 execHash, uint256 gasPrice) external auth returns (bytes32 newExecHash) {
-        (bool executable, ) = isExecutable(execHash);
-        require(executable, "NOT_EXECUTABLE");
+        // Ensure that msg.sender is the creator of the request.
+        require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
+        // Ensure tokens have not already been removed.
+        (bool tokensRemoved, ) = areTokensRemoved(execHash);
+        require(!tokensRemoved, "TOKENS_REMOVED");
 
+        // Get the previous gas price.
         uint256 previousGasPrice = getRequestGasPrice[execHash];
 
-        require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
+        // Ensure that the new gas price is greater than the previous.
         require(gasPrice > previousGasPrice, "LESS_THAN_PREVIOUS_GAS_PRICE");
 
+        // Get the timestamp when the `execHash` would become uncled if this `bumpGas` call succeeds.
+        uint256 switchTimestamp = MIN_UNLOCK_DELAY_SECONDS + block.timestamp;
+
+        // Ensure that if there is a token unlock scheduled it would be after the switch.
+        // Tokens cannot be withdrawn after the switch which is why it's safe if they unlock atter.
+        uint256 tokenUnlockTimestamp = getRequestTokenUnlockTimestamp[execHash];
+        require(tokenUnlockTimestamp == 0 || tokenUnlockTimestamp > block.timestamp);
+
+        // Get more data about the previous request.
         address previousStrategy = getRequestStrategy[execHash];
         bytes memory previousCalldata = getRequestCalldata[execHash];
         uint64 previousGasLimit = getRequestGasLimit[execHash];
@@ -255,8 +268,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Map the resubmitted request to its uncle.
         getRequestUncle[newExecHash] = execHash;
 
-        // Set the uncled request to expire in MIN_CANCEL_SECONDS.
-        uint256 switchTimestamp = MIN_CANCEL_SECONDS + block.timestamp;
+        // Set the uncled request to expire in MIN_UNLOCK_DELAY_SECONDS.
         getRequestTokenRemovalTimestamp[execHash] = switchTimestamp;
 
         emit BumpGas(execHash, newExecHash, switchTimestamp);
@@ -276,8 +288,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         uint64 gasUsed,
         bool reverted
     ) external nonReentrant onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
-        (bool executable, ) = isExecutable(execHash);
-        require(executable, "NOT_EXECUTABLE");
+        (bool tokensRemoved, ) = areTokensRemoved(execHash);
+        require(!tokensRemoved, "TOKENS_REMOVED");
 
         uint256 gasLimit = getRequestGasLimit[execHash];
         uint256 gasPrice = getRequestGasPrice[execHash];
@@ -315,28 +327,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         }
     }
 
-    /// @notice Returns if the request is executable along with a timestamp of when that may change.
-    /// @return executable A boolean indicating if the request is executable.
-    /// @return changeTimestamp A timestamp indicating when the request might switch from being executable to unexecutable (or vice-versa). Will be 0 if there is no change expected. It will be a timestamp if the request will be enabled soon (it's a resubmitted version of an uncled request) or the request is being canceled soon.
-    function isExecutable(bytes32 execHash) public view returns (bool executable, uint256 changeTimestamp) {
-        if (getRequestCreator[execHash] == address(0)) {
-            // This isn't a valid execHash!
-            executable = false;
-            changeTimestamp = 0;
-        } else {
-            (bool tokensRemoved, uint256 tokensRemovedChangeTimestamp) = areTokensRemoved(execHash);
-            (bool canceled, uint256 canceledChangeTimestamp) = isCanceled(execHash);
-
-            executable = !tokensRemoved && !canceled;
-
-            // One or both of these values will be 0 so we can just add them.
-            changeTimestamp = canceledChangeTimestamp + tokensRemovedChangeTimestamp;
-        }
-    }
-
-    /// @notice Checks if the request is currently canceled along with a timestamp of when it may be canceled.
-    /// @return tokensRemoved A boolean indicating if the request has been canceled.
-    /// @return changeTimestamp A timestamp indicating when the request might have its tokens removed or added. Will be 0 if there is no removal/addition expected. It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request).
+    /// @notice Checks if the request has had one of its tokens removed.
+    /// @return tokensRemoved A boolean indicating if the request has had one of its tokens removed.
+    /// @return changeTimestamp A timestamp indicating when the request might have one of its tokens removed or added. Will be 0 if there is no removal/addition expected. It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request).
     function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
         uint256 removalTimestamp = getRequestTokenRemovalTimestamp[execHash];
 
@@ -372,20 +365,20 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         }
     }
 
-    /// @notice Checks if the request is currently canceled along with a timestamp of when it may be canceled.
-    /// @return canceled A boolean indicating if the request has been canceled.
-    /// @return changeTimestamp A timestamp indicating when the request might be canceled. Will be 0 if there is no cancel expected. It will be a timestamp if a cancel has been requested.
-    function isCanceled(bytes32 execHash) public view returns (bool canceled, uint256 changeTimestamp) {
-        uint256 cancelTimestamp = getRequestTokenUnlockTimestamp[execHash];
+    /// @notice Checks if the request is scheduled to have its tokens unlocked.
+    /// @return unlocked A boolean indicating if the request has had its tokens unlocked.
+    /// @return changeTimestamp A timestamp indicating when the request might have its tokens unlocked. Will be 0 if there is no unlock is scheduled. It will be a timestamp if an unlock has been scheduled.
+    function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked, uint256 changeTimestamp) {
+        uint256 tokenUnlockTimestamp = getRequestTokenUnlockTimestamp[execHash];
 
-        if (cancelTimestamp == 0) {
-            // There has been no cancel attempt.
-            canceled = false;
+        if (tokenUnlockTimestamp == 0) {
+            // There has been no unlock.
+            unlocked = false;
             changeTimestamp = 0;
         } else {
-            // There has been a cancel attempt.
-            canceled = block.timestamp >= cancelTimestamp;
-            changeTimestamp = canceled ? 0 : cancelTimestamp;
+            // There has been an unlock scheduled.
+            unlocked = block.timestamp >= tokenUnlockTimestamp;
+            changeTimestamp = unlocked ? 0 : tokenUnlockTimestamp;
         }
     }
 }
