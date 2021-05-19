@@ -3,7 +3,7 @@ pragma solidity 0.7.6;
 
 /// @notice Utility library to compute a Nova execHash from a nonce, strategy address, calldata and gas price.
 library NovaExecHashLib {
-    /// @notice Computes a Nova execHash from a nonce, strategy address, calldata and gas price.
+    /// @dev Computes a Nova execHash from a nonce, strategy address, calldata and gas price.
     /// @return A Nova execHash.
     function compute(
         uint256 nonce,
