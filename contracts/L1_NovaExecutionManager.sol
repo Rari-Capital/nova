@@ -15,7 +15,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @dev The revert message text used to cause a hard revert.
     string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.
-    bytes32 private constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
+    bytes32 internal constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
 
     /// @dev The bytes length of an abi encoded execCompleted call.
     uint256 public constant execCompletedMessageBytesLength = 132;
@@ -38,7 +38,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     address public currentExecutor;
     /// @dev The address of the strategy that is currenlty being called.
     /// @dev This will not be reset to address(0) after each execution completes.
-    address private currentlyExecutingStrategy;
+    address internal currentlyExecutingStrategy;
 
     /// @notice Convience function that `execWithRecipient` with all relevant arguments and sets the l2Recipient to msg.sender.
     function exec(
