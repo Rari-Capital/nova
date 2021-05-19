@@ -47,7 +47,7 @@ contract Echidna_L2_NovaRegistry {
         try
             registry.requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0))
         returns (bytes32 execHash) {
-            assert(execHash == registry.computeExecHash(registry.systemNonce(), strategy, l1calldata, gasPrice));
+            assert(execHash == NovaExecHashLib.compute(registry.systemNonce(), strategy, l1calldata, gasPrice));
 
             assert(registry.getRequestCreator(execHash) == address(this));
             assert(registry.getRequestStrategy(execHash) == strategy);

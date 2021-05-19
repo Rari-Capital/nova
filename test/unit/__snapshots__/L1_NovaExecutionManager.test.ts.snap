@@ -6,4 +6,4 @@ exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute 
 
 exports[`L1_NovaExecutionManager exec/execWithRecipient soft revert should not exec to revert 1`] = `158499`;
 
-exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `188090`;
+exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `188112`;
