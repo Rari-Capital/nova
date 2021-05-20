@@ -342,8 +342,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
                 tokensRemoved = false;
                 changeTimestamp = 0;
             } else {
-                // This is a resubmitted version of a uncled request, so we have to check if the uncle has had its tokens removed,
-                // if so, this request has its tokens.
+                // This is a resubmitted version of a uncled request, so we have to check if the uncle has had its tokens removed, if so, this request has its tokens.
                 uint256 uncleDeathTimestamp = getRequestTokenRemovalTimestamp[uncle];
 
                 if (uncleDeathTimestamp == 1) {
