@@ -12,10 +12,18 @@ import "./external/DSAuth.sol";
 import "./libraries/NovaExecHashLib.sol";
 
 contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
+    /*///////////////////////////////////////////////////////////////
+                            HARD REVERT CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
     /// @dev The revert message text used to cause a hard revert.
     string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.
     bytes32 internal constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
+
+    /*///////////////////////////////////////////////////////////////
+                       CROSS DOMAIN MESSAGE CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @dev The bytes length of an abi encoded execCompleted call.
     uint256 public constant execCompletedMessageBytesLength = 132;
@@ -23,12 +31,20 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @dev The xDomainGasLimit to use for the call to execCompleted.
     uint32 public constant execCompletedGasLimit = 1_000_000;
 
+    /*///////////////////////////////////////////////////////////////
+                             REGISTRY ADDRESS
+    //////////////////////////////////////////////////////////////*/
+
     /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
     address public immutable L2_NovaRegistryAddress;
 
     constructor(address _L2_NovaRegistryAddress, address _messenger) OVM_CrossDomainEnabled(_messenger) {
         L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
     }
+
+    /*///////////////////////////////////////////////////////////////
+                        EXECUTION CONTEXT STORAGE
+    //////////////////////////////////////////////////////////////*/
 
     /// @dev The execHash computed from the currently executing call to `exec`.
     /// @dev This will be reset after every execution.
@@ -40,15 +56,9 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @dev This will not be reset to address(0) after each execution completes.
     address internal currentlyExecutingStrategy;
 
-    /// @notice Convience function that `execWithRecipient` with all relevant arguments and sets the l2Recipient to msg.sender.
-    function exec(
-        uint256 nonce,
-        address strategy,
-        bytes calldata l1calldata,
-        uint256 deadline
-    ) external {
-        execWithRecipient(nonce, strategy, l1calldata, msg.sender, deadline);
-    }
+    /*///////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////*/
 
     /// @dev Validates if a deadline timestamp is beyond the current block's timestamp.
     /// @param deadline Timestamp after which the transaction will revert.
@@ -56,6 +66,10 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         require(block.timestamp <= deadline, "PAST_DEADLINE");
         _;
     }
+
+    /*///////////////////////////////////////////////////////////////
+                           STATEFUL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Executes a request and sends tip/inputs to a specific address.
     /// @param nonce The nonce of the request.
@@ -144,6 +158,20 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
             }
         }
     }
+
+    /// @notice Convience function that `execWithRecipient` with all relevant arguments and sets the l2Recipient to msg.sender.
+    function exec(
+        uint256 nonce,
+        address strategy,
+        bytes calldata l1calldata,
+        uint256 deadline
+    ) external {
+        execWithRecipient(nonce, strategy, l1calldata, msg.sender, deadline);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                            PURE FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Convience function that triggers a hard revert.
     function hardRevert() external pure {
