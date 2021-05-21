@@ -11,13 +11,12 @@ import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
 import "./external/LowGasSafeMath.sol";
-import "./external/FullMath.sol";
+
 import "./libraries/NovaExecHashLib.sol";
 
 contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
     using OVM_SafeERC20 for IERC20;
     using LowGasSafeMath for uint256;
-    using FullMath for uint256;
 
     /*///////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -390,7 +389,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // The amount of ETH to pay for the gas used (capped at the gas limit).
         uint256 gasPayment = gasPrice * (gasUsed > gasLimit ? gasLimit : gasUsed);
         // The amount of ETH to pay as the tip to the rewardRecepient.
-        uint256 recipientTip = reverted ? tip.mulDiv(7, 10) : tip;
+        uint256 recipientTip = reverted ? (tip * 7) / 10 : tip;
 
         // Refund the creator any unused gas + refund some of the tip if reverted
         ETH.transfer(getRequestCreator[execHash], ((gasLimit * gasPrice) - gasPayment) + (tip - recipientTip));
