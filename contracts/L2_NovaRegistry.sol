@@ -18,7 +18,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The minimum delay between when `unlock` and `withdraw` can be called.
+    /// @notice The minimum delay between when `unlockTokens` and `withdrawTokens` can be called.
     uint256 public constant MIN_UNLOCK_DELAY_SECONDS = 300;
 
     /// @notice The ERC20 users must use to pay for the L1 gas usage of request.
@@ -50,26 +50,31 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
 
     /// @notice Emitted when `requestExec` is called.
     /// @param nonce The nonce assigned to this request.
-    event Request(bytes32 indexed execHash, address indexed strategy, uint256 nonce);
+    event RequestExec(bytes32 indexed execHash, address indexed strategy, uint256 nonce);
 
     /// @notice Emitted when `execCompleted` is called.
     event ExecCompleted(bytes32 indexed execHash, address indexed rewardRecipient, uint256 gasUsed, bool reverted);
 
     /// @notice Emitted when `claim` is called.
-    event Claim(bytes32 indexed execHash);
+    event ClaimInputTokens(bytes32 indexed execHash);
 
-    /// @notice Emitted when `withdraw` is called.
-    event Withdraw(bytes32 indexed execHash);
+    /// @notice Emitted when `withdrawTokens` is called.
+    event WithdrawTokens(bytes32 indexed execHash);
 
-    /// @notice Emitted when `unlock` is called.
-    /// @param unlockTimestamp When the unlock will set into effect and the creator will be able to call `withdraw`.
-    event Unlock(bytes32 indexed execHash, uint256 unlockTimestamp);
+    /// @notice Emitted when `unlockTokens` is called.
+    /// @param unlockTimestamp When the unlock will set into effect and the creator will be able to call `withdrawTokens`.
+    event UnlockTokens(bytes32 indexed execHash, uint256 unlockTimestamp);
 
-    /// @notice Emitted when `bumpGas` is called.
+    /// @notice Emitted when `speedUpRequest` is called.
     /// @param newExecHash The execHash of the resubmitted request (copy of its uncle with an updated gasPrice).
     /// @param newNonce The nonce of the resubmitted request.
     /// @param changeTimestamp When the uncled request (`execHash`) will have its tokens transfered to the resubmitted request (`newExecHash`).
-    event BumpGas(bytes32 indexed execHash, bytes32 indexed newExecHash, uint256 newNonce, uint256 changeTimestamp);
+    event SpeedUpRequest(
+        bytes32 indexed execHash,
+        bytes32 indexed newExecHash,
+        uint256 newNonce,
+        uint256 changeTimestamp
+    );
 
     /*///////////////////////////////////////////////////////////////
                        GLOBAL NONCE COUNTER STORAGE
@@ -137,13 +142,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
                               UNCLE STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Maps execHashes which represent resubmitted requests (via bumpGas) to their corresponding "uncled" request's execHash.
-    /// @notice An uncled request is a request that has had its tokens removed via `bumpGas` in favor of a resubmitted request generated in the transaction.
-    /// @notice Will be bytes32("") if `bumpGas` has not been called with the `execHash`.
+    /// @notice Maps execHashes which represent resubmitted requests (via speedUpRequest) to their corresponding "uncled" request's execHash.
+    /// @notice An uncled request is a request that has had its tokens removed via `speedUpRequest` in favor of a resubmitted request generated in the transaction.
+    /// @notice Will be bytes32("") if `speedUpRequest` has not been called with the `execHash`.
     mapping(bytes32 => bytes32) public getRequestUncle;
 
-    /// @notice Maps execHashes to a timestamp representing when the request will be disabled and replaced by a re-submitted request with a higher gas price (via `bumpGas`).
-    /// @notice Will be 0 if `bumpGas` has not been called with the `execHash`.
+    /// @notice Maps execHashes to a timestamp representing when the request will be disabled and replaced by a re-submitted request with a higher gas price (via `speedUpRequest`).
+    /// @notice Will be 0 if `speedUpRequest` has not been called with the `execHash`.
     mapping(bytes32 => uint256) public getRequestUncleDeathTimestamp;
 
     /*///////////////////////////////////////////////////////////////
@@ -179,7 +184,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
             gasPrice: gasPrice
         });
 
-        emit Request(execHash, strategy, systemNonce);
+        emit RequestExec(execHash, strategy, systemNonce);
 
         // Store all critical request data.
         getRequestCreator[execHash] = msg.sender;
@@ -201,8 +206,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         }
     }
 
-    /// @notice Calls `requestExec` with all relevant parameters along with calling `unlock` with the `autoUnlockDelay` argument.
-    /// @dev See `requestExec` and `unlock` for more information.
+    /// @notice Calls `requestExec` with all relevant parameters along with calling `unlockTokens` with the `autoUnlockDelay` argument.
+    /// @dev See `requestExec` and `unlockTokens` for more information.
     function requestExecWithTimeout(
         address strategy,
         bytes calldata l1calldata,
@@ -214,13 +219,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     ) external returns (bytes32 execHash) {
         execHash = requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, inputTokens);
 
-        unlock(execHash, autoUnlockDelay);
+        unlockTokens(execHash, autoUnlockDelay);
     }
 
     /// @notice Claims input tokens earned from executing a request.
     /// @notice ETH is already sent to the recipient immediatly after executing a request.
     /// @param execHash The hash of the executed request.
-    function claim(bytes32 execHash) external nonReentrant auth {
+    function claimInputTokens(bytes32 execHash) external nonReentrant auth {
         RewardRecipientData memory rewardRecipientData = getRequestRewardRecipient[execHash];
 
         // Ensure that the tokens have not already been claimed.
@@ -228,7 +233,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
 
         InputToken[] memory inputTokens = requestInputTokens[execHash];
 
-        emit Claim(execHash);
+        emit ClaimInputTokens(execHash);
 
         // Loop over each input token to transfer it to the recipient.
         for (uint256 i = 0; i < inputTokens.length; i++) {
@@ -236,29 +241,29 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         }
     }
 
-    /// @notice Unlocks a request's tokens with a delay. Once the delay has passed anyone may call `withdraw` on behalf of the user to recieve their bounties/input tokens back.
+    /// @notice Unlocks a request's tokens with a delay. Once the delay has passed anyone may call `withdrawTokens` on behalf of the user to recieve their bounties/input tokens back.
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to unlock.
-    /// @param withdrawDelaySeconds The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
-    function unlock(bytes32 execHash, uint256 withdrawDelaySeconds) public auth {
+    /// @param unlockDelaySeconds The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
+    function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public auth {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
         require(getRequestUnlockTimestamp[execHash] == 0, "ALREADY_UNLOCKED");
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
-        require(withdrawDelaySeconds >= MIN_UNLOCK_DELAY_SECONDS, "DELAY_TOO_SMALL");
+        require(unlockDelaySeconds >= MIN_UNLOCK_DELAY_SECONDS, "DELAY_TOO_SMALL");
 
         // Set the delay timestamp to (current timestamp + the delay)
-        uint256 timestamp = block.timestamp + withdrawDelaySeconds;
+        uint256 timestamp = block.timestamp + unlockDelaySeconds;
         getRequestUnlockTimestamp[execHash] = timestamp;
 
-        emit Unlock(execHash, timestamp);
+        emit UnlockTokens(execHash, timestamp);
     }
 
     /// @notice Withdraws tokens (input/gas/bounties) from an unlocked request.
-    /// @notice The creator of the request associated with `execHash` must call `unlock` and wait the `withdrawDelaySeconds` they specified before calling `withdraw`.
+    /// @notice The creator of the request associated with `execHash` must call `unlockTokens` and wait the `unlockDelaySeconds` they specified before calling `withdrawTokens`.
     /// @notice Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to withdraw from.
-    function withdraw(bytes32 execHash) external nonReentrant auth {
+    function withdrawTokens(bytes32 execHash) external nonReentrant auth {
         // Ensure that the tokens are unlocked.
         (bool tokensUnlocked, ) = areTokensUnlocked(execHash);
         require(tokensUnlocked, "NOT_UNLOCKED");
@@ -266,7 +271,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
 
-        emit Withdraw(execHash);
+        emit WithdrawTokens(execHash);
 
         address creator = getRequestCreator[execHash];
         InputToken[] memory inputTokens = requestInputTokens[execHash];
@@ -288,7 +293,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
-    function bumpGas(bytes32 execHash, uint256 gasPrice) external auth returns (bytes32 newExecHash) {
+    function speedUpRequest(bytes32 execHash, uint256 gasPrice) external auth returns (bytes32 newExecHash) {
         // Ensure that msg.sender is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
         // Ensure tokens have not already been removed.
@@ -301,7 +306,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Ensure that the new gas price is greater than the previous.
         require(gasPrice > previousGasPrice, "LESS_THAN_PREVIOUS_GAS_PRICE");
 
-        // Get the timestamp when the `execHash` would become uncled if this `bumpGas` call succeeds.
+        // Get the timestamp when the `execHash` would become uncled if this `speedUpRequest` call succeeds.
         uint256 switchTimestamp = MIN_UNLOCK_DELAY_SECONDS + block.timestamp;
 
         // Ensure that if there is a token unlock scheduled it would be after the switch.
@@ -336,7 +341,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Set the uncled request to expire in MIN_UNLOCK_DELAY_SECONDS.
         getRequestUncleDeathTimestamp[execHash] = switchTimestamp;
 
-        emit BumpGas(execHash, newExecHash, systemNonce, switchTimestamp);
+        emit SpeedUpRequest(execHash, newExecHash, systemNonce, switchTimestamp);
 
         // Transfer in additional ETH to pay for the new gas limit.
         ETH.safeTransferFrom(msg.sender, address(this), (gasPrice - previousGasPrice) * previousGasLimit);
