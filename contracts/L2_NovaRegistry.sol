@@ -125,17 +125,17 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     }
 
     /*///////////////////////////////////////////////////////////////
-                         REWARD RECIPIENT STORAGE
+                       INPUT TOKEN RECIPIENT STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    struct RewardRecipientData {
-        address rewardRecipient;
+    struct InputTokenRecipientData {
+        address recipient;
         bool isClaimed;
     }
 
-    /// @notice Maps execHashes to the address of the l2Recipient who recieved the tip, inputs and gas for executing the request.
-    /// @notice Will be address(0) if no one has executed the request yet.
-    mapping(bytes32 => RewardRecipientData) public getRequestRewardRecipient;
+    /// @notice Maps execHashes to the address of the user who recieved the input tokens for executing or withdrawing the request.
+    /// @notice Will be address(0) if no one has executed or withdrawn the request yet.
+    mapping(bytes32 => InputTokenRecipientData) public getRequestInputTokenRecipient;
 
     /*///////////////////////////////////////////////////////////////
                               UNLOCK STORAGE
@@ -230,13 +230,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     }
 
     /// @notice Claims input tokens earned from executing a request.
-    /// @notice ETH is already sent to the recipient immediatly after executing a request.
+    /// @notice Request creators must also call this function if their request reverted (as input tokens are not sent to executors if the request reverts).
     /// @param execHash The hash of the executed request.
     function claimInputTokens(bytes32 execHash) external nonReentrant auth {
-        RewardRecipientData memory rewardRecipientData = getRequestRewardRecipient[execHash];
+        InputTokenRecipientData memory inputTokenRecipientData = getRequestInputTokenRecipient[execHash];
 
         // Ensure that the tokens have not already been claimed.
-        require(!rewardRecipientData.isClaimed, "ALREADY_CLAIMED");
+        require(!inputTokenRecipientData.isClaimed, "ALREADY_CLAIMED");
 
         InputToken[] memory inputTokens = requestInputTokens[execHash];
 
@@ -244,7 +244,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
 
         // Loop over each input token to transfer it to the recipient.
         for (uint256 i = 0; i < inputTokens.length; i++) {
-            inputTokens[i].l2Token.transfer(rewardRecipientData.rewardRecipient, inputTokens[i].amount);
+            inputTokens[i].l2Token.transfer(inputTokenRecipientData.recipient, inputTokens[i].amount);
         }
     }
 
@@ -294,7 +294,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         InputToken[] memory inputTokens = requestInputTokens[execHash];
 
         // Store that the request has had its tokens removed.
-        getRequestRewardRecipient[execHash].isClaimed = true;
+        getRequestInputTokenRecipient[execHash].isClaimed = true;
 
         // Transfer the ETH which would have been used for (gas + tip) back to the creator.
         ETH.transfer(creator, (getRequestGasPrice[execHash] * getRequestGasLimit[execHash]) + getRequestTip[execHash]);
@@ -385,6 +385,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         uint256 gasLimit = getRequestGasLimit[execHash];
         uint256 gasPrice = getRequestGasPrice[execHash];
         uint256 tip = getRequestTip[execHash];
+        address creator = getRequestCreator[execHash];
 
         // The amount of ETH to pay for the gas used (capped at the gas limit).
         uint256 gasPayment = gasPrice * (gasUsed > gasLimit ? gasLimit : gasUsed);
@@ -392,12 +393,12 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         uint256 recipientTip = reverted ? (tip * 7) / 10 : tip;
 
         // Refund the creator any unused gas + refund some of the tip if reverted
-        ETH.transfer(getRequestCreator[execHash], ((gasLimit * gasPrice) - gasPayment) + (tip - recipientTip));
+        ETH.transfer(creator, ((gasLimit * gasPrice) - gasPayment) + (tip - recipientTip));
         // Pay the recipient the gas payment + the tip.
         ETH.transfer(rewardRecipient, gasPayment + recipientTip);
 
-        // Store that the request has had its tokens removed.
-        getRequestRewardRecipient[execHash] = RewardRecipientData(rewardRecipient, reverted);
+        // Give the proper input token recipient the ability to claim the tokens.
+        getRequestInputTokenRecipient[execHash].recipient = reverted ? creator : rewardRecipient;
 
         emit ExecCompleted(execHash, rewardRecipient, gasUsed, reverted);
     }
@@ -410,9 +411,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @return tokensRemoved A boolean indicating if the request has had one of its tokens removed.
     /// @return changeTimestamp A timestamp indicating when the request might have one of its tokens removed or added. Will be 0 if there is no removal/addition expected. It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request).
     function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
-        address rewardRecipient = getRequestRewardRecipient[execHash].rewardRecipient;
+        address inputTokenRecipient = getRequestInputTokenRecipient[execHash].recipient;
 
-        if (rewardRecipient == address(0)) {
+        if (inputTokenRecipient == address(0)) {
             // Request has not been executed and tokens have not been withdrawn.
 
             bytes32 uncle = getRequestUncle[execHash];
