@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.4.23;
+// SPDX-License-Identifier: GNU-3
+pragma solidity 0.7.6;
 
 /// @notice Provides a flexible and updatable auth pattern which is completely separate from application logic.
 /// @author DappHub (https://github.com/dapphub/ds-auth)
