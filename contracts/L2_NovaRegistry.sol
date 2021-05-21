@@ -6,6 +6,8 @@ import "ovm-safeerc20/OVM_SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
@@ -13,6 +15,7 @@ import "./libraries/NovaExecHashLib.sol";
 
 contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
     using OVM_SafeERC20 for IERC20;
+    using SafeMath for uint256;
 
     /*///////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -64,6 +67,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @notice Emitted when `unlockTokens` is called.
     /// @param unlockTimestamp When the unlock will set into effect and the creator will be able to call `withdrawTokens`.
     event UnlockTokens(bytes32 indexed execHash, uint256 unlockTimestamp);
+
+    /// @notice Emitted when `relockTokens` is called.
+    event RelockTokens(bytes32 indexed execHash);
 
     /// @notice Emitted when `speedUpRequest` is called.
     /// @param newExecHash The execHash of the resubmitted request (copy of its uncle with an updated gasPrice).
@@ -253,10 +259,20 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         require(unlockDelaySeconds >= MIN_UNLOCK_DELAY_SECONDS, "DELAY_TOO_SMALL");
 
         // Set the delay timestamp to (current timestamp + the delay)
-        uint256 timestamp = block.timestamp + unlockDelaySeconds;
+        uint256 timestamp = block.timestamp.add(unlockDelaySeconds);
         getRequestUnlockTimestamp[execHash] = timestamp;
 
         emit UnlockTokens(execHash, timestamp);
+    }
+
+    /// @notice Cancels a scheduled unlock.
+    /// @param execHash The unique hash of the request which has an unlock scheduled.
+    function relockTokens(bytes32 execHash) public auth {
+        require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
+
+        delete getRequestUnlockTimestamp[execHash];
+
+        emit RelockTokens(execHash);
     }
 
     /// @notice Withdraws tokens (input/gas/bounties) from an unlocked request.
