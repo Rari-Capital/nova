@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: GNU-3
 pragma solidity 0.7.6;
 
 import "./DSAuth.sol";
