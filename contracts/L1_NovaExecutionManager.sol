@@ -60,17 +60,6 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     address internal currentlyExecutingStrategy;
 
     /*///////////////////////////////////////////////////////////////
-                                MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Validates if a deadline timestamp is beyond the current block's timestamp.
-    /// @param deadline Timestamp after which the transaction will revert.
-    modifier validateDeadline(uint256 deadline) {
-        require(block.timestamp <= deadline, "PAST_DEADLINE");
-        _;
-    }
-
-    /*///////////////////////////////////////////////////////////////
                            STATEFUL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
@@ -86,8 +75,12 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         bytes calldata l1calldata,
         address l2Recipient,
         uint256 deadline
-    ) public validateDeadline(deadline) nonReentrant auth {
+    ) external nonReentrant {
         uint256 startGas = gasleft();
+
+        // Validte preconditions.
+        require(block.timestamp <= deadline, "PAST_DEADLINE");
+        require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
 
         // Compute the execHash.
         bytes32 execHash =
@@ -108,23 +101,25 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // We reset only one of the execution context variables because it will cost us less gas to use a previously set storage slot on all future runs.
         delete currentExecHash;
 
-        // Figure out how much gas this xDomain message is going to cost us.
-        uint256 xDomainMessageGas =
-            // ((estimated cost per calldata char) * (bytes length for an encoded call to execCompleted)) + ((cross domain gas limit) / (enqueue gas burn)) + (sendMessage overhead)
-            (50 * execCompletedMessageBytesLength) + (execCompletedGasLimit / 32) + 74000;
-
-        // Figure out how much gas this call will take up in total: (Constant function call gas) + (Calldata gas) + (Gas diff after calls) + (the amount of gas that will be burned via enqueue + storage/other message overhead)
-        uint256 gasUsed =
-            21000 + (msg.data.length * averageGasPerCalldataByte) + (startGas - gasleft()) + xDomainMessageGas;
-
         // Send message to unlock the bounty on L2.
         sendCrossDomainMessage(
             L2_NovaRegistryAddress,
             abi.encodeWithSelector(
                 L2_NovaRegistry(L2_NovaRegistryAddress).execCompleted.selector,
+                // Computed execHash:
                 execHash,
+                // The reward recipient on L2:
                 l2Recipient,
-                gasUsed,
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                // The amount of gas the relayer is predicted to pay for performing this relay:
+                21000 + /* Constant function call gas  */
+                    (msg.data.length * averageGasPerCalldataByte) + /* Calldata cost estimate */
+                    (startGas - gasleft()) + /* Gas used so far */
+                    (50 * execCompletedMessageBytesLength) + /* Cost per message calldata char * Message bytes length */
+                    (execCompletedGasLimit / 32) + /* Cross domain gas limit / Enqueue gas burn */
+                    74000, /* sendMessage/enqueue overhead */
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                // Did the call revert:
                 !success
             ),
             execCompletedGasLimit
