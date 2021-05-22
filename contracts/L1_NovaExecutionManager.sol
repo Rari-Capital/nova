@@ -75,7 +75,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         bytes calldata l1calldata,
         address l2Recipient,
         uint256 deadline
-    ) external nonReentrant auth {
+    ) external nonReentrant {
         uint256 startGas = gasleft();
 
         // Validte preconditions.
