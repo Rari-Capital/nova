@@ -101,6 +101,15 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // We reset only one of the execution context variables because it will cost us less gas to use a previously set storage slot on all future runs.
         delete currentExecHash;
 
+        // Estimate how much gas the relayer will have paid (not accounting for refunds):
+        uint256 gasUsedEstimate =
+            9000 + /* Constant function call gas (21,000) - currentExecHash refund (12,000) */
+                (msg.data.length * averageGasPerCalldataByte) + /* Calldata cost estimate */
+                (startGas - gasleft()) + /* Gas used so far */
+                (50 * execCompletedMessageBytesLength) + /* Cost per message calldata char * Message bytes length */
+                (execCompletedGasLimit / 32) + /* Cross domain gas limit / Enqueue gas burn */
+                74000; /* sendMessage/enqueue overhead */
+
         // Send message to unlock the bounty on L2.
         sendCrossDomainMessage(
             L2_NovaRegistryAddress,
@@ -112,13 +121,8 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
                 l2Recipient,
                 // Did the call revert:
                 !success,
-                // The amount of gas the relayer is predicted to pay for performing this relay:
-                21000 + /* Constant function call gas  */
-                    (msg.data.length * averageGasPerCalldataByte) + /* Calldata cost estimate */
-                    (startGas - gasleft()) + /* Gas used so far */
-                    (50 * execCompletedMessageBytesLength) + /* Cost per message calldata char * Message bytes length */
-                    (execCompletedGasLimit / 32) + /* Cross domain gas limit / Enqueue gas burn */
-                    74000 /* sendMessage/enqueue overhead */
+                // Estimated gas used in total:
+                gasUsedEstimate
             ),
             execCompletedGasLimit
         );
