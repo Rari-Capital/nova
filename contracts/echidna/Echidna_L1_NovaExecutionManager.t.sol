@@ -40,7 +40,7 @@ contract Echidna_L1_NovaExecutionManager {
             // xDomain constants should always be as expected:
             assert(mockCrossDomainMessenger.latestTarget() == L2_NovaRegistryAddress);
             assert(mockCrossDomainMessenger.latestSender() == address(executionManager));
-            assert(mockCrossDomainMessenger.latestGasLimit() == executionManager.execCompletedGasLimit());
+            assert(mockCrossDomainMessenger.latestGasLimit() == executionManager.EXEC_COMPLETED_MESSAGE_GAS_LIMIT());
         } catch {
             // If it reverted, it should be because the deadline was in the past, if not, something is wrong:
             assert(deadline < block.timestamp);

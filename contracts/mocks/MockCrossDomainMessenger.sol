@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.7.6;
 
-contract MockCrossDomainMessenger {
+import "@eth-optimism/contracts/iOVM/bridge/messaging/iAbs_BaseCrossDomainMessenger.sol";
+
+contract MockCrossDomainMessenger is iAbs_BaseCrossDomainMessenger {
     address public latestTarget;
     bytes public latestMessage;
     uint32 public latestGasLimit;
     address public latestSender;
 
-    function xDomainMessageSender() external view returns (address) {
+    function xDomainMessageSender() external view override returns (address) {
         return latestSender;
     }
 
@@ -19,7 +21,7 @@ contract MockCrossDomainMessenger {
         address _target,
         bytes memory _message,
         uint32 _gasLimit
-    ) external {
+    ) external override {
         uint256 startingGas = gasleft();
         latestTarget = _target;
         latestMessage = _message;

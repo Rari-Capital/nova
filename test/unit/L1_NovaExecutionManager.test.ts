@@ -76,7 +76,7 @@ describe("L1_NovaExecutionManager", function () {
       );
 
       // Make sure execCompletedMessageBytesLength is correct.
-      await L1_NovaExecutionManager.execCompletedMessageBytesLength().should.eventually.equal(
+      await L1_NovaExecutionManager.EXEC_COMPLETED_MESSAGE_BYTES_LENGTH().should.eventually.equal(
         ((await (
           await getFactory<L2NovaRegistry__factory>("L2_NovaRegistry")
         ).interface.encodeFunctionData("execCompleted", [

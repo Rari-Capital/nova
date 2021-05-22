@@ -88,3 +88,4 @@ typechain-ovm
 gasReporterOutput.json
 **/echidna_corpus
 **/crytic-export
+.vscode/

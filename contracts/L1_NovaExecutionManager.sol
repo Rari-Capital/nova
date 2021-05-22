@@ -26,13 +26,13 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     //////////////////////////////////////////////////////////////*/
 
     /// @dev The amount of gas to assume for each byte of calldata.
-    uint32 public constant averageGasPerCalldataByte = 13;
+    uint32 public constant AVERAGE_GAS_PER_CALLDATA_BYTE = 13;
 
     /// @dev The bytes length of an abi encoded execCompleted call.
-    uint256 public constant execCompletedMessageBytesLength = 132;
+    uint256 public constant EXEC_COMPLETED_MESSAGE_BYTES_LENGTH = 132;
 
     /// @dev The xDomainGasLimit to use for the call to execCompleted.
-    uint32 public constant execCompletedGasLimit = 1_000_000;
+    uint32 public constant EXEC_COMPLETED_MESSAGE_GAS_LIMIT = 1_000_000;
 
     /*///////////////////////////////////////////////////////////////
                              REGISTRY ADDRESS
@@ -75,7 +75,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         bytes calldata l1calldata,
         address l2Recipient,
         uint256 deadline
-    ) external nonReentrant {
+    ) external nonReentrant auth {
         uint256 startGas = gasleft();
 
         // Validte preconditions.
@@ -103,11 +103,11 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
 
         // Estimate how much gas the relayer will have paid (not accounting for refunds):
         uint256 gasUsedEstimate =
-            9000 + /* Constant function call gas (21,000) - currentExecHash refund (12,000) */
-                (msg.data.length * averageGasPerCalldataByte) + /* Calldata cost estimate */
+            10000 + /* Constant function call gas (21,000) + Auth and Reentrancy Guard gas (4,000) - Delete currentExecHash refund (15,000) */
+                (msg.data.length * AVERAGE_GAS_PER_CALLDATA_BYTE) + /* Calldata cost estimate */
                 (startGas - gasleft()) + /* Gas used so far */
-                (50 * execCompletedMessageBytesLength) + /* Cost per message calldata char * Message bytes length */
-                (execCompletedGasLimit / 32) + /* Cross domain gas limit / Enqueue gas burn */
+                (50 * EXEC_COMPLETED_MESSAGE_BYTES_LENGTH) + /* Cost per message calldata char * Message bytes length */
+                (EXEC_COMPLETED_MESSAGE_GAS_LIMIT / 32) + /* Cross domain gas limit / Enqueue gas burn */
                 74000; /* sendMessage/enqueue overhead */
 
         // Send message to unlock the bounty on L2.
@@ -124,7 +124,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
                 // Estimated gas used in total:
                 gasUsedEstimate
             ),
-            execCompletedGasLimit
+            EXEC_COMPLETED_MESSAGE_GAS_LIMIT
         );
     }
 

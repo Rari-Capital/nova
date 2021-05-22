@@ -268,7 +268,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
 
     /// @notice Cancels a scheduled unlock.
     /// @param execHash The unique hash of the request which has an unlock scheduled.
-    function relockTokens(bytes32 execHash) public auth {
+    function relockTokens(bytes32 execHash) external auth {
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
 
         delete getRequestUnlockTimestamp[execHash];
