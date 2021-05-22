@@ -82,8 +82,8 @@ describe("L1_NovaExecutionManager", function () {
         ).interface.encodeFunctionData("execCompleted", [
           ethers.utils.keccak256("0x00"),
           ethers.constants.AddressZero,
-          0,
           false,
+          0,
         ]).length) -
           2) /
           2

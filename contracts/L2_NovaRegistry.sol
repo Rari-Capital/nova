@@ -57,7 +57,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     event RequestExec(bytes32 indexed execHash, address indexed strategy, uint256 nonce);
 
     /// @notice Emitted when `execCompleted` is called.
-    event ExecCompleted(bytes32 indexed execHash, address indexed rewardRecipient, uint256 gasUsed, bool reverted);
+    event ExecCompleted(bytes32 indexed execHash, address indexed rewardRecipient, bool reverted, uint256 gasUsed);
 
     /// @notice Emitted when `claim` is called.
     event ClaimInputTokens(bytes32 indexed execHash);
@@ -371,13 +371,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @dev Distributes inputs/tips to the executor as a result of a successful execution. Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
     /// @param execHash The computed execHash of the execution.
     /// @param rewardRecipient The address the executor specified to be the recipient of the tokens on L2.
-    /// @param gasUsed The amount of gas used by the execution tx on L1.
     /// @param reverted If the strategy reverted on L1 during execution.
+    /// @param gasUsed The amount of gas used by the execution tx on L1.
     function execCompleted(
         bytes32 execHash,
         address rewardRecipient,
-        uint64 gasUsed,
-        bool reverted
+        bool reverted,
+        uint64 gasUsed
     ) external nonReentrant onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
@@ -400,7 +400,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Give the proper input token recipient the ability to claim the tokens.
         getRequestInputTokenRecipient[execHash].recipient = reverted ? creator : rewardRecipient;
 
-        emit ExecCompleted(execHash, rewardRecipient, gasUsed, reverted);
+        emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
     }
 
     /*///////////////////////////////////////////////////////////////

@@ -110,17 +110,15 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
                 execHash,
                 // The reward recipient on L2:
                 l2Recipient,
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                // Did the call revert:
+                !success,
                 // The amount of gas the relayer is predicted to pay for performing this relay:
                 21000 + /* Constant function call gas  */
                     (msg.data.length * averageGasPerCalldataByte) + /* Calldata cost estimate */
                     (startGas - gasleft()) + /* Gas used so far */
                     (50 * execCompletedMessageBytesLength) + /* Cost per message calldata char * Message bytes length */
                     (execCompletedGasLimit / 32) + /* Cross domain gas limit / Enqueue gas burn */
-                    74000, /* sendMessage/enqueue overhead */
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                // Did the call revert:
-                !success
+                    74000 /* sendMessage/enqueue overhead */
             ),
             execCompletedGasLimit
         );
