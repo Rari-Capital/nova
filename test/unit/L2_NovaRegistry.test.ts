@@ -27,6 +27,9 @@ describe("L2_NovaRegistry", function () {
   let MockETH: MockERC20;
   let MockCrossDomainMessenger: MockCrossDomainMessenger;
 
+  const fakeExecutionManagerAddress =
+    "0xDeADBEEF1337caFEBAbE1337CacAfACe1337C0dE";
+
   describe("constructor/setup", function () {
     it("should properly deploy mocks", async function () {
       MockETH = await (
@@ -44,6 +47,16 @@ describe("L2_NovaRegistry", function () {
       L2_NovaRegistry = await (
         await getFactory<L2NovaRegistry__factory>("L2_NovaRegistry")
       ).deploy(MockETH.address, MockCrossDomainMessenger.address);
+    });
+
+    it("should allow connecting to an execution manager", async function () {
+      await L2_NovaRegistry.connectExecutionManager(
+        fakeExecutionManagerAddress
+      );
+
+      await L2_NovaRegistry.L1_NovaExecutionManagerAddress().should.eventually.equal(
+        fakeExecutionManagerAddress
+      );
     });
 
     it("should properly use constructor arguments", async function () {

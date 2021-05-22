@@ -104,6 +104,21 @@ describe("L1_NovaExecutionManager", function () {
       });
 
       it("should properly permit authorization for specific functions", async function () {
+        const [, nonDeployer] = signers;
+
+        // Should enforce authorization before permitted.
+        await L1_NovaExecutionManager.connect(nonDeployer)
+          .exec(
+            0,
+            MockStrategy.address,
+            MockStrategy.interface.encodeFunctionData(
+              "thisFunctionWillNotRevert"
+            ),
+            nonDeployer.address,
+            9999999999999
+          )
+          .should.be.revertedWith("ds-auth-unauthorized");
+
         await SimpleDSGuard.permitAnySource(
           L1_NovaExecutionManager.interface.getSighash(
             "exec(uint256,address,bytes,address,uint256)"
