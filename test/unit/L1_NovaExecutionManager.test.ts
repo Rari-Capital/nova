@@ -106,13 +106,7 @@ describe("L1_NovaExecutionManager", function () {
       it("should properly permit authorization for specific functions", async function () {
         await SimpleDSGuard.permitAnySource(
           L1_NovaExecutionManager.interface.getSighash(
-            "execWithRecipient(uint256,address,bytes,address, uint256)"
-          )
-        );
-
-        await SimpleDSGuard.permitAnySource(
-          L1_NovaExecutionManager.interface.getSighash(
-            "exec(uint256,address,bytes, uint256)"
+            "exec(uint256,address,bytes,address,uint256)"
           )
         );
 
@@ -176,19 +170,25 @@ describe("L1_NovaExecutionManager", function () {
 
   describe("exec/execWithRecipient", function () {
     it("should properly complete the first exec", async function () {
+      const [deployer] = signers;
+
       await L1_NovaExecutionManager.exec(
         0,
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        deployer.address,
         9999999999999
       ).should.not.be.reverted;
     });
 
     it("hard revert should cause exec to revert", async function () {
+      const [deployer] = signers;
+
       await L1_NovaExecutionManager.exec(
         1,
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert"),
+        deployer.address,
         9999999999999
       ).should.be.revertedWith(
         await L1_NovaExecutionManager.HARD_REVERT_TEXT()
@@ -196,27 +196,35 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("soft revert should not exec to revert", async function () {
+      const [deployer] = signers;
+
       await snapshotGasCost(
         L1_NovaExecutionManager.exec(
           2,
           MockStrategy.address,
           MockStrategy.interface.encodeFunctionData("thisFunctionWillRevert"),
+          deployer.address,
           9999999999999
         )
       ).should.not.be.reverted;
     });
 
     it("respects the deadline", async function () {
+      const [deployer] = signers;
+
       await L1_NovaExecutionManager.exec(
         3,
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        deployer.address,
         // Set a deadline 5 seconds in the past
         Math.floor(Date.now() / 1000) - 5
       ).should.be.revertedWith("PAST_DEADLINE");
     });
 
     it("should properly execute a minimal exec", async function () {
+      const [deployer] = signers;
+
       await snapshotGasCost(
         L1_NovaExecutionManager.exec(
           4,
@@ -224,12 +232,15 @@ describe("L1_NovaExecutionManager", function () {
           MockStrategy.interface.encodeFunctionData(
             "thisFunctionWillNotRevert"
           ),
+          deployer.address,
           9999999999999
         )
       ).should.not.be.reverted;
     });
 
     it("should properly execute a stateful exec", async function () {
+      const [deployer] = signers;
+
       await snapshotGasCost(
         L1_NovaExecutionManager.exec(
           5,
@@ -237,6 +248,7 @@ describe("L1_NovaExecutionManager", function () {
           MockStrategy.interface.encodeFunctionData(
             "thisFunctionWillModifyState"
           ),
+          deployer.address,
           9999999999999
         )
       ).should.not.be.reverted;
@@ -261,6 +273,7 @@ describe("L1_NovaExecutionManager", function () {
             "thisFunctionWillTransferFromRelayer",
             [MockERC20.address, weiAmount]
           ),
+          deployer.address,
           9999999999999
         )
       )
@@ -273,6 +286,8 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will hard revert if tokens were not approved", async function () {
+      const [deployer] = signers;
+
       await L1_NovaExecutionManager.exec(
         7,
         MockStrategy.address,
@@ -280,6 +295,7 @@ describe("L1_NovaExecutionManager", function () {
           "thisFunctionWillTransferFromRelayer",
           [MockERC20.address, ethers.utils.parseEther("9999999")]
         ),
+        deployer.address,
         9999999999999
       ).should.be.revertedWith(
         await L1_NovaExecutionManager.HARD_REVERT_TEXT()
@@ -287,6 +303,8 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will properly handle a transferFrom with no return value", async function () {
+      const [deployer] = signers;
+
       const NoReturnValueERC20 = await (
         await getFactory<NoReturnValueERC20__factory>("NoReturnValueERC20")
       ).deploy();
@@ -298,11 +316,14 @@ describe("L1_NovaExecutionManager", function () {
           "thisFunctionWillTransferFromRelayer",
           [NoReturnValueERC20.address, 0]
         ),
+        deployer.address,
         9999999999999
       ).should.not.be.reverted;
     });
 
     it("will hard revert if transferFrom returns a non-bool", async function () {
+      const [deployer] = signers;
+
       const BadReturnValueERC20 = await (
         await getFactory<BadReturnValueERC20__factory>("BadReturnValueERC20")
       ).deploy();
@@ -314,6 +335,7 @@ describe("L1_NovaExecutionManager", function () {
           "thisFunctionWillTransferFromRelayer",
           [BadReturnValueERC20.address, 0]
         ),
+        deployer.address,
         9999999999999
       ).should.be.revertedWith(
         await L1_NovaExecutionManager.HARD_REVERT_TEXT()
@@ -321,6 +343,8 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will hard revert if transferFrom returns false without reverting", async function () {
+      const [deployer] = signers;
+
       const ReturnFalseERC20 = await (
         await getFactory<ReturnFalseERC20__factory>("ReturnFalseERC20")
       ).deploy();
@@ -332,6 +356,7 @@ describe("L1_NovaExecutionManager", function () {
           "thisFunctionWillTransferFromRelayer",
           [ReturnFalseERC20.address, 0]
         ),
+        deployer.address,
         9999999999999
       ).should.be.revertedWith(
         await L1_NovaExecutionManager.HARD_REVERT_TEXT()
@@ -369,6 +394,7 @@ describe("L1_NovaExecutionManager", function () {
           "thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens",
           [MockERC20.address, weiAmount]
         ),
+        deployer.address,
         9999999999999
       ).should.not.emit(MockERC20, "Transfer");
 

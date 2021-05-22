@@ -30,9 +30,10 @@ contract Echidna_L1_NovaExecutionManager {
         uint256 nonce,
         address strategy,
         bytes calldata l1calldata,
+        address recipient,
         uint256 deadline
     ) public {
-        try executionManager.exec(nonce, strategy, l1calldata, deadline) {
+        try executionManager.exec(nonce, strategy, l1calldata, recipient, deadline) {
             // ExecHash should always be reset:
             assert(executionManager.currentExecHash() == "");
 

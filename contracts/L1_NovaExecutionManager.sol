@@ -22,8 +22,11 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     bytes32 internal constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
 
     /*///////////////////////////////////////////////////////////////
-                       CROSS DOMAIN MESSAGE CONSTANTS
+                          GAS ESTIMATION CONSTANTS
     //////////////////////////////////////////////////////////////*/
+
+    /// @dev The amount of gas to assume for each byte of calldata.
+    uint32 public constant averageGasPerCalldataByte = 13;
 
     /// @dev The bytes length of an abi encoded execCompleted call.
     uint256 public constant execCompletedMessageBytesLength = 132;
@@ -77,7 +80,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @param l1calldata The calldata associated with the request.
     /// @param l2Recipient The address of the account on L2 to recieve the tip/inputs.
     /// @param deadline Timestamp after which the transaction will revert.
-    function execWithRecipient(
+    function exec(
         uint256 nonce,
         address strategy,
         bytes calldata l1calldata,
@@ -110,8 +113,9 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
             // ((estimated cost per calldata char) * (bytes length for an encoded call to execCompleted)) + ((cross domain gas limit) / (enqueue gas burn)) + (sendMessage overhead)
             (50 * execCompletedMessageBytesLength) + (execCompletedGasLimit / 32) + 74000;
 
-        // Figure out how much gas this call will take up in total: (Constant function call gas) + (Gas diff after calls) + (the amount of gas that will be burned via enqueue + storage/other message overhead)
-        uint256 gasUsed = 21396 + (startGas - gasleft()) + xDomainMessageGas;
+        // Figure out how much gas this call will take up in total: (Constant function call gas) + (Calldata gas) + (Gas diff after calls) + (the amount of gas that will be burned via enqueue + storage/other message overhead)
+        uint256 gasUsed =
+            21000 + (msg.data.length * averageGasPerCalldataByte) + (startGas - gasleft()) + xDomainMessageGas;
 
         // Send message to unlock the bounty on L2.
         sendCrossDomainMessage(
@@ -157,16 +161,6 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
                 revert(HARD_REVERT_TEXT);
             }
         }
-    }
-
-    /// @notice Convience function that `execWithRecipient` with all relevant arguments and sets the l2Recipient to msg.sender.
-    function exec(
-        uint256 nonce,
-        address strategy,
-        bytes calldata l1calldata,
-        uint256 deadline
-    ) external {
-        execWithRecipient(nonce, strategy, l1calldata, msg.sender, deadline);
     }
 
     /*///////////////////////////////////////////////////////////////
