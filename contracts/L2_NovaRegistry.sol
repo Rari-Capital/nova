@@ -255,7 +255,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public auth {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
-        require(getRequestUnlockTimestamp[execHash] == 0, "ALREADY_UNLOCKED");
+        require(getRequestUnlockTimestamp[execHash] == 0, "UNLOCK_ALREADY_SCHEDULED");
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
         require(unlockDelaySeconds >= MIN_UNLOCK_DELAY_SECONDS, "DELAY_TOO_SMALL");
 
@@ -269,6 +269,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @notice Cancels a scheduled unlock.
     /// @param execHash The unique hash of the request which has an unlock scheduled.
     function relockTokens(bytes32 execHash) external auth {
+        (bool tokensRemoved, ) = areTokensRemoved(execHash);
+        require(!tokensRemoved, "TOKENS_REMOVED");
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
 
         delete getRequestUnlockTimestamp[execHash];
