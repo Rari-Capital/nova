@@ -1,18 +1,19 @@
 # Nova
 
-**Nova is a <u>set of contracts</u> & <u>network of relayers</u> that empowers users/contracts to seamlessly interact with L1 contracts + liquidity <u>without leaving L2</u> in a trustless and <u>composable</u> manner.**
+
+**Nova is a <u>set of contracts</u> & <u>network of relayers</u> that enable seamless <u>L1-L2 interop</u> a trustless and <u>composable</u> manner.**
 
 <img width="500" style="float: right;" alt="Explainer" src="https://i.imgur.com/TbbAhLd.png">
 
-- Users specify what actions they want run on L1 from L2
+- L2 contracts "request execution" of an L1 contract's function(s)
 
-- Users pay a bounty which pays for the gas of execution on L1 + whatever upfront costs a relayer executing on L1 needs to have.
+- Contracts provide a bounty which pays for the gas of execution on L1 + whatever upfront costs a relayer needs to endure.
 
-- Relayers execute requests on L1 by calling the Nova "Execution Manager" contract with the calldata users on L2 give them.
+- Relayers execute requests on L1 by calling the Nova "Execution Manager" contract with the calldata contracts on L2 give them.
 
-- The execution manager will call a specific strategy contract which can send tokens up to L2 via a bridge.
+- The execution manager will call the specified "strategy contract" which may send tokens up to L2 via a bridge.
 
-- After executing a request, the Nova execution manager sends a confirmation up to L2 to unlock the bounty for the relayer.
+- After executing a request, the Nova Execution Manager sends a confirmation up to L2 to unlock the bounty for the relayer.
 
 **[Read our whitepaper/technical specification to learn more!](https://github.com/rari-capital/nova/blob/master/docs/spec.md)**
 
