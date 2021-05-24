@@ -63,19 +63,21 @@ The caller must approve all `inputTokens` to the registry as well as approving e
 function requestExecWithTimeout(address strategy, bytes calldata l1calldata, uint256 gasLimit, uint256 gasPrice, uint256 tip, InputToken[] calldata inputTokens, uint256 autoUnlockDelay) external returns (bytes32 execHash)
 ```
 
-- `strategy`: [See `requestExec`](#request-execution)
+- `strategy`: [See `requestExec`.](#request-execution)
 
-- `l1calldata`: [See `requestExec`](#request-execution)
+- `l1calldata`: [See `requestExec`.](#request-execution)
 
-- `gasLimit`: [See `requestExec`](#request-execution)
+- `gasLimit`: [See `requestExec`.](#request-execution)
 
-- `gasPrice`: [See `requestExec`](#request-execution)
+- `gasPrice`: [See `requestExec`.](#request-execution)
 
-- `tip`: [See `requestExec`](#request-execution)
+- `tip`: [See `requestExec`.](#request-execution)
 
-- `inputTokens`: [See `requestExec`](#request-execution)
+- `inputTokens`: [See `requestExec`.](#request-execution)
 
-- [See `unlockTokens`](#unlock-tokens)
+- `requestExec`: [See `unlockTokens`.](#unlock-tokens)
+
+- **`RETURN`: [See `requestExec`.](#request-execution)**
 
 Behaves exactly like `requestExec` but also calls `unlockTokens` with `autoUnlockDelay` automatically.
 
