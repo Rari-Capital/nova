@@ -245,7 +245,7 @@ Once the registry verifies that the `execHash` was previously registered (meanin
 
 Lastly it will mark `execHash` as executed so it cannot be executed again.
 
-## Get request info
+### Get request info
 
 There are quite a few public functions to get details about a request. 
 
