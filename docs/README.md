@@ -171,13 +171,19 @@ function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemo
 
 - `execHash`: The unique identifier for the request to check.
 
-TODO WORDING
+- **`RETURN`: Tuple of 2 values (are tokens removed, when that may change). `changeTimestamp` will be 0 if no removal/addition is scheduled to occur.**
 
 ::: tip
 Relayers should call this function before trying to execute a request in the registry.
 :::
 
-TODO BREAKDOWN
+Checks if the request has had its tokens removed. Returns if the tokens have been removed along with a timestamp of when they may be added or removed. 
+
+- Tokens may start out removed, if so `tokensRemoved` will be true and `changeTimestamp` will be in the future and represent when tokens will be added. If this is the case you know the request is a resubmitted request created via [`speedUpRequest`](#speed-up-a-request).
+
+- Tokens may be scheduled to be removed, if so `tokensRemoved` will be false and `changeTimestamp` will be in the future and represent when the tokens will be removed. If this is the case you know the request is an uncled request— updated via [`speedUpRequest`](#speed-up-a-request).
+
+- Tokens may be already removed or added, in which case `changeTimestamp` will be 0.
 
 ### Check if tokens are unlocked
 
@@ -187,7 +193,11 @@ function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked,
 
 - `execHash`: The unique identifier for the request to check.
 
-- **`RETURN`: Tuple of 2 values (is unlocked, when that may change). `changeTimestamp` will be 0 if no unlock is scheduled.**
+- **`RETURN`: Tuple of 2 values (is unlocked, when that may change). `changeTimestamp` will be 0 if no future unlock is scheduled.**
+
+::: tip
+Relayers should call this function before trying to execute a request in the registry.
+:::
 
 Checks if the request is scheduled to have its tokens unlocked. Returns if tokens are unlocked yet along with a timestamp of when they are scheduled to be unlocked (if the creator has called `unlockTokens`).
 
