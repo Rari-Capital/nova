@@ -55,6 +55,10 @@ function requestExec(address strategy, bytes calldata l1calldata, uint256 gasLim
 
 This function allows a user/contract to request a strategy to be executed with specific calldata.
 
+::: tip
+This function may consume a fair bit of gas as it transfers multiple ERC20s at once.
+:::
+
 The caller must approve all `inputTokens` to the registry as well as approving enough WETH to pay for `(gasLimit * gasPrice) + tip`.
 
 ### Request execution with a timeout
@@ -162,6 +166,22 @@ function relockTokens(bytes32 execHash) external
 Cancels a scheduled unlock triggered via [`unlockTokens`](#unlock-tokens).
 
 The caller must be the creator of the request.
+
+### Claim input tokens
+
+```solidity
+function claimInputTokens(bytes32 execHash) external
+```
+
+- `execHash`: The hash of the executed request.
+
+Claims input tokens earned from executing a request. Request creators must also call this function if their request reverted to claim their input tokens (as input tokens are not sent to executors if the request reverts).
+
+::: tip
+This function may consume a fair bit of gas as it transfers multiple ERC20s at once.
+:::
+
+Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recpient specified by the executor or the creator).
 
 ### Check if tokens are removed
 
