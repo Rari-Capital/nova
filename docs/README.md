@@ -213,20 +213,17 @@ This function can only be called via a message relayed from cross domain messeng
 
 The `execHash` gets computed by the `L1_NovaExecutionManager` like so: `keccak256(abi.encodePacked(nonce, strategy, l1calldata, gasPrice))` and is used to ensure the right calldata **(and gas price)** was used on L1.
 
-Once the registry verifies that the `execHash` was previously registered (meaning this execution was valid) & not disabled (via `isDisabled`):
+Once the registry verifies that the `execHash` was previously registered (meaning this execution was valid) and tokens are not removed:
 
 - It will find this `execHash` in the registry's storage and retrieve the `gasPrice` and tip/inputToken information associated with this execHash.
 
 - It will first pay for the gas cost of L1 execution by calculating the ETH to send to the `relayer` using `(gasLimit > gasUsed ? gasUsed : gasLimit) * gasPrice`. Any remaining ETH will be sent back to the user who requested execution (just like how gas is refunded on L1 if the gas limit exceeds gas used).
 
-- It will then loop over all the `inputTokens` and transfer the `amount` of each `l2Token` to either:
+- It will then send the `rewardRecipient` the tip. If the request reverted, the recipient will only recieve 70% of the tip and the creator will be refunded the remaining 30%. **This is to incentivize relayers to act honestly.**
 
-  1. The `rewardRecipient` if `reverted` is false.
-  2. The request's creator if `reverted` is true.
+- If the request did not revert, the `rewardRecipient` will be marked as the input token recipient for this request so they can claim the input tokens via [`claimInputTokens`](#claim-input-tokens). If the request reverted the creator of the request will be marked as the input token recipient.
 
-- It will then loop over all the `bounties` and transfer the `amount` of each `l2Token` to the `rewardRecipient`. **If `reverted` is true it will transfer 30% of the amount back to the request's creator and only 70% to the `rewardRecipient`.**
-
-After all the bounties/inputs have been paid out it will mark `execHash` as executed so it cannot be executed again.
+Lastly it will mark `execHash` as executed so it cannot be executed again.
 
 ---
 
