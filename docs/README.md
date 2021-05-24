@@ -7,7 +7,7 @@
 
 - L2 contracts "request execution" of an L1 contract's function(s)
 
-- Contracts provide a bounty which pays for the gas of execution on L1 + whatever upfront costs a relayer needs to endure.
+- L2 contracts provide a bounty which pays for the gas of execution on L1 + whatever upfront costs a relayer needs to endure.
 
 - Relayers execute requests on L1 by calling the Nova "Execution Manager" contract with the calldata contracts on L2 give them.
 
