@@ -75,7 +75,7 @@ function requestExecWithTimeout(address strategy, bytes calldata l1calldata, uin
 
 - `inputTokens`: [See `requestExec`.](#request-execution)
 
-- `requestExec`: [See `unlockTokens`.](#unlock-tokens)
+- `autoUnlockDelay`: [See `unlockTokens`.](#unlock-tokens)
 
 - **`RETURN`: [See `requestExec`.](#request-execution)**
 
@@ -92,6 +92,10 @@ This function is useful for strategies that are likely to cause hard reverts or 
 ```solidity
 function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public
 ```
+
+- `execHash`: The unique hash of the request to unlock.
+
+- `unlockDelaySeconds`: The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
 
 This function starts a countdown which lasts for `unlockDelaySeconds`. After the delay is passed a user is allowed to withdraw their tip/inputs via [`withdrawTokens`](#withdraw-tokens). 
 
@@ -115,9 +119,13 @@ A user may call may not call `unlockTokens` a second time on the same `execHash`
 function withdrawTokens(bytes32 execHash) external
 ```
 
+- `execHash`: The unique hash of the request to withdraw from.
+
 This function gives the request's creator their input tokens, tip, and gas payment back.
 
-A user cannot call this function unless they have already called `cancel` and waited for at least the `withdrawDelaySeconds` they specified when calling `cancel`.
+The creator of the request associated with `execHash` must call `unlockTokens` and wait the `unlockDelaySeconds` they specified before calling `withdrawTokens`.
+
+Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
 
 ### Bump request gas price
 
