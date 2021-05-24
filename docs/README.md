@@ -163,54 +163,33 @@ Cancels a scheduled unlock triggered via [`unlockTokens`](#unlock-tokens).
 
 The caller must be the creator of the request.
 
-### Check if request is executable
+### Check if tokens are removed
 
 ```solidity
-function isExecutable(bytes32 execHash) public view returns (bool executable, uint256 changeTimestamp)
+function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp)
 ```
 
-Returns if the request is executable (`executeable`) along with a timestamp of when that may change (`changeTimestamp`).
+- `execHash`: The unique identifier for the request to check.
+
+TODO WORDING
 
 ::: tip
 Relayers should call this function before trying to execute a request in the registry.
 :::
 
-The `changeTimestamp` will be timestamp indicating when the request might switch from being executable to unexecutable (or vice-versa):
+TODO BREAKDOWN
 
-- It will be 0 if there is no change expected.
-- It will be a timestamp if the request will be enabled soon (as it's a resubmitted version of an uncled request) or the request is being canceled soon.
-
-### Get all request information
+### Check if tokens are unlocked
 
 ```solidity
-function getRequestData(bytes32 execHash)
-    external
-    view
-    returns (
-        // General request data:
-        address strategy,
-        bytes memory l1calldata,
-        uint256 gasLimit,
-        uint256 gasPrice,
-        uint256 tip,
-        InputToken[] memory inputTokens,
-        // Other data:
-        uint256 nonce,
-        address creator,
-        bytes32 uncle,
-        // Can be fetched via `isExecutable`:
-        bool executable,
-        uint256 changeTimestamp
-    )
+function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked, uint256 changeTimestamp)
 ```
 
-Returns all relevant data about a request by its `execHash`.
+- `execHash`: The unique identifier for the request to check.
 
-- The first 6 return items are the parameters passed to `requestExec`.
-- `nonce` is the nonce assigned to this request. It is used to compute the `execHash`.
-- `creator` is the address which called `requestExec` to create this request.
-- `uncle` may either be an empty bytestring or the execHash of the uncle of this transaction (the transaction that this resubmitted transaction is cloned from).
-- The last two return items are the return value s of calling `isExecutable` with `execHash`.
+Checks if the request is scheduled to have its tokens unlocked.
+
+TODO
 
 ### Complete execution request
 
