@@ -19,7 +19,7 @@
 
 ## L2_NovaRegistry
 
-This is the primary contract contracts and users will be interacting with. L2 users/contracts can use this contract to [request execution of different strategies](#request-execution), [unlock their tokens](#unlock-tokens), [withdraw their tokens](#withdraw-tokens), and [speed up their requests](#speed-up-a-request).
+This is the primary contract users and contracts will be interacting with. L2 users/contracts can use this contract to [request execution of different strategies](#request-execution), [unlock their tokens](#unlock-tokens), [withdraw their tokens](#withdraw-tokens), and [speed up their requests](#speed-up-a-request).
 
 Relayers will use this contract to view the latest requests, [receive tips for executing requests](#complete-execution-request) and [claim input tokens](#claim-input-tokens).
 
