@@ -127,19 +127,37 @@ The creator of the request associated with `execHash` must call `unlockTokens` a
 
 Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
 
-### Bump request gas price
+### Speed up a request
 
 ```solidity
-function bumpGas(bytes32 execHash, uint256 gasPrice) external returns (bytes32 newExecHash)
+function speedUpRequest(bytes32 execHash, uint256 gasPrice) external returns (bytes32 newExecHash)
 ```
 
-`bumpGas` allows a user/contract to increase the gas price for their request without having to `cancel`, `withdraw` and call `requestExec` again. Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (this is known as the "uncled" request) and enabling an updated version of the request (this is known as the resubmitted request which can be found under `newExecHash`).
+- `execHash`: The execHash of the request you wish to resubmit with a higher gas price.
+
+- `gasPrice`: The updated gas price to use for the resubmitted request in wei.
+
+- **`RETURN`: The "newExecHash" (unique identifier) for the resubmitted request.**
+
+`speedUpRequest` allows a user/contract to increase the gas price for their request without having to `cancel`, `withdraw` and call `requestExec` again. 
+
+Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (this is known as the "uncled" request) and enabling an updated version of the request (this is known as the resubmitted request which is returned as `newExecHash`).
+
+The caller must be the creator of the `execHash` and must also approve enough extra WETH to pay for the increased gas costs: `(gasPrice - previousGasPrice) * previousGasLimit`.
 
 ::: danger
 A relayer can still execute the uncled request associated with the `execHash` up until the delay has passed.
 :::
 
 If a relayer executes the uncled request before the delay has passed the resubmitted request will not be executable after the delay.
+
+### Relock tokens
+
+- `execHash`: The unique hash of the request which has an unlock scheduled.
+
+Cancels a scheduled unlock triggered via [`unlockTokens`](#unlock-tokens).
+
+The caller must be the creator of the request.
 
 ### Check if request is executable
 
