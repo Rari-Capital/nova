@@ -52,9 +52,9 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @dev The execHash computed from the currently executing call to `exec`.
     /// @dev This will be reset after every execution.
     bytes32 public currentExecHash;
-    /// @dev The address who called `exec`/`execWithRecipient`.
+    /// @dev The address who called `exec`.
     /// @dev This will not be reset to address(0) after each execution completes.
-    address public currentExecutor;
+    address public currentRelayer;
     /// @dev The address of the strategy that is currenlty being called.
     /// @dev This will not be reset to address(0) after each execution completes.
     address internal currentlyExecutingStrategy;
@@ -88,7 +88,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
 
         // Initialize execution context.
         currentExecHash = execHash;
-        currentExecutor = msg.sender;
+        currentRelayer = msg.sender;
         currentlyExecutingStrategy = strategy;
 
         // Call the strategy.
@@ -142,7 +142,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         (bool success, bytes memory returndata) =
             address(token).call(
                 // Encode a call to transferFrom.
-                abi.encodeWithSelector(IERC20(token).transferFrom.selector, currentExecutor, msg.sender, amount)
+                abi.encodeWithSelector(IERC20(token).transferFrom.selector, currentRelayer, msg.sender, amount)
             );
 
         // Hard revert if the transferFrom call reverted.

@@ -108,8 +108,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     mapping(bytes32 => uint256) public getRequestTip;
 
     /// @notice A token/amount pair that a relayer will need on L1 to execute the request (and will be returned to them on L2).
-    /// @param l2Token The token on L2 to transfer to the executor upon a successful execution.
-    /// @param amount The amount of the `l2Token` to the executor upon a successful execution (scaled by the `l2Token`'s decimals).
+    /// @param l2Token The token on L2 to transfer to the relayer upon a successful execution.
+    /// @param amount The amount of the `l2Token` to the relayer upon a successful execution (scaled by the `l2Token`'s decimals).
     /// @dev Relayers may have to reference a registry/list of some sort to determine the equivalent L1 token they will need.
     /// @dev The decimal scheme may not align between the L1 and L2 tokens, a relayer should check via off-chain logic.
     struct InputToken {
@@ -372,9 +372,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
                   CROSS DOMAIN MESSENGER ONLY FUNCTION
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Distributes inputs/tips to the executor as a result of a successful execution. Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
+    /// @dev Distributes inputs/tips to the relayer as a result of a successful execution. Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
     /// @param execHash The computed execHash of the execution.
-    /// @param rewardRecipient The address the executor specified to be the recipient of the tokens on L2.
+    /// @param rewardRecipient The address the relayer specified to be the recipient of the tokens on L2.
     /// @param reverted If the strategy reverted on L1 during execution.
     /// @param gasUsed The amount of gas used by the execution tx on L1.
     function execCompleted(
