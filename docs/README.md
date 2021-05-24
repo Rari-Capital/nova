@@ -27,8 +27,8 @@ Relayers will use this contract to [view the latest requests](#get-all-request-i
 
 ```solidity
 /// @notice A token/amount pair that a relayer will need on L1 to execute the request (and will be returned to them on L2).
-/// @param l2Token The token on L2 to transfer to the executor upon a successful execution.
-/// @param amount The amount of the `l2Token` to the executor upon a successful execution (scaled by the `l2Token`'s decimals).
+/// @param l2Token The token on L2 to transfer to the relayer upon a successful execution.
+/// @param amount The amount of the `l2Token` to the relayer upon a successful execution (scaled by the `l2Token`'s decimals).
 /// @dev Relayers may have to reference a registry/list of some sort to determine the equivalent L1 token they will need.
 /// @dev The decimal scheme may not align between the L1 and L2 tokens, a relayer should check via off-chain logic.
 struct InputToken {
@@ -175,7 +175,7 @@ function claimInputTokens(bytes32 execHash) external
 
 - `execHash`: The hash of the executed request.
 
-Claims input tokens earned from executing a request. Request creators must also call this function if their request reverted to claim their input tokens (as input tokens are not sent to executors if the request reverts).
+Claims input tokens earned from executing a request. Request creators must also call this function if their request reverted to claim their input tokens (as input tokens are not sent to relayers if the request reverts).
 
 ::: tip
 This function may consume a fair bit of gas as it transfers multiple ERC20s at once.
@@ -249,9 +249,9 @@ Lastly it will mark `execHash` as executed so it cannot be executed again.
 
 ## L1_NovaExecutionManager
 
-Users on L2 never need to interact with this contract. This contract is to facilitate the execution of requests and send messages to unlock input tokens/tip for relayers/executors (post-execution).
+Users on L2 never need to interact with this contract. This contract is to facilitate the execution of requests and send messages to unlock input tokens/tip for relayers/relayers (post-execution).
 
-Strategy contracts may wish to call back into this contract to trigger a [hard revert](#trigger-hard-revert), [get the current execHash](#get-the-current-exechash) or [transfer tokens from the executor/relayer](#transfer-tokens-from-the-executor).
+Strategy contracts may wish to call back into this contract to trigger a [hard revert](#trigger-hard-revert), [get the current execHash](#get-the-current-exechash) or [transfer tokens from the relayer](#transfer-tokens-from-the-relayer).
 
 ### Execute Request
 
@@ -270,7 +270,9 @@ The call to `strategy` is wrapped in a try-catch block:
   - [This is called a SOFT REVERT.](#execute-request)
   - If a strategy **soft reverts**, the `inputTokens` for the request will **not be sent** to the relayer and **only 70% of the tip** will be sent (instead of the usual 100%). The **30% tip penalty** is to prevent relayers from attempting to cause or wait for soft reverts and **act in good faith** instead.
 
+This function also keeps track of how much gas is consumed by the strategy and `exec` itself. 
 
+Once the strategy is executed this function sends a cross domain message to call [`execCompleted`](#complete-execution-request) on the registry.
 
 ### Trigger Hard Revert
 
@@ -288,18 +290,18 @@ function currentExecHash() external view returns (bytes32)
 
 This function returns the execHash computed from the current call to `exec`. Strategy contracts may wish to call this function to send messages up to L2 with and tag them with the current execHash.
 
-### Get The Current Executor
+### Get The Current Relayer
 
 ```solidity
-function currentExecutor() external view returns (address)
+function currentRelayer() external view returns (address)
 ```
 
-This function returns the current "executor" (address that made the current call to `exec`). Strategy contrats may wish to call this function to ensure only a trusted party is able to execute the strategy or to release additional rewards for the executor, etc.
+This function returns the current "relayer" (address that made the current call to `exec`). Strategy contrats may wish to call this function to ensure only a trusted party is able to execute the strategy or to release additional rewards for the relayer, etc.
 
-### Transfer Tokens From The Executor
+### Transfer Tokens From The Relayer
 
 ```solidity
-function transferFromExecutor(address token, uint256 amount) external
+function transferFromRelayer(address token, uint256 amount) external
 ```
 
 This function transfers tokens the calling relayer (the account that called `exec`/`execWithRecipient`) has approved to the execution manager to the currently executing `strategy`.
@@ -358,5 +360,4 @@ function swapExactTokensForTokens(
   // Send the tokens up to L2 with the recipient being the `to` param
   optimismTokenBridge.depositAsERC20(address(output), to, outputAmount);
 }
-
 ```
