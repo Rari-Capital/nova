@@ -245,6 +245,32 @@ Once the registry verifies that the `execHash` was previously registered (meanin
 
 Lastly it will mark `execHash` as executed so it cannot be executed again.
 
+## Get request info
+
+There are quite a few public functions to get details about a request. 
+
+They are all implemented as public mappings (which generate a function with the mapping's name which takes its key as a parameter and returns what the key maps to):
+
+```solidity
+/// @notice Maps execHashes to the creator of each request.
+mapping(bytes32 => address) public getRequestCreator;
+
+/// @notice Maps execHashes to the address of the strategy associated with the request.
+mapping(bytes32 => address) public getRequestStrategy;
+    
+/// @notice Maps execHashes to the calldata associated with the request.
+mapping(bytes32 => bytes) public getRequestCalldata;
+
+/// @notice Maps execHashes to the gas limit a relayer should use to execute the request.
+mapping(bytes32 => uint64) public getRequestGasLimit;
+
+/// @notice Maps execHashes to the gas price a relayer must use to execute the request.
+mapping(bytes32 => uint256) public getRequestGasPrice;
+
+/// @notice Maps execHashes to the additional tip in wei relayers will receive for executing them.
+mapping(bytes32 => uint256) public getRequestTip;
+```
+
 ---
 
 ## L1_NovaExecutionManager
