@@ -1,6 +1,5 @@
 # Nova
 
-
 **Nova is a <u>set of contracts</u> & <u>network of relayers</u> that enable seamless <u>L1-L2 interop</u> a trustless and <u>composable</u> manner.**
 
 <img width="500" style="float: right;" alt="Explainer" src="https://i.imgur.com/TbbAhLd.png">
@@ -83,10 +82,10 @@ function requestExecWithTimeout(address strategy, bytes calldata l1calldata, uin
 
 - **`RETURN`: [See `requestExec`.](#request-execution)**
 
-Behaves exactly like `requestExec` but also calls `unlockTokens` with `autoUnlockDelay` automatically.
+Behaves exactly like [`requestExec`](#request-execution) but also calls [`unlockTokens`](#unlock-tokens) with `autoUnlockDelay` automatically.
 
 ::: warning
-The user will still have to call `withdrawTokens` once the `autoUnlockDelay` timeout completes.
+The user will still have to call [`withdrawTokens`](#withdraw-tokens) once the `autoUnlockDelay` timeout completes.
 :::
 
 This function is useful for strategies that are likely to cause hard reverts or not be executed for some reason.
@@ -101,21 +100,21 @@ function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public
 
 - `unlockDelaySeconds`: The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
 
-This function starts a countdown which lasts for `unlockDelaySeconds`. After the delay is passed a user is allowed to withdraw their tip/inputs via [`withdrawTokens`](#withdraw-tokens). 
+This function starts a countdown which lasts for `unlockDelaySeconds`. After the delay is passed a user is allowed to withdraw their tip/inputs via [`withdrawTokens`](#withdraw-tokens).
 
 `msg.sender` must be the initiator of execution request the `execHash` links to.
 
 ::: tip
-After `unlockTokens` is called the user must wait `unlockDelaySeconds` before calling `withdrawTokens` to get their tip, input tokens, etc back.
+After [`unlockTokens`](#unlock-tokens) is called the user must wait `unlockDelaySeconds` before calling [`withdrawTokens`](#withdraw-tokens) to get their tip, input tokens, etc back.
 :::
 
 ::: warning
 `unlockDelaySeconds` must be >=300 (5 minutes).
 :::
 
-A relayer can still execute the request associated with the `execHash` until `withdrawTokens` is called.
+A relayer can still execute the request associated with the `execHash` until [`withdrawTokens`](#withdraw-tokens) is called.
 
-A user may call may not call `unlockTokens` a second time on the same `execHash`.
+A user may call may not call [`unlockTokens`](#unlock-tokens) a second time on the same `execHash`.
 
 ### Withdraw tokens
 
@@ -127,7 +126,7 @@ function withdrawTokens(bytes32 execHash) external
 
 This function gives the request's creator their input tokens, tip, and gas payment back.
 
-The creator of the request associated with `execHash` must call `unlockTokens` and wait the `unlockDelaySeconds` they specified before calling `withdrawTokens`.
+The creator of the request associated with `execHash` must call [`unlockTokens`](#unlock-tokens) and wait the `unlockDelaySeconds` they specified before calling [`withdrawTokens`](#withdraw-tokens).
 
 Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
 
@@ -143,7 +142,7 @@ function speedUpRequest(bytes32 execHash, uint256 gasPrice) external returns (by
 
 - **`RETURN`: The "newExecHash" (unique identifier) for the resubmitted request.**
 
-`speedUpRequest` allows a user/contract to increase the gas price for their request without having to `cancel`, `withdraw` and call `requestExec` again. 
+This function allows a user/contract to increase the gas price for a request they've created.
 
 Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (this is known as the "uncled" request) and enabling an updated version of the request (this is known as the resubmitted request which is returned as `newExecHash`).
 
@@ -197,7 +196,7 @@ function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemo
 Relayers should call this function before trying to execute a request in the registry.
 :::
 
-Checks if the request has had its tokens removed. Returns if the tokens have been removed along with a timestamp of when they may be added or removed. 
+Checks if the request has had its tokens removed. Returns if the tokens have been removed along with a timestamp of when they may be added or removed.
 
 - Tokens may start out removed, if so `tokensRemoved` will be true and `changeTimestamp` will be in the future and represent when tokens will be added. If this is the case you know the request is a resubmitted request created via [`speedUpRequest`](#speed-up-a-request).
 
@@ -219,7 +218,7 @@ function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked,
 Relayers should call this function before trying to execute a request in the registry.
 :::
 
-Checks if the request is scheduled to have its tokens unlocked. Returns if tokens are unlocked yet along with a timestamp of when they are scheduled to be unlocked (if the creator has called `unlockTokens`).
+Checks if the request is scheduled to have its tokens unlocked. Returns if tokens are unlocked yet along with a timestamp of when they are scheduled to be unlocked (if the creator has called [`unlockTokens`](#unlock-tokens)).
 
 ### Complete execution request
 
@@ -247,7 +246,7 @@ Lastly it will mark `execHash` as executed so it cannot be executed again.
 
 ### Get request info
 
-There are quite a few public functions to get details about a request. 
+There are quite a few public functions to get details about a request.
 
 They are all implemented as public mappings (which generate a function with the mapping's name which takes its key as a parameter and returns what the key maps to):
 
@@ -257,7 +256,7 @@ mapping(bytes32 => address) public getRequestCreator;
 
 /// @notice Maps execHashes to the address of the strategy associated with the request.
 mapping(bytes32 => address) public getRequestStrategy;
-    
+
 /// @notice Maps execHashes to the calldata associated with the request.
 mapping(bytes32 => bytes) public getRequestCalldata;
 
@@ -289,14 +288,14 @@ This function calls the `strategy` address with the specified `l1calldata`.
 
 The call to `strategy` is wrapped in a try-catch block:
 
-- If the call reverts and the revert message is `__NOVA__HARD__REVERT__`, **`exec` will revert immediately (no message to L2 will be sent).**
+- If the call reverts and the revert message is `__NOVA__HARD__REVERT__`, **[`exec`](#execute-request) will revert immediately (no message to L2 will be sent).**
   - [This is called a HARD REVERT.](#execute-request)
   - Strategy contracts should only **hard revert** if the relayer has not properly set up the execution context (like not approving the right amount input of tokens, etc)
-- If the call reverts and the revert message is empty or is not `__NOVA__HARD__REVERT__`, **`exec` will continue with sending a message to L2.**
+- If the call reverts and the revert message is empty or is not `__NOVA__HARD__REVERT__`, **[`exec`](#execute-request) will continue with sending a message to L2.**
   - [This is called a SOFT REVERT.](#execute-request)
   - If a strategy **soft reverts**, the `inputTokens` for the request will **not be sent** to the relayer and **only 70% of the tip** will be sent (instead of the usual 100%). The **30% tip penalty** is to prevent relayers from attempting to cause or wait for soft reverts and **act in good faith** instead.
 
-This function also keeps track of how much gas is consumed by the strategy and `exec` itself. 
+This function also keeps track of how much gas is consumed by the strategy and [`exec`](#execute-request) itself.
 
 Once the strategy is executed this function sends a cross domain message to call [`execCompleted`](#complete-execution-request) on the registry.
 
@@ -314,7 +313,7 @@ Convenience function that simply runs `revert("__NOVA__HARD__REVERT__")`.
 function currentExecHash() external view returns (bytes32)
 ```
 
-This function returns the execHash computed from the current call to `exec`. Strategy contracts may wish to call this function to send messages up to L2 with and tag them with the current execHash.
+This function returns the execHash computed from the current call to [`exec`](#execute-request). Strategy contracts may wish to call this function to send messages up to L2 with and tag them with the current execHash.
 
 ### Get The Current Relayer
 
@@ -322,7 +321,7 @@ This function returns the execHash computed from the current call to `exec`. Str
 function currentRelayer() external view returns (address)
 ```
 
-This function returns the current "relayer" (address that made the current call to `exec`). Strategy contrats may wish to call this function to ensure only a trusted party is able to execute the strategy or to release additional rewards for the relayer, etc.
+This function returns the current "relayer" (address that made the current call to [`exec`](#execute-request)). Strategy contrats may wish to call this function to ensure only a trusted party is able to execute the strategy or to release additional rewards for the relayer, etc.
 
 ### Transfer Tokens From The Relayer
 
@@ -330,7 +329,7 @@ This function returns the current "relayer" (address that made the current call 
 function transferFromRelayer(address token, uint256 amount) external
 ```
 
-This function transfers tokens the calling relayer (the account that called `exec`/`execWithRecipient`) has approved to the execution manager to the currently executing `strategy`.
+This function transfers tokens the calling relayer (the account that called [`exec`](#execute-request)) has approved to the execution manager to the currently executing `strategy`.
 
 ::: danger
 Only the currently executing `strategy` can call this function.
@@ -349,7 +348,7 @@ To integrate **Uniswap/Sushiswap** we only need to write one custom contract (a 
   - The `to` param will be used as the recipient of the tokens on L2.
   - The Uniswap router will be told to send the output tokens back to the `Nova_UniswapStrategy` contract (so it can send them up to L2 via the bridge)
 - Each of the methods would require that a relayer approve the tokens necessary for the swap to the `L1_NovaExecutionManager`
-- The method would call `transferFromRelayer` to get the input tokens from the relayer and then perform the corresponding method call on the Uniswap router.
+- The method would call [`transferFromRelayer`](#transfer-tokens-from-the-relayer) to get the input tokens from the relayer and then perform the corresponding method call on the Uniswap router.
 - The method would then send the output tokens through an Optimism token bridge to the `to` address.
 
 **Here's what one of those wrapped router functions in the Strategy contract would look like:**
@@ -386,4 +385,5 @@ function swapExactTokensForTokens(
   // Send the tokens up to L2 with the recipient being the `to` param
   optimismTokenBridge.depositAsERC20(address(output), to, outputAmount);
 }
+
 ```
