@@ -40,11 +40,17 @@ function requestExec(address strategy, bytes calldata l1calldata, uint256 gasLim
 ```
 
 - `strategy`: The address of the "strategy" contract on L1 a relayer should call with `l1calldata`.
+
 - `l1calldata`: The abi encoded calldata a relayer should call the `strategy` with on L1.
+
 - `gasLimit`: The gas limit a relayer should use on L1.
+
 - `gasPrice`: The gas price a relayer should use on L1.
+
 - `tip`: The additional wei to pay as a tip for any relayer that executes this request.
+
 - `inputTokens`: An array of 5 or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2).
+
 - **`RETURN`: The "execHash" (unique identifier) for this request.**
 
 This function allows a user/contract to request a strategy to be executed with specific calldata.
@@ -54,21 +60,35 @@ The caller must approve all `inputTokens` to the registry as well as approving e
 ### Request execution with a timeout
 
 ```solidity
-function requestExecWithTimeout(address strategy, bytes calldata l1calldata, uint256 gasLimit, uint256 gasPrice, uint256 tip, InputToken[] calldata inputTokens, uint256 autoCancelDelay) external returns (bytes32 execHash)
+function requestExecWithTimeout(address strategy, bytes calldata l1calldata, uint256 gasLimit, uint256 gasPrice, uint256 tip, InputToken[] calldata inputTokens, uint256 autoUnlockDelay) external returns (bytes32 execHash)
 ```
 
-Behaves exactly like `requestExec` but also calls `cancel` with `autoCancelDelay` automatically.
+- `strategy`: [See `requestExec`](#request-execution)
+
+- `l1calldata`: [See `requestExec`](#request-execution)
+
+- `gasLimit`: [See `requestExec`](#request-execution)
+
+- `gasPrice`: [See `requestExec`](#request-execution)
+
+- `tip`: [See `requestExec`](#request-execution)
+
+- `inputTokens`: [See `requestExec`](#request-execution)
+
+- [See `unlockTokens`](#unlock-tokens)
+
+Behaves exactly like `requestExec` but also calls `unlockTokens` with `autoUnlockDelay` automatically.
 
 ::: warning
-The user will still have to call `withdraw` once the `autoCancelDelay` timeout completes.
+The user will still have to call `withdrawTokens` once the `autoUnlockDelay` timeout completes.
 :::
 
 This function is useful for strategies that are likely to cause hard reverts or not be executed for some reason.
 
-### Cancel execution request
+### Unlock tokens
 
 ```solidity
-function cancel(bytes32 execHash, uint256 withdrawDelaySeconds) public
+function unlockTokens(bytes32 execHash, uint256 withdrawDelaySeconds) public
 ```
 
 This function cancels an execution request (allows a user to withdraw their tip/inputs after a delay). `msg.sender` must be the initiator of execution request the `execHash` links to.
