@@ -7,7 +7,7 @@
 
 - L2 contracts "request execution" of an L1 contract's function(s)
 
-- Contracts provide a bounty which pays for the gas of execution on L1 + whatever upfront costs a relayer needs to endure.
+- L2 contracts provide a bounty which pays for the gas of execution on L1 + whatever upfront costs a relayer needs to endure.
 
 - Relayers execute requests on L1 by calling the Nova "Execution Manager" contract with the calldata contracts on L2 give them.
 
@@ -54,6 +54,10 @@ function requestExec(address strategy, bytes calldata l1calldata, uint256 gasLim
 - **`RETURN`: The "execHash" (unique identifier) for this request.**
 
 This function allows a user/contract to request a strategy to be executed with specific calldata.
+
+::: tip
+This function may consume a fair bit of gas as it transfers multiple ERC20s at once.
+:::
 
 The caller must approve all `inputTokens` to the registry as well as approving enough WETH to pay for `(gasLimit * gasPrice) + tip`.
 
@@ -127,13 +131,23 @@ The creator of the request associated with `execHash` must call `unlockTokens` a
 
 Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
 
-### Bump request gas price
+### Speed up a request
 
 ```solidity
-function bumpGas(bytes32 execHash, uint256 gasPrice) external returns (bytes32 newExecHash)
+function speedUpRequest(bytes32 execHash, uint256 gasPrice) external returns (bytes32 newExecHash)
 ```
 
-`bumpGas` allows a user/contract to increase the gas price for their request without having to `cancel`, `withdraw` and call `requestExec` again. Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (this is known as the "uncled" request) and enabling an updated version of the request (this is known as the resubmitted request which can be found under `newExecHash`).
+- `execHash`: The execHash of the request you wish to resubmit with a higher gas price.
+
+- `gasPrice`: The updated gas price to use for the resubmitted request in wei.
+
+- **`RETURN`: The "newExecHash" (unique identifier) for the resubmitted request.**
+
+`speedUpRequest` allows a user/contract to increase the gas price for their request without having to `cancel`, `withdraw` and call `requestExec` again. 
+
+Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (this is known as the "uncled" request) and enabling an updated version of the request (this is known as the resubmitted request which is returned as `newExecHash`).
+
+The caller must be the creator of the `execHash` and must also approve enough extra WETH to pay for the increased gas costs: `(gasPrice - previousGasPrice) * previousGasLimit`.
 
 ::: danger
 A relayer can still execute the uncled request associated with the `execHash` up until the delay has passed.
@@ -141,54 +155,71 @@ A relayer can still execute the uncled request associated with the `execHash` up
 
 If a relayer executes the uncled request before the delay has passed the resubmitted request will not be executable after the delay.
 
-### Check if request is executable
+### Relock tokens
 
 ```solidity
-function isExecutable(bytes32 execHash) public view returns (bool executable, uint256 changeTimestamp)
+function relockTokens(bytes32 execHash) external
 ```
 
-Returns if the request is executable (`executeable`) along with a timestamp of when that may change (`changeTimestamp`).
+- `execHash`: The unique hash of the request which has an unlock scheduled.
+
+Cancels a scheduled unlock triggered via [`unlockTokens`](#unlock-tokens).
+
+The caller must be the creator of the request.
+
+### Claim input tokens
+
+```solidity
+function claimInputTokens(bytes32 execHash) external
+```
+
+- `execHash`: The hash of the executed request.
+
+Claims input tokens earned from executing a request. Request creators must also call this function if their request reverted to claim their input tokens (as input tokens are not sent to executors if the request reverts).
+
+::: tip
+This function may consume a fair bit of gas as it transfers multiple ERC20s at once.
+:::
+
+Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recpient specified by the executor or the creator).
+
+### Check if tokens are removed
+
+```solidity
+function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp)
+```
+
+- `execHash`: The unique identifier for the request to check.
+
+- **`RETURN`: Tuple of 2 values (are tokens removed, when that may change). `changeTimestamp` will be 0 if no removal/addition is scheduled to occur.**
 
 ::: tip
 Relayers should call this function before trying to execute a request in the registry.
 :::
 
-The `changeTimestamp` will be timestamp indicating when the request might switch from being executable to unexecutable (or vice-versa):
+Checks if the request has had its tokens removed. Returns if the tokens have been removed along with a timestamp of when they may be added or removed. 
 
-- It will be 0 if there is no change expected.
-- It will be a timestamp if the request will be enabled soon (as it's a resubmitted version of an uncled request) or the request is being canceled soon.
+- Tokens may start out removed, if so `tokensRemoved` will be true and `changeTimestamp` will be in the future and represent when tokens will be added. If this is the case you know the request is a resubmitted request created via [`speedUpRequest`](#speed-up-a-request).
 
-### Get all request information
+- Tokens may be scheduled to be removed, if so `tokensRemoved` will be false and `changeTimestamp` will be in the future and represent when the tokens will be removed. If this is the case you know the request is an uncled request— updated via [`speedUpRequest`](#speed-up-a-request).
+
+- Tokens may be already removed or added, in which case `changeTimestamp` will be 0.
+
+### Check if tokens are unlocked
 
 ```solidity
-function getRequestData(bytes32 execHash)
-    external
-    view
-    returns (
-        // General request data:
-        address strategy,
-        bytes memory l1calldata,
-        uint256 gasLimit,
-        uint256 gasPrice,
-        uint256 tip,
-        InputToken[] memory inputTokens,
-        // Other data:
-        uint256 nonce,
-        address creator,
-        bytes32 uncle,
-        // Can be fetched via `isExecutable`:
-        bool executable,
-        uint256 changeTimestamp
-    )
+function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked, uint256 changeTimestamp)
 ```
 
-Returns all relevant data about a request by its `execHash`.
+- `execHash`: The unique identifier for the request to check.
 
-- The first 6 return items are the parameters passed to `requestExec`.
-- `nonce` is the nonce assigned to this request. It is used to compute the `execHash`.
-- `creator` is the address which called `requestExec` to create this request.
-- `uncle` may either be an empty bytestring or the execHash of the uncle of this transaction (the transaction that this resubmitted transaction is cloned from).
-- The last two return items are the return value s of calling `isExecutable` with `execHash`.
+- **`RETURN`: Tuple of 2 values (is unlocked, when that may change). `changeTimestamp` will be 0 if no future unlock is scheduled.**
+
+::: tip
+Relayers should call this function before trying to execute a request in the registry.
+:::
+
+Checks if the request is scheduled to have its tokens unlocked. Returns if tokens are unlocked yet along with a timestamp of when they are scheduled to be unlocked (if the creator has called `unlockTokens`).
 
 ### Complete execution request
 
@@ -202,20 +233,17 @@ This function can only be called via a message relayed from cross domain messeng
 
 The `execHash` gets computed by the `L1_NovaExecutionManager` like so: `keccak256(abi.encodePacked(nonce, strategy, l1calldata, gasPrice))` and is used to ensure the right calldata **(and gas price)** was used on L1.
 
-Once the registry verifies that the `execHash` was previously registered (meaning this execution was valid) & not disabled (via `isDisabled`):
+Once the registry verifies that the `execHash` was previously registered (meaning this execution was valid) and tokens are not removed:
 
 - It will find this `execHash` in the registry's storage and retrieve the `gasPrice` and tip/inputToken information associated with this execHash.
 
 - It will first pay for the gas cost of L1 execution by calculating the ETH to send to the `relayer` using `(gasLimit > gasUsed ? gasUsed : gasLimit) * gasPrice`. Any remaining ETH will be sent back to the user who requested execution (just like how gas is refunded on L1 if the gas limit exceeds gas used).
 
-- It will then loop over all the `inputTokens` and transfer the `amount` of each `l2Token` to either:
+- It will then send the `rewardRecipient` the tip. If the request reverted, the recipient will only recieve 70% of the tip and the creator will be refunded the remaining 30%. **This is to incentivize relayers to act honestly.**
 
-  1. The `rewardRecipient` if `reverted` is false.
-  2. The request's creator if `reverted` is true.
+- If the request did not revert, the `rewardRecipient` will be marked as the input token recipient for this request so they can claim the input tokens via [`claimInputTokens`](#claim-input-tokens). If the request reverted the creator of the request will be marked as the input token recipient.
 
-- It will then loop over all the `bounties` and transfer the `amount` of each `l2Token` to the `rewardRecipient`. **If `reverted` is true it will transfer 30% of the amount back to the request's creator and only 70% to the `rewardRecipient`.**
-
-After all the bounties/inputs have been paid out it will mark `execHash` as executed so it cannot be executed again.
+Lastly it will mark `execHash` as executed so it cannot be executed again.
 
 ---
 
@@ -228,7 +256,7 @@ Strategy contracts may wish to call back into this contract to trigger a [hard r
 ### Execute Request
 
 ```solidity
-function exec(uint256 nonce, address strategy, bytes memory l1calldata) public
+function exec(uint256 nonce, address strategy, bytes memory l1calldata, address l2Recipient) public
 ```
 
 This function calls the `strategy` address with the specified `l1calldata`.
@@ -242,17 +270,7 @@ The call to `strategy` is wrapped in a try-catch block:
   - [This is called a SOFT REVERT.](#execute-request)
   - If a strategy **soft reverts**, the `inputTokens` for the request will **not be sent** to the relayer and **only 70% of the tip** will be sent (instead of the usual 100%). The **30% tip penalty** is to prevent relayers from attempting to cause or wait for soft reverts and **act in good faith** instead.
 
-The `nonce` argument is used to compute the `execHash` needed to unlock the inputs/tip for this strategy on L2.
 
-All computation in the function leading up to the cross domain message is sandwiched between calls to `gasLeft()`. These are used to calculate how many gas units the relayer had to pay for (so the registry can **release the proper payment** on L2). However, we are not able to account for refunds so users may end up over-paying their executors (depending on the strategy).
-
-After the call to `strategy` is completed, the EM will compute the `execHash` it needs (using the arguments passed into `exec` along with the `tx.gasprice`) and **send a cross domain message** to call the `L2_NovaRegistry`'s `execCompleted` with the neccessary arguments. This will send the `inputTokens`/`tip` to the caller of `exec` on L2.
-
-```solidity
-function execWithRecipient(uint256 nonce, address strategy, bytes calldata l1calldata, address l2Recipient) external
-```
-
-Behaves like `exec` but tells the `L2_NovaRegistry` contract to send the `inputTokens`/`tip` to the `l2Recipient` on L2 (instead of specifically the relayer who calls the function).
 
 ### Trigger Hard Revert
 
@@ -342,53 +360,3 @@ function swapExactTokensForTokens(
 }
 
 ```
-
-## Future MEV Extraction Mechanism
-
-::: danger NOT IMPLEMENTED (YET)
-The mechanism explained below is not currently implemented, but will be in a future iteration of the Nova protocol.
-:::
-
-### Background
-
-An important property of Nova is that it is censorship resistant. There is no single "operator" who can execute requests, anyone is free to. Having a competitive landscape of different relayers filling orders is important to ensure users can always get their execution requests filled and they are never censored.
-
-However, considering that many of these requests will come with a tip that makes the request profitable beyond the maximum gas it takes to execute them, it is natural for multiple relayers to engage in PGAs to extract profit from as many strategies that they can.
-
-The profits from these PGAs don't go to the Nova protocol or users who request execution, they go to **miners/arb-bots** who contribute no value to the protocol.
-
-### MEV Auctions (MEVA)
-
-We can extract the value that would have gone to miners by auctioning off "priority rights" to execute requests for specific strategies (this is also known as a [MEVA](https://ethresear.ch/t/mev-auction-auctioning-transaction-ordering-rights-as-a-solution-to-miner-extractable-value/6788)). Each strategy will have its own sequencer (relayer with priority rights) to prevent a sequencer from potentially ignoring a strategy that their relayer is not capable of fulfilling executions for. The auctions will function like so:
-
-- Every X hours (configurable) anyone would be able to call `function triggerAuction(address strategy)` on the `L2_NovaRegistry`.
-- From there a 5-minute auction would be initiated
-- Every bid must be at least 20% greater than the previous bid
-- If there is a new bid within the last 1 minute of the auction, the auction timer is extended by 1 minute
-- During this 1 minute period the next bid must be at least 40% greater than the previous bid
-- If there is another bid in this 1 minute then another 1 minute is added to the timer with the same 40% bid difference requirement **(this repeats until there are no bids in a 1 minute period)**
-- The auction winner's bid is taken by the system while all other bids are sent back to their respective bidders.
-- The winner is given ownership of an NFT (known as the "priority key") that they can transfer around at will.
-
-::: tip
-The owner of the priority key for each strategy will from here on be referred to as a strategy's "sequencer".
-:::
-
-The strategy's sequencer is given a Y (configurable) minute window where **only they** can execute that specific strategy. Any other relayer performing an execution for a strategy during its "sequencer window" will not receive the execution request's tips (the strategy's sequencer will).
-
-::: tip
-After the Y minute window expires for the request any relayer is free to execute requests and receive the full tip.
-:::
-
-Users will be able to opt out of giving the strategy sequencer priority when requesting an execution (but will pay a small penalty).
-
-### Sequencer Extractable Value
-
-This system not only extracts PGA profits that would have gone to miners, but they are also able to **extract other frontrunning profits** that would have gone to sandwich relayers, etc.
-
-- The sequencer effectively has the rights to **reorder transactions** within that 1 minute window
-- Importantly, **they can insert their own transactions** inbetween/around them as part of an atomic bundle (via something like a DSProxy).
-- Atomic insertion and reoreding rights allow them to take advantage of frontrunning schemes like sandwich attacks without miner/other relayer competition.
-- Relayers bidding in auctions for different strategies will price-in the frontrunning profits they estimate they can extract and adjust their bid accordingly.
-  - **Since the profits from these auctions go to the protocol, we have effectively extracted MEV profits that miners/frontrunning relayers could have made off of Nova users and brought it back to the protocol instead.**
-  - _We can even redistribute the profits we earn from MEVA back to users as a way to reduce costs!_
