@@ -19,9 +19,9 @@
 
 ## L2_NovaRegistry
 
-This is the "user facing" contract of Nova. Users can use this contract to [request execution of different strategies](#request-execution), [cancel their requests](#cancel-execution-request), [withdraw their tokens](#withdraw-tip-input-tokens), and [bump the gas price of their requests](#bump-request-gas-price).
+This is the primary contract contracts and users will be interacting with. L2 users/contracts can use this contract to [request execution of different strategies](#request-execution), [cancel their requests](#cancel-execution-request), [withdraw their tokens](#withdraw-tip-input-tokens), and [bump the gas price of their requests](#bump-request-gas-price).
 
-Relayers also will use this contract to [view the latest requests](#get-all-request-information) and [receive tips for executing requests](#complete-execution-request).
+Relayers will use this contract to [view the latest requests](#get-all-request-information) and [receive tips for executing requests](#complete-execution-request).
 
 ### Request execution
 
@@ -36,24 +36,20 @@ struct InputToken {
     uint256 amount;
 }
 
-/// @param strategy The address of the "strategy" contract on L1 a relayer should call with `l1calldata`.
-/// @param l1calldata The abi encoded calldata a relayer should call the `strategy` with on L1.
-/// @param gasLimit The gas limit a relayer should use on L1.
-/// @param gasPrice The gas price a relayer should use on L1.
-/// @param tip The additional wei to pay as a tip for any relayer that executes this request.
-/// @param inputTokens An array of 5 or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2). `inputTokens` will not be awarded if the `strategy` reverts on L1.
 function requestExec(address strategy, bytes calldata l1calldata, uint256 gasLimit, uint256 gasPrice, uint256 tip, InputToken[] calldata inputTokens) public returns (bytes32 execHash)
 ```
 
-This function allows a user/contract to request a strategy to be executed.
+- `strategy`: The address of the "strategy" contract on L1 a relayer should call with `l1calldata`.
+- `l1calldata`: The abi encoded calldata a relayer should call the `strategy` with on L1.
+- `gasLimit`: The gas limit a relayer should use on L1.
+- `gasPrice`: The gas price a relayer should use on L1.
+- `tip`: The additional wei to pay as a tip for any relayer that executes this request.
+- `inputTokens`: An array of 5 or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2).
+- **`RETURN`: The "execHash" (unique identifier) for this request.**
 
-It will first increment the contract's nonce (which is to prevent duplicate execution requests from having the same `execHash`) then transfer in all the `InputToken`s (**all must be approved to the registry by the caller**), and the amount of ETH neccessary to pay for the max amount of gas used + the tip.
+This function allows a user/contract to request a strategy to be executed with specific calldata.
 
-::: warning
-The inputs are not checked to be sufficient by the registry, it is up to Nova relayers to determine which requests are profitable via `getRequestData`.
-:::
-
-It will then compute the `execHash` (unique identifier of this specific execution request) like so: `keccak256(abi.encodePacked(nonce, strategy, l1calldata, gasPrice))` and store it in in a mapping and assigned to all of the arguments this function was passed.
+The caller must approve all `inputTokens` to the registry as well as approving enough WETH to pay for `(gasLimit * gasPrice) + tip`.
 
 ### Request execution with a timeout
 
