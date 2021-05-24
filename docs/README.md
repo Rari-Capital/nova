@@ -187,9 +187,9 @@ function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked,
 
 - `execHash`: The unique identifier for the request to check.
 
-Checks if the request is scheduled to have its tokens unlocked.
+- **`RETURN`: Tuple of 2 values (is unlocked, when that may change). `changeTimestamp` will be 0 if no unlock is scheduled.**
 
-TODO
+Checks if the request is scheduled to have its tokens unlocked. Returns if tokens are unlocked yet along with a timestamp of when they are scheduled to be unlocked (if the creator has called `unlockTokens`).
 
 ### Complete execution request
 
@@ -229,7 +229,7 @@ Strategy contracts may wish to call back into this contract to trigger a [hard r
 ### Execute Request
 
 ```solidity
-function exec(uint256 nonce, address strategy, bytes memory l1calldata) public
+function exec(uint256 nonce, address strategy, bytes memory l1calldata, address l2Recipient) public
 ```
 
 This function calls the `strategy` address with the specified `l1calldata`.
@@ -243,17 +243,7 @@ The call to `strategy` is wrapped in a try-catch block:
   - [This is called a SOFT REVERT.](#execute-request)
   - If a strategy **soft reverts**, the `inputTokens` for the request will **not be sent** to the relayer and **only 70% of the tip** will be sent (instead of the usual 100%). The **30% tip penalty** is to prevent relayers from attempting to cause or wait for soft reverts and **act in good faith** instead.
 
-The `nonce` argument is used to compute the `execHash` needed to unlock the inputs/tip for this strategy on L2.
 
-All computation in the function leading up to the cross domain message is sandwiched between calls to `gasLeft()`. These are used to calculate how many gas units the relayer had to pay for (so the registry can **release the proper payment** on L2). However, we are not able to account for refunds so users may end up over-paying their executors (depending on the strategy).
-
-After the call to `strategy` is completed, the EM will compute the `execHash` it needs (using the arguments passed into `exec` along with the `tx.gasprice`) and **send a cross domain message** to call the `L2_NovaRegistry`'s `execCompleted` with the neccessary arguments. This will send the `inputTokens`/`tip` to the caller of `exec` on L2.
-
-```solidity
-function execWithRecipient(uint256 nonce, address strategy, bytes calldata l1calldata, address l2Recipient) external
-```
-
-Behaves like `exec` but tells the `L2_NovaRegistry` contract to send the `inputTokens`/`tip` to the `l2Recipient` on L2 (instead of specifically the relayer who calls the function).
 
 ### Trigger Hard Revert
 
