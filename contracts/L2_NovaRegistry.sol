@@ -170,6 +170,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @param gasPrice The gas price (in wei) a relayer should use on L1.
     /// @param tip The additional wei to pay as a tip for any relayer that executes this request.
     /// @param inputTokens An array of 5 or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2). `inputTokens` will not be awarded if the `strategy` reverts on L1.
+    /// @return execHash The "execHash" (unique identifier) for this request.
     function requestExec(
         address strategy,
         bytes calldata l1calldata,
@@ -312,6 +313,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
+    /// @return newExecHash The unique identifier for the resubmitted request.
     function speedUpRequest(bytes32 execHash, uint256 gasPrice) external auth returns (bytes32 newExecHash) {
         // Ensure that msg.sender is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
