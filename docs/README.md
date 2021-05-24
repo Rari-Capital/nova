@@ -153,6 +153,10 @@ If a relayer executes the uncled request before the delay has passed the resubmi
 
 ### Relock tokens
 
+```solidity
+function relockTokens(bytes32 execHash) external
+```
+
 - `execHash`: The unique hash of the request which has an unlock scheduled.
 
 Cancels a scheduled unlock triggered via [`unlockTokens`](#unlock-tokens).
