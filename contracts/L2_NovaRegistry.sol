@@ -412,6 +412,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Checks if the request has had one of its tokens removed.
+    /// @param execHash The request to check.
     /// @return tokensRemoved A boolean indicating if the request has had one of its tokens removed.
     /// @return changeTimestamp A timestamp indicating when the request might have one of its tokens removed or added. Will be 0 if there is no removal/addition expected. It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request).
     function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
@@ -442,6 +443,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     }
 
     /// @notice Checks if the request is scheduled to have its tokens unlocked.
+    /// @param execHash The request to check.
     /// @return unlocked A boolean indicating if the request has had its tokens unlocked.
     /// @return changeTimestamp A timestamp indicating when the request might have its tokens unlocked. Will be 0 if there is no unlock is scheduled. It will be a timestamp if an unlock has been scheduled.
     function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked, uint256 changeTimestamp) {
