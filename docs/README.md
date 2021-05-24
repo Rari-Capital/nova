@@ -90,27 +90,29 @@ This function is useful for strategies that are likely to cause hard reverts or 
 ### Unlock tokens
 
 ```solidity
-function unlockTokens(bytes32 execHash, uint256 withdrawDelaySeconds) public
+function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public
 ```
 
-This function cancels an execution request (allows a user to withdraw their tip/inputs after a delay). `msg.sender` must be the initiator of execution request the `execHash` links to.
+This function starts a countdown which lasts for `unlockDelaySeconds`. After the delay is passed a user is allowed to withdraw their tip/inputs via [`withdrawTokens`](#withdraw-tokens). 
+
+`msg.sender` must be the initiator of execution request the `execHash` links to.
 
 ::: tip
-After `cancel` is called the user must wait `withdrawDelaySeconds` before calling `withdraw` to get their tip, input tokens, etc back.
+After `unlockTokens` is called the user must wait `unlockDelaySeconds` before calling `withdrawTokens` to get their tip, input tokens, etc back.
 :::
 
 ::: warning
-`withdrawDelaySeconds` must be >=300 (5 minutes).
+`unlockDelaySeconds` must be >=300 (5 minutes).
 :::
 
-A relayer can still execute the request associated with the `execHash` up until the withdraw delay has passed.
+A relayer can still execute the request associated with the `execHash` until `withdrawTokens` is called.
 
-A user may call may not call `cancel` a second time on the same `execHash`.
+A user may call may not call `unlockTokens` a second time on the same `execHash`.
 
-### Withdraw tip/input tokens
+### Withdraw tokens
 
 ```solidity
-function withdraw(bytes32 execHash) external
+function withdrawTokens(bytes32 execHash) external
 ```
 
 This function gives the request's creator their input tokens, tip, and gas payment back.
