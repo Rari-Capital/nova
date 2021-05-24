@@ -231,7 +231,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     }
 
     /// @notice Claims input tokens earned from executing a request.
-    /// @notice Request creators must also call this function if their request reverted (as input tokens are not sent to executors if the request reverts).
+    /// @notice Request creators must also call this function if their request reverted (as input tokens are not sent to relayers if the request reverts).
     /// @param execHash The hash of the executed request.
     function claimInputTokens(bytes32 execHash) external nonReentrant auth {
         InputTokenRecipientData memory inputTokenRecipientData = getRequestInputTokenRecipient[execHash];
