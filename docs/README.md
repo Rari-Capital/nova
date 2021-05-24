@@ -19,9 +19,9 @@
 
 ## L2_NovaRegistry
 
-This is the primary contract contracts and users will be interacting with. L2 users/contracts can use this contract to [request execution of different strategies](#request-execution), [cancel their requests](#cancel-execution-request), [withdraw their tokens](#withdraw-tip-input-tokens), and [bump the gas price of their requests](#bump-request-gas-price).
+This is the primary contract contracts and users will be interacting with. L2 users/contracts can use this contract to [request execution of different strategies](#request-execution), [unlock their tokens](#unlock-tokens), [withdraw their tokens](#withdraw-tokens), and [speed up their requests](#speed-up-a-request).
 
-Relayers will use this contract to [view the latest requests](#get-all-request-information) and [receive tips for executing requests](#complete-execution-request).
+Relayers will use this contract to view the latest requests, [receive tips for executing requests](#complete-execution-request) and [claim input tokens](#claim-input-tokens).
 
 ### Request execution
 
