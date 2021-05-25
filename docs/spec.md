@@ -18,6 +18,15 @@
   - Most importantly every one these past projects do not provide the tools developers desperately need. 
     - _They are only useful for transfering tokens between chains/rollups_, but are unable to allow users and contracts to trustlessly read from or write to L1 from the comfort of L2.
 
-## Simple Summary
+## Solution Summary
 
 By utilizing the verifiable nature of [Optimism's](https://optimism.io) [`enqueue` message passing system](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls), **Nova is able to allow users/contracts on L2 to perform transactions on L1 and trustlessly recieve their results**. Nova relies on a relayer to execute the transaction on L1, but a relayer can only ignore a transaction— they are unable to tamper with it or change its output. Nova transactions have meta-transaction level latency (nearly identical to sending the L1 transaction directly to an Ethereum full node) thanks to the [instant confirmations provided by Optimsim's sequencer model](https://research.paradigm.xyz/rollups).
+
+## Abstract
+
+Nova consists of at least 2 contracts:
+- A "registry" **on L2**
+- An "execution manager" **on L1**
+
+
+
