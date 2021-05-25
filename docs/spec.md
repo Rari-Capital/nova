@@ -1,6 +1,7 @@
 # The Nova Protocol
 
 - Author(s): transmissions11
+- Reviewer(s): platocrat
 - Created On: May 25th, 2020
 
 ## Problem Summary
@@ -8,10 +9,10 @@
 - Migrating to L2 is hard. A large percentage of DeFi activity will likely still remain on L1 for a considerable amount of time. 
 - Users and devs alike want the cheap fees of L2 while still retaining composability with L1. 
 
-- A few other projects have attempted to solve this problem with "fast withdrawals" or "cross-chain meta-transactions" but they don't meet the full use-cases of most developers.
-  - Almost all of the current L2-L1 composability protocols are modeled after systems designed for cross-chain swaps and transactions. They don't take advantage of the extra flexibliity and security we inherit from rollups!
+- A few other projects have attempted to solve this problem with "fast withdrawals" or "cross-chain meta-transactions" but don't fully meet the needs of most developers.
+  - Almost all of the current L2-L1 composability protocols are modeled after systems that were designed for cross-chain swaps and transactions. They don't take advantage of the extra flexibliity and security we inherit from rollups.
 
-    - Many of these solutions rely on [HTLCs](https://www.youtube.com/watch?v=qUAyW4pdooA) which are not usuable directly via contracts as they rely on the active involvement of two parties and critically **the sender's signature (contract's do NOT have signatures!)**
+    - Many of these solutions rely on [HTLCs](https://www.youtube.com/watch?v=qUAyW4pdooA) which are not unusable directly via contracts as they rely on the active involvement of two parties and critically **the sender's signature (contract's do NOT have signatures!)**
    
     - Other solutions rely on modified trust assumptions via bonds, etc. These solutions simply do not meet the **ironclad security needs of DeFi developers.**
 
