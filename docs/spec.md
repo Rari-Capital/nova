@@ -16,7 +16,7 @@
    
     - Other solutions rely on modified trust assumptions via bonds, etc. These solutions simply do not meet the **ironclad security needs of DeFi developers.**
 
-  - Most importantly every one these past projects do not provide the tools developers desperately need. 
+  - Most importantly every one these past projects do not provide the ultimate flexibility developers desperately need. 
     - _They are only useful for transfering tokens between chains/rollups_, but are unable to allow users and contracts to trustlessly read from or write to L1 from the comfort of L2.
 
 ## Solution Summary
