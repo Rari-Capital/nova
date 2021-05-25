@@ -25,9 +25,18 @@ By utilizing the verifiable nature of [Optimism's](https://optimism.io) [`enqueu
 
 ## Abstract
 
-Nova consists of at least 2 contracts:
+### Nova consists of at least 2 contracts:
 - A "registry" **on L2**
+
+The registry is where users make "requests" (post transactions to be executed), and relayers recieve rewards for executing them. It coordinates ingesting tokens from users and holding them, releasing tokens to relayers, allowing users to withdraw their requests after a delay, etc.
+
 - An "execution manager" **on L1**
 
+The execution manager is what allows the registry to be certian that a request was properly executed. 
 
+Relayers take the calldata and strategy address users post to the registry (after validating the user paid for the right amount of gas, etc) and execute them through the execution manager. 
+
+The execution manager runs the call itself, measures the gas used and then [`enqueue`s a message up to registry](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) that informs the registry of how much gas the execution used, if the transaction reverted, and which relayer executed the request.
+
+The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc. 
 
