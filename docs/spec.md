@@ -35,14 +35,16 @@ The Nova protocol consists of at least 2 contracts. Both of these contracts live
     - The abi encoded calldata to call the "strategy" with
     - How much gas the transaction is expected to take up 
     - The gas price they want used to execute the request
-  - Request creators must approve the amount of WETH neccessary to pay for `gasPrice * gasLimit` before making a request. 
+    - How much additional wei they want to tip the relayer (can be 0)
+  - Request creators must approve the amount of WETH neccessary to pay for `(gasPrice * gasLimit) + tip` before making a request. 
   - Request creators may optionally specify "input tokens" which they must provide for the relayer like gas.
     - Input tokens represent tokens a relayer will need to approve to the execution manager in order to succesfully execute the request on L1. 
     - Relayers must front input tokens themselves but will recieve their input tokens back on L2 if they successfuly execute a request.
     - Relayers will not recieve their input tokens back if the strategy reverts on L1.
     - Strategy contracts can access input tokens from relayers via a special method in the execution manager.
     - If the relayer does not approve enough input tokens the strategy will cause a "hard revert" which means the entire call will revert (preventing a message from being sent to pay out the relayer and undoing any actions taken by the relayer in the tx).
-
+  - 30% of the tip will be sent back to the request creator if the strategy reverts to incentivize good behavior.   
+  - The registry will refund the request creator for any gas unused by the call on L1.
   - The registry also coordinates releasing tokens to relayers, allowing users to withdraw their requests after a delay, speeding up their requests, etc. 
 
 - ### An "execution manager" **on L1**
@@ -63,3 +65,5 @@ _In summary, these two contracts enable what could be described as "cross-layer 
 ## External Assumptions
 
 - [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) does not contain any flaws that would allow third parties to tamper with or forge the origin of a message. 
+
+- Relayers simulate the end to end proccess of executing a request and receiving the rewards before executing them so they do not attempt to execute malicious requests.
