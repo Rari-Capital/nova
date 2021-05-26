@@ -49,8 +49,10 @@ The registry is where users make and manage "requests" (transactions to be execu
         - If the relayer does not approve enough input tokens the strategy will cause a "hard revert" which means the entire call will revert (preventing a message from being sent to pay out the relayer and undoing any actions taken by the relayer in the tx).
 
   - Request creators must approve the amount of WETH neccessary to pay for `(gasPrice * gasLimit) + tip` before making a request.
-  - 30% of the tip will be sent back to the request creator if the strategy reverts to incentivize good behavior.
-  - The registry will refund the request creator for any gas unused by the call on L1.
+    - 30% of the tip will be sent back to the request creator if the strategy reverts to incentivize good behavior.
+    - The registry will refund the request creator for any gas unused by the call on L1.
+
+  - **Data about the request (calldata, strategy, gas price, etc) are hashed along with a "nonce" assigned to request to generate a unique identifier known as the execHash that will be used to reference the request.**
 
 - Users and relayers can claim input tokens via a seperate function on the registry.
 
@@ -86,9 +88,9 @@ The registry is where users make and manage "requests" (transactions to be execu
 
 The execution manager is what allows the registry to be certian that a request was properly executed.
 
-- Relayers take the calldata and strategy address users post to the registry (after validating the user paid for the right amount of gas, etc) and execute them via the execution manager.
+- Relayers take the calldata and strategy address users post to the registry (after validating the user paid for the right amount of gas, etc) and execute them via the execution manager. The relayer must also provide the nonce assigned to the request so it can compute the execHash.
 
-- The execution manager runs the call itself measures the gas used
+- The execution manager runs the call itself measures the gas used.
 
   - The call may revert, and as long as the revert message is not `__NOVA__HARD__REVERT`, it will still count as a succesful execution and the relayer will be reimbursed the gas they spent.
 
