@@ -55,6 +55,8 @@ The registry is where users make and manage "requests" (transactions to be execu
 
   - **Data about the request (calldata, strategy, gas price, etc) are hashed along with a "nonce" assigned to request to generate a unique identifier known as the execHash that will be used to reference the request.**
 
+<p align="center"><img width="480" src="https://www.websequencediagrams.com/files/render?link=pbdgyZ4TVrTket4SYh0QueYoaj6azHfXoNE2ip6ITqxtciOd4H0mPRGJQCPaGA4O"></p>
+
 - Users and relayers can claim input tokens via a seperate function on the registry.
 
   - Relayers may call this function after executing a request with input tokens.
