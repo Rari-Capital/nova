@@ -49,6 +49,7 @@ The registry is where users make and manage "requests" (transactions to be execu
         - If the relayer does not approve enough input tokens the strategy will cause a "hard revert" which means the entire call will revert (preventing a message from being sent to pay out the relayer and undoing any actions taken by the relayer in the tx).
 
   - Request creators must approve the amount of WETH neccessary to pay for `(gasPrice * gasLimit) + tip` before making a request.
+
     - 30% of the tip will be sent back to the request creator if the strategy reverts to incentivize good behavior.
     - The registry will refund the request creator for any gas unused by the call on L1.
 
@@ -90,25 +91,22 @@ The execution manager is what allows the registry to be certian that a request w
 
 - Relayers take the calldata and strategy address users post to the registry (after validating the user paid for the right amount of gas, etc) and execute them via the execution manager. The relayer must also provide the nonce assigned to the request so it can compute the execHash.
 
-- The execution manager runs the call itself measures the gas used.
+  - The execution manager runs the call itself measures the gas used.
 
-  - The call may revert, and as long as the revert message is not `__NOVA__HARD__REVERT`, it will still count as a succesful execution and the relayer will be reimbursed the gas they spent.
+    - The call may revert, and as long as the revert message is not `__NOVA__HARD__REVERT__`, it will still count as a succesful execution and the relayer will be reimbursed the gas they spent.
 
-  - if the call did revert with `__NOVA__HARD__REVERT`, this means the relayer has done something unwanted by the strategy and will cause the call to the execution manager to revert, which means the realeyer will not be reimbursed the gas they spent.
+    - If the call did revert with `__NOVA__HARD__REVERT__`, this means the relayer has done something unwanted by the strategy and will cause the call to the execution manager to revert, which means the realeyer will not be reimbursed the gas they spent.
 
-- If the call does not revert with `__NOVA__HARD__REVERT`, the execution manager then calls [`sendMessage` on Optimism's OVM_L1CrossDomainMessenger contract](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) to send a message to the registry.
+    - If the call does not revert with `__NOVA__HARD__REVERT__`, the execution manager then calls [`sendMessage` on Optimism's OVM_L1CrossDomainMessenger contract](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) to send a message to the registry.
 
-  - The message contains a unique identifier for the execution, how much gas was used, if the transaction reverted, and which relayer executed the request.
+      - The message contains the computed execHash for this call, how much gas was used, if the transaction reverted, and which relayer executed the request.
 
-    - The "unique identifier" is referred to as an "execHash"
+    - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc.
 
-    - The execHash is a hash of all relevant factors about the execution (strategy address, calldata, gas price, etc).
-
-    - The execHash is first computed and stored when a request is created on the registry.
-
-      - When a message comes in, the registry can find which request matches the execHash to determine which input tokens to release, etc.
-
-  - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc.
+- Strategy contracts may wish to access "input tokens" from the relayer via the `transferFromRelayer(address token, uint256 amount)` function present on the execution manager contract.
+  - This function will attempt to transferFrom `amount` of `token` to the calling strategy.
+  - If the relayer has not approved `amount` of `token` to the execution manager, the execution manager will revert with `__NOVA__HARD__REVERT__`
+  - If caller is not the currently executing strategy the function will revert with `NOT_EXECUTING`.
 
 _In summary, these two contracts enable what could be described as "cross-layer meta-transactions" that can be intiated by L2 contracts and users alike._
 
