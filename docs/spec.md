@@ -132,3 +132,5 @@ _In summary, these two contracts enable what could be described as "cross-layer 
 - Relayers simulate the end to end proccess of executing a request and receiving the rewards before executing them so they do not attempt to execute malicious requests.
 
 - Relayers specify deadlines of less than 5 minutes when relaying via the execution manager (as to ensure they do not execute a request after its tokens are withdrawn).
+
+- Relayers are coordinating off-chain to ensure that multiple relayers don't try to execute the same request. Our initial implementation of the Nova protocol will use a team-controlled whitelist to ensure a group of trusted relayers are coordinated, but future iterations could use cryptoeconomic incentivies or leader election auctions to prevent coordination issues from occuring.
