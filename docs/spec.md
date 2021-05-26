@@ -62,11 +62,15 @@ The registry is where users make and manage "requests" (transactions to be execu
 
   - Anyone may call the "claim input tokens" function on behalf of the relayer or user.
 
+<p align="center"><img width="480" src="https://user-images.githubusercontent.com/26209401/119604018-30bddc00-bda3-11eb-9c8c-a25428296817.png"></p>
+
 - If a user's request is not being executed, they may trigger a token unlock, which sets off a 5 minute countdown (or longer if a user specifies)
 
   - After the waiting period has passed, anyone is free to call a method on the registry which will withdraw the tokens and send them to the request's creator.
   - If the user's request gets executed during the unlock period, they will not be able to withdraw their tokens.
   - If a user waits out the unlock period but does not withdraw their tokens, a relayer may still execute the request.
+
+<p align="center"><img width="480" src="https://user-images.githubusercontent.com/26209401/119603541-4252b400-bda2-11eb-87d8-87b8fcf45340.png"></p>
 
 - If a user specifies a gas price that is too low, they can speed up their request using a function on the registry.
 
@@ -75,6 +79,8 @@ The registry is where users make and manage "requests" (transactions to be execu
   - The request creator is free to speed up their request at any time by calling a function on the registry. This function immediately begins the minimum 5 minute timeout period, and once 5 minutes have passed the request will be automatically withdrawn from and tokens will be transfered to a matching request with a higher gas price.
 
   - This function requires that the user approve the additional WETH needed to pay for the higher gas price: `(newGasPrice - previousGasPrice) * gasLimit`
+
+<p align="center"><img width="480" src="https://user-images.githubusercontent.com/26209401/119603588-5b5b6500-bda2-11eb-8257-96f3d2183150.png"></p>
 
 ### An "execution manager" **on L1**
 
