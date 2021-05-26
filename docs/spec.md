@@ -103,10 +103,15 @@ The execution manager is what allows the registry to be certian that a request w
 
     - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc.
 
+<p align="center"><img width="780" src="https://user-images.githubusercontent.com/26209401/119608199-6a461580-bdaa-11eb-95de-07bd86f45984.png"></p>
+
+
 - Strategy contracts may wish to access "input tokens" from the relayer via the `transferFromRelayer(address token, uint256 amount)` function present on the execution manager contract.
   - This function will attempt to transferFrom `amount` of `token` to the calling strategy.
   - If the relayer has not approved `amount` of `token` to the execution manager, the execution manager will revert with `__NOVA__HARD__REVERT__`
   - If caller is not the currently executing strategy the function will revert with `NOT_EXECUTING`.
+
+<p align="center"><img width="480" src="https://user-images.githubusercontent.com/26209401/119608051-2ce18800-bdaa-11eb-8aaf-09d7b436212c.png"></p>
 
 _In summary, these two contracts enable what could be described as "cross-layer meta-transactions" that can be intiated by L2 contracts and users alike._
 
