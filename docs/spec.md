@@ -28,15 +28,34 @@ By utilizing the verifiable nature of [Optimism's](https://optimism.io) [`enqueu
 ### Nova consists of at least 2 contracts:
 - A "registry" **on L2**
 
-The registry is where users make "requests" (post transactions to be executed), and relayers recieve rewards for executing them. It coordinates ingesting tokens from users and holding them, releasing tokens to relayers, allowing users to withdraw their requests after a delay, etc.
+  - The registry is where users make "requests" (post transactions to be executed), and relayers recieve rewards for executing them. 
+  - A "request" is created when a user/contract calls a function on the contract (the official implementation calls this function `requestExec`) with:
+    - The address of an L1 contract (this is known as the "strategy" contract)
+    - The abi encoded calldata to call the "strategy" with
+    - How much gas the transaction is expected to take up 
+    - The gas price they want used to execute the request
+  - Request creators must approve the amount of WETH neccessary to pay for `gasPrice * gasLimit` before making a request. 
+  - Request creators may optionally specify "input tokens" which they must provide for the relayer like gas.
+    - Input tokens represent tokens a relayer will need to approve to the execution manager in order to succesfully execute the request on L1. 
+    - Relayers must front input tokens themselves but will recieve their input tokens back on L2 if they successfuly execute a request.
+    - Relayers will not recieve their input tokens back if the strategy reverts on L1.
+    - Strategy contracts can access input tokens from relayers via a special method in the execution manager.
+    - If the relayer does not approve enough input tokens the strategy will cause a "hard revert" which means the entire call will revert (preventing a message from being sent to pay out the relayer and undoing any actions taken by the relayer in the tx).
+
+  - The registry also coordinates releasing tokens to relayers, allowing users to withdraw their requests after a delay, speeding up their requests, etc. 
 
 - An "execution manager" **on L1**
 
-The execution manager is what allows the registry to be certian that a request was properly executed. 
+  - The execution manager is what allows the registry to be certian that a request was properly executed. 
+  - Relayers take the calldata and strategy address users post to the registry (after validating the user paid for the right amount of gas, etc) and execute them via the execution manager. 
+  - The execution manager runs the call itself measures the gas used 
+    - The call may revert, and as long as the revert message is not `__NOVA__HARD__REVERT`, it will still count as a succesful execution and the relayer will be reimbursed the gas they spent.
+    - if the call did revert with `__NOVA__HARD__REVERT`, this means the relayer has done something unwanted by the strategy and will cause the call to the execution manager to revert, which means the realeyer will not be reimbursed the gas they spent.
+  - If the call does not revert with `__NOVA__HARD__REVERT`, the execution manager then calls [`enqueue`](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) on [Optimism's "Canonical Transaction Chain"](https://community.optimism.io/docs/protocol/protocol.html#chain-contracts) contract to send a message to the registry. 
+    - The message contains a unique identifier for the execution, how much gas was used, if the transaction reverted, and which relayer executed the request. 
+      - The unique identifier is a hash of all relevant factors about the execution (strategy address, calldata, gas price, etc). 
+      - The identifier can be precomputed on the registry, and when a message comes in, the registry knows that if the unique identifier matches one already present in the registry, it was properly executed. 
+    - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc. 
 
-Relayers take the calldata and strategy address users post to the registry (after validating the user paid for the right amount of gas, etc) and execute them through the execution manager. 
-
-The execution manager runs the call itself, measures the gas used and then [`enqueue`s a message up to registry](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) that informs the registry of how much gas the execution used, if the transaction reverted, and which relayer executed the request.
-
-The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc. 
+### In summary, these two contracts enable what could be described as "cross-layer meta-transactions" that can be intiated by L2 contracts and users alike.
 
