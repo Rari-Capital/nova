@@ -65,7 +65,7 @@ The registry is where users make and manage "requests" (transactions to be execu
 
   - Anyone may call the "claim input tokens" function on behalf of the relayer or user.
 
-<p align="center"><img width="480" src="https://user-images.githubusercontent.com/26209401/119604018-30bddc00-bda3-11eb-9c8c-a25428296817.png"></p>
+<p align="center"><img width="480" src="https://www.websequencediagrams.com/files/render?link=6jDCBnCc0fWLq0uG42WmAsZKOEzmxurJ5rhgSE9iNJ0zIwRJPATvVe4uEW8AHD0b"></p>
 
 - If a user's request is not being executed, they may trigger a token unlock, which sets off a 5 minute countdown (or longer if a user specifies)
 
@@ -73,7 +73,7 @@ The registry is where users make and manage "requests" (transactions to be execu
   - If the user's request gets executed during the unlock period, they will not be able to withdraw their tokens.
   - If a user waits out the unlock period but does not withdraw their tokens, a relayer may still execute the request.
 
-<p align="center"><img width="480" src="https://user-images.githubusercontent.com/26209401/119603541-4252b400-bda2-11eb-87d8-87b8fcf45340.png"></p>
+<p align="center"><img width="480" src="https://www.websequencediagrams.com/files/render?link=0wegpyMVKOotkpQRuqkDbgoCFBD9kyaFtvsyR9jXHmfTWbXHnBOb0L1aIGtfEoXm"></p>
 
 - If a user specifies a gas price that is too low, they can speed up their request using a function on the registry.
 
@@ -83,7 +83,7 @@ The registry is where users make and manage "requests" (transactions to be execu
 
   - This function requires that the user approve the additional WETH needed to pay for the higher gas price: `(newGasPrice - previousGasPrice) * gasLimit`
 
-<p align="center"><img width="480" src="https://user-images.githubusercontent.com/26209401/119603588-5b5b6500-bda2-11eb-8257-96f3d2183150.png"></p>
+<p align="center"><img width="480" src="https://www.websequencediagrams.com/files/render?link=lkVgcR0mtXNsw0z7z7BfyswRYENareFL286V3ffIu3uUOYfYEwNhnOIZCpND6bFO"></p>
 
 ### An "execution manager" **on L1**
 
@@ -103,7 +103,7 @@ The execution manager is what allows the registry to be certian that a request w
 
     - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc.
 
-<p align="center"><img width="780" src="https://user-images.githubusercontent.com/26209401/119608199-6a461580-bdaa-11eb-95de-07bd86f45984.png"></p>
+<p align="center"><img width="780" src="https://www.websequencediagrams.com/files/render?link=rJZQgiiPyTBoRDgWNJWLiyI4FHb4VDnCTLFIO9dCPMdUPW5oIIaBE7qVH14lgBY6"></p>
 
 
 - Strategy contracts may wish to access "input tokens" from the relayer via the `transferFromRelayer(address token, uint256 amount)` function present on the execution manager contract.
@@ -111,7 +111,7 @@ The execution manager is what allows the registry to be certian that a request w
   - If the relayer has not approved `amount` of `token` to the execution manager, the execution manager will revert with `__NOVA__HARD__REVERT__`
   - If caller is not the currently executing strategy the function will revert with `NOT_EXECUTING`.
 
-<p align="center"><img width="480" src="https://user-images.githubusercontent.com/26209401/119608051-2ce18800-bdaa-11eb-8aaf-09d7b436212c.png"></p>
+<p align="center"><img width="480" src="https://www.websequencediagrams.com/files/render?link=vGYrHNrMgthxIyrBh5nhj960WQdxd4AAGvhwT8DuEMJd6Z8hN9NngFz19lIsVSGe"></p>
 
 _In summary, these two contracts enable what could be described as "cross-layer meta-transactions" that can be intiated by L2 contracts and users alike._
 
