@@ -22,7 +22,7 @@
 
 ## Solution Summary
 
-By utilizing the verifiable nature of [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls), **Nova is able to allow users/contracts on L2 to perform transactions on L1 and trustlessly recieve their results**. Nova relies on at least one relayer to execute the transaction on L1, but a relayer can only ignore a transaction— they are unable to tamper with it or change its output. Relayers are reimbursed for the gas they spend and incentivized with additional tips. Nova transactions have meta-transaction level latency (nearly identical to sending the L1 transaction directly to an Ethereum full node) thanks to the [instant confirmations provided by Optimsim's sequencer model](https://research.paradigm.xyz/rollups).
+By utilizing the verifiable nature of [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html), **Nova is able to allow users/contracts on L2 to perform transactions on L1 and trustlessly recieve their results**. Nova relies on at least one relayer to execute the transaction on L1, but a relayer can only ignore a transaction— they are unable to tamper with it or change its output. Relayers are reimbursed for the gas they spend and incentivized with additional tips. Nova transactions have meta-transaction level latency (nearly identical to sending the L1 transaction directly to an Ethereum full node) thanks to the [instant confirmations provided by Optimsim's sequencer model](https://research.paradigm.xyz/rollups).
 
 ## High Level Overview
 
@@ -103,7 +103,7 @@ The execution manager is what allows the registry to be certian that a request w
 
     - If the call did revert with `__NOVA__HARD__REVERT__`, this means the relayer has done something unwanted by the strategy and will cause the call to the execution manager to revert, which means the realeyer will not be reimbursed the gas they spent.
 
-    - If the call does not revert with `__NOVA__HARD__REVERT__`, the execution manager then calls [`sendMessage` on Optimism's OVM_L1CrossDomainMessenger contract](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) to send a message to the registry.
+    - If the call does not revert with `__NOVA__HARD__REVERT__`, the execution manager then calls [`sendMessage` on Optimism's OVM_L1CrossDomainMessenger contract](https://community.optimism.io/docs/developers/bridging.html) to send a message to the registry.
 
       - The message contains the computed execHash for this call, how much gas was used, if the transaction reverted, and which relayer executed the request.
 
@@ -127,7 +127,7 @@ _In summary, these two contracts enable what could be described as "cross-layer 
 
 ## External Assumptions
 
-- [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) does not contain any flaws that would allow third parties to tamper with or forge the origin of a message.
+- [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html) does not contain any flaws that would allow third parties to tamper with or forge the origin of a message.
 
 - Relayers simulate the end to end proccess of executing a request and receiving the rewards before executing them so they do not attempt to execute malicious requests.
 
