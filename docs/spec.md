@@ -81,7 +81,11 @@ The registry is where users make and manage "requests" (transactions to be execu
 
   - Speeding up a request is much more convenient than unlocking + withdrawing tokens and then recreating the request as it only takes one transaction.
 
-  - The request creator is free to speed up their request at any time by calling a function on the registry. This function immediately begins the minimum 5 minute timeout period, and once 5 minutes have passed the request will be automatically withdrawn from and tokens will be transfered to a matching request with a higher gas price.
+  - The request creator is free to speed up their request at any time by calling a function on the registry. 
+  
+  - This function immediately begins the minimum 5 minute timeout period, and once 5 minutes have passed the request will be automatically withdrawn from and tokens will be transfered to a matching request with a higher gas price.
+    - The new request (with a higher gas price) is called the "resubmitted" request
+    - The old request which is disabled after 5 minutes is known as the "uncled" request
 
   - This function requires that the user approve the additional WETH needed to pay for the higher gas price: `(newGasPrice - previousGasPrice) * gasLimit`
 
