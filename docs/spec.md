@@ -30,7 +30,7 @@ The Nova protocol consists of at least 2 contracts. Both of these contracts live
 
 - ### A "registry" **on L2**
 
-  - The registry is where users make and manage "requests" (transactions to be executed), and relayers recieve rewards for executing them.
+  The registry is where users make and manage "requests" (transactions to be executed), and relayers recieve rewards for executing them.
 
   - A "request" is created when a user/contract calls a function on the contract (the official implementation calls this function `requestExec`)
 
@@ -78,7 +78,7 @@ The Nova protocol consists of at least 2 contracts. Both of these contracts live
 
 - ### An "execution manager" **on L1**
 
-  - The execution manager is what allows the registry to be certian that a request was properly executed.
+  The execution manager is what allows the registry to be certian that a request was properly executed.
 
   - Relayers take the calldata and strategy address users post to the registry (after validating the user paid for the right amount of gas, etc) and execute them via the execution manager.
 
