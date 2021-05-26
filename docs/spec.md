@@ -92,9 +92,13 @@ The execution manager is what allows the registry to be certian that a request w
 
   - The message contains a unique identifier for the execution, how much gas was used, if the transaction reverted, and which relayer executed the request.
 
-    - The unique identifier is a hash of all relevant factors about the execution (strategy address, calldata, gas price, etc).
+    - The "unique identifier" is referred to as an "execHash"
 
-    - The identifier can be precomputed on the registry, and when a message comes in, the registry knows that if the unique identifier matches one already present in the registry, it was properly executed.
+    - The execHash is a hash of all relevant factors about the execution (strategy address, calldata, gas price, etc).
+
+    - The execHash is first computed and stored when a request is created on the registry. 
+      
+      - When a message comes in, the registry can find which request matches the execHash to determine which input tokens to release, etc.
 
   - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc.
 
