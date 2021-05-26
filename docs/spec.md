@@ -25,8 +25,9 @@ By utilizing the verifiable nature of [Optimism's](https://optimism.io) [`enqueu
 
 ## Abstract
 
-### Nova consists of at least 2 contracts:
-- A "registry" **on L2**
+The Nova protocol consists of at least 2 contracts. Both of these contracts live on seperate layers, but must have knowledge of each other's addresses on their opposite chains in order to send and validate messages between them. The minimum 2 contracts needed are:
+
+- ### A "registry" **on L2**
 
   - The registry is where users make "requests" (post transactions to be executed), and relayers recieve rewards for executing them. 
   - A "request" is created when a user/contract calls a function on the contract (the official implementation calls this function `requestExec`) with:
@@ -44,7 +45,7 @@ By utilizing the verifiable nature of [Optimism's](https://optimism.io) [`enqueu
 
   - The registry also coordinates releasing tokens to relayers, allowing users to withdraw their requests after a delay, speeding up their requests, etc. 
 
-- An "execution manager" **on L1**
+- ### An "execution manager" **on L1**
 
   - The execution manager is what allows the registry to be certian that a request was properly executed. 
   - Relayers take the calldata and strategy address users post to the registry (after validating the user paid for the right amount of gas, etc) and execute them via the execution manager. 
@@ -57,5 +58,5 @@ By utilizing the verifiable nature of [Optimism's](https://optimism.io) [`enqueu
       - The identifier can be precomputed on the registry, and when a message comes in, the registry knows that if the unique identifier matches one already present in the registry, it was properly executed. 
     - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc. 
 
-### In summary, these two contracts enable what could be described as "cross-layer meta-transactions" that can be intiated by L2 contracts and users alike.
+_In summary, these two contracts enable what could be described as "cross-layer meta-transactions" that can be intiated by L2 contracts and users alike._
 
