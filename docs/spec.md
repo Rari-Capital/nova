@@ -109,6 +109,10 @@ The execution manager is what allows the registry to be certian that a request w
 
     - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc.
 
+  - Relayers may also specify a "deadline" (timestamp representing the absolute latest point they want the transaction run at):
+    - This is to protect relayers from abuse by users who might try to unlock and withdraw their tokens before the relayer's transaction makes it on-chain— allowing them to avoid paying the relayer.
+    - Relayers should specify deadlines of less than 5 minutes in the future when they attempt a relay (as to ensure they do not execute a request after its tokens are withdrawn). 
+
 <p align="center"><img width="780" src="https://www.websequencediagrams.com/files/render?link=rJZQgiiPyTBoRDgWNJWLiyI4FHb4VDnCTLFIO9dCPMdUPW5oIIaBE7qVH14lgBY6"></p>
 
 
