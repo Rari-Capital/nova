@@ -23,7 +23,7 @@
 
 By utilizing the verifiable nature of [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls), **Nova is able to allow users/contracts on L2 to perform transactions on L1 and trustlessly recieve their results**. Nova relies on a relayer to execute the transaction on L1, but a relayer can only ignore a transaction— they are unable to tamper with it or change its output. Nova transactions have meta-transaction level latency (nearly identical to sending the L1 transaction directly to an Ethereum full node) thanks to the [instant confirmations provided by Optimsim's sequencer model](https://research.paradigm.xyz/rollups).
 
-## Abstract
+## High Level Overview
 
 The Nova protocol consists of at least 2 contracts. Both of these contracts live on seperate layers, but must have knowledge of each other's addresses on their opposite chains in order to send and validate messages between them. The minimum 2 contracts needed are:
 
@@ -67,3 +67,5 @@ _In summary, these two contracts enable what could be described as "cross-layer 
 - [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) does not contain any flaws that would allow third parties to tamper with or forge the origin of a message. 
 
 - Relayers simulate the end to end proccess of executing a request and receiving the rewards before executing them so they do not attempt to execute malicious requests.
+
+- Relayers specify deadlines of less than 5 minutes when relaying via the execution manager (as to ensure they do not execute a request after its tokens are withdrawn).
