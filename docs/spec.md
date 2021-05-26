@@ -79,14 +79,23 @@ The Nova protocol consists of at least 2 contracts. Both of these contracts live
 - ### An "execution manager" **on L1**
 
   - The execution manager is what allows the registry to be certian that a request was properly executed.
+
   - Relayers take the calldata and strategy address users post to the registry (after validating the user paid for the right amount of gas, etc) and execute them via the execution manager.
+
   - The execution manager runs the call itself measures the gas used
+
     - The call may revert, and as long as the revert message is not `__NOVA__HARD__REVERT`, it will still count as a succesful execution and the relayer will be reimbursed the gas they spent.
+
     - if the call did revert with `__NOVA__HARD__REVERT`, this means the relayer has done something unwanted by the strategy and will cause the call to the execution manager to revert, which means the realeyer will not be reimbursed the gas they spent.
+
   - If the call does not revert with `__NOVA__HARD__REVERT`, the execution manager then calls [`sendMessage` on Optimism's OVM_L1CrossDomainMessenger contract](https://community.optimism.io/docs/developers/bridging.html#understanding-contract-calls) to send a message to the registry.
+
     - The message contains a unique identifier for the execution, how much gas was used, if the transaction reverted, and which relayer executed the request.
+
       - The unique identifier is a hash of all relevant factors about the execution (strategy address, calldata, gas price, etc).
+
       - The identifier can be precomputed on the registry, and when a message comes in, the registry knows that if the unique identifier matches one already present in the registry, it was properly executed.
+
     - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc.
 
 _In summary, these two contracts enable what could be described as "cross-layer meta-transactions" that can be intiated by L2 contracts and users alike._
