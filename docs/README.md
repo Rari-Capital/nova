@@ -1,6 +1,5 @@
 # Nova
 
-
 **Nova is a <u>set of contracts</u> & <u>network of relayers</u> that enable seamless <u>L1-L2 interop</u> a trustless and <u>composable</u> manner.**
 
 <img width="500" style="float: right;" alt="Explainer" src="https://i.imgur.com/TbbAhLd.png">
@@ -101,7 +100,7 @@ function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public
 
 - `unlockDelaySeconds`: The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
 
-This function starts a countdown which lasts for `unlockDelaySeconds`. After the delay is passed a user is allowed to withdraw their tip/inputs via [`withdrawTokens`](#withdraw-tokens). 
+This function starts a countdown which lasts for `unlockDelaySeconds`. After the delay is passed a user is allowed to withdraw their tip/inputs via [`withdrawTokens`](#withdraw-tokens).
 
 `msg.sender` must be the initiator of execution request the `execHash` links to.
 
@@ -143,11 +142,11 @@ function speedUpRequest(bytes32 execHash, uint256 gasPrice) external returns (by
 
 - **`RETURN`: The "newExecHash" (unique identifier) for the resubmitted request.**
 
-`speedUpRequest` allows a user/contract to increase the gas price for their request without having to `cancel`, `withdraw` and call `requestExec` again. 
+`speedUpRequest` allows a user/contract to increase the gas price for their request without having to `cancel`, `withdraw` and call `requestExec` again.
 
 Calling this function will initiate a 5 minute delay before disabling the request associated with `execHash` (this is known as the "uncled" request) and enabling an updated version of the request (this is known as the resubmitted request which is returned as `newExecHash`).
 
-The caller must be the creator of the `execHash` and must also approve enough extra WETH to pay for the increased gas costs: `(gasPrice - previousGasPrice) * previousGasLimit`.
+The caller must be the creator of the `execHash` and must also approve enough extra WETH to pay for the increased gas costs: `(newGasPrice - previousGasPrice) * gasLimit`.
 
 ::: danger
 A relayer can still execute the uncled request associated with the `execHash` up until the delay has passed.
@@ -197,7 +196,7 @@ function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemo
 Relayers should call this function before trying to execute a request in the registry.
 :::
 
-Checks if the request has had its tokens removed. Returns if the tokens have been removed along with a timestamp of when they may be added or removed. 
+Checks if the request has had its tokens removed. Returns if the tokens have been removed along with a timestamp of when they may be added or removed.
 
 - Tokens may start out removed, if so `tokensRemoved` will be true and `changeTimestamp` will be in the future and represent when tokens will be added. If this is the case you know the request is a resubmitted request created via [`speedUpRequest`](#speed-up-a-request).
 
@@ -247,7 +246,7 @@ Lastly it will mark `execHash` as executed so it cannot be executed again.
 
 ### Get request info
 
-There are quite a few public functions to get details about a request. 
+There are quite a few public functions to get details about a request.
 
 They are all implemented as public mappings (which generate a function with the mapping's name which takes its key as a parameter and returns what the key maps to):
 
@@ -257,7 +256,7 @@ mapping(bytes32 => address) public getRequestCreator;
 
 /// @notice Maps execHashes to the address of the strategy associated with the request.
 mapping(bytes32 => address) public getRequestStrategy;
-    
+
 /// @notice Maps execHashes to the calldata associated with the request.
 mapping(bytes32 => bytes) public getRequestCalldata;
 
@@ -296,7 +295,7 @@ The call to `strategy` is wrapped in a try-catch block:
   - [This is called a SOFT REVERT.](#execute-request)
   - If a strategy **soft reverts**, the `inputTokens` for the request will **not be sent** to the relayer and **only 70% of the tip** will be sent (instead of the usual 100%). The **30% tip penalty** is to prevent relayers from attempting to cause or wait for soft reverts and **act in good faith** instead.
 
-This function also keeps track of how much gas is consumed by the strategy and `exec` itself. 
+This function also keeps track of how much gas is consumed by the strategy and `exec` itself.
 
 Once the strategy is executed this function sends a cross domain message to call [`execCompleted`](#complete-execution-request) on the registry.
 
@@ -386,4 +385,5 @@ function swapExactTokensForTokens(
   // Send the tokens up to L2 with the recipient being the `to` param
   optimismTokenBridge.depositAsERC20(address(output), to, outputAmount);
 }
+
 ```
