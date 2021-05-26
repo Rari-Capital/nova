@@ -96,8 +96,8 @@ The execution manager is what allows the registry to be certian that a request w
 
     - The execHash is a hash of all relevant factors about the execution (strategy address, calldata, gas price, etc).
 
-    - The execHash is first computed and stored when a request is created on the registry. 
-      
+    - The execHash is first computed and stored when a request is created on the registry.
+
       - When a message comes in, the registry can find which request matches the execHash to determine which input tokens to release, etc.
 
   - The registry can then check that the sender of the message is the execution manager it expects and release the gas payment, etc.
