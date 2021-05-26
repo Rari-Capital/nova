@@ -62,11 +62,11 @@ The registry is where users make and manage "requests" (transactions to be execu
 
   - Anyone may call the "claim input tokens" function on behalf of the relayer or user.
 
-- If a user's request is not being executed, they may trigger a token unlock, which sets off a 5 minute countdown.
+- If a user's request is not being executed, they may trigger a token unlock, which sets off a 5 minute countdown (or longer if a user specifies)
 
-  - After the 5 minutes have passed, anyone is free to call a method on the registry which will withdraw the tokens and send them to the request's creator.
+  - After the waiting period has passed, anyone is free to call a method on the registry which will withdraw the tokens and send them to the request's creator.
   - If the user's request gets executed during the unlock period, they will not be able to withdraw their tokens.
-  - If a user waits out the 5 minute unlock period but does not withdraw their tokens, a relayer may still execute the request.
+  - If a user waits out the unlock period but does not withdraw their tokens, a relayer may still execute the request.
 
 - If a user specifies a gas price that is too low, they can speed up their request using a function on the registry.
 
