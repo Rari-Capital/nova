@@ -129,13 +129,12 @@ _In summary, these two contracts enable what could be described as "cross-layer 
 
 - [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html) does not contain any flaws that would allow third parties to tamper with or forge the origin of a message.
 
-- Relayers simulate the end to end proccess of executing a request and receiving the rewards before executing them so they do not attempt to execute malicious requests.
+- Relayers simulate the end to end proccess of executing a request and receiving the rewards before executing them so they do not lose funds attempting to execute malicious requests.
 
-- Relayers specify deadlines of less than 5 minutes when relaying via the execution manager (as to ensure they do not execute a request after its tokens are withdrawn).
+- Relayers specify deadlines of less than 5 minutes when relaying via the execution manager so they do not lose funds attempting to execute a request after its tokens have been withdrawn.
 
-- Relayers are coordinating off-chain to ensure that multiple relayers don't try to execute the same request. 
+- Relayers are coordinating off-chain to ensure that multiple relayers don't lose funds trying to execute the same request.
   - Relayers executing the same request **does not affect users**— only relayers who may end up double-executing a request which results in **only one relayer being paid.** This is considered a core assumption as without it, relaying could become risky and unappealing. 
-
 
   - Our initial implementation of the Nova protocol will use a team-controlled whitelist to ensure a group of trusted relayers are coordinated, but future iterations could use cryptoeconomic incentivies or leader election auctions to prevent coordination issues from occuring.
 
