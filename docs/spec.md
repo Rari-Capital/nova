@@ -81,9 +81,10 @@ The registry is where users make and manage "requests" (transactions to be execu
 
   - Speeding up a request is much more convenient than unlocking + withdrawing tokens and then recreating the request as it only takes one transaction.
 
-  - The request creator is free to speed up their request at any time by calling a function on the registry. 
-  
+  - The request creator is free to speed up their request at any time by calling a function on the registry.
+
   - This function immediately begins the minimum 5 minute timeout period, and once 5 minutes have passed the request will be automatically withdrawn from and tokens will be transfered to a matching request with a higher gas price.
+
     - The new request (with a higher gas price) is called the "resubmitted" request
     - The old request which is disabled after 5 minutes is known as the "uncled" request
 
@@ -111,10 +112,9 @@ The execution manager is what allows the registry to be certian that a request w
 
   - Relayers may also specify a "deadline" (timestamp representing the absolute latest point they want the transaction run at):
     - This is to protect relayers from abuse by users who might try to unlock and withdraw their tokens before the relayer's transaction makes it on-chain— allowing them to avoid paying the relayer.
-    - Relayers should specify deadlines of less than 5 minutes in the future when they attempt a relay (as to ensure they do not execute a request after its tokens are withdrawn). 
+    - Relayers should specify deadlines of less than 5 minutes in the future when they attempt a relay (as to ensure they do not execute a request after its tokens are withdrawn).
 
 <p align="center"><img width="780" src="https://www.websequencediagrams.com/files/render?link=rJZQgiiPyTBoRDgWNJWLiyI4FHb4VDnCTLFIO9dCPMdUPW5oIIaBE7qVH14lgBY6"></p>
-
 
 - Strategy contracts may wish to access "input tokens" from the relayer via the `transferFromRelayer(address token, uint256 amount)` function present on the execution manager contract.
   - This function will attempt to transferFrom `amount` of `token` to the calling strategy.
@@ -134,7 +134,7 @@ _In summary, these two contracts enable what could be described as "cross-layer 
 - Relayers specify deadlines of less than 5 minutes when relaying via the execution manager so they do not lose funds attempting to execute a request after its tokens have been withdrawn.
 
 - Relayers are coordinating off-chain to ensure that multiple relayers don't lose funds trying to execute the same request.
-  - Relayers executing the same request **does not affect users**— only relayers who may end up double-executing a request which results in **only one relayer being paid.** This is considered a core assumption as without it, relaying could become risky and unappealing. 
+
+  - Relayers executing the same request **does not affect users**— only relayers who may end up double-executing a request which results in **only one relayer being paid.** This is considered a core assumption as without it, relaying could become risky and unappealing.
 
   - Our initial implementation of the Nova protocol will use a team-controlled whitelist to ensure a group of trusted relayers are coordinated, but future iterations could use cryptoeconomic incentivies or leader election auctions to prevent coordination issues from occuring.
-
