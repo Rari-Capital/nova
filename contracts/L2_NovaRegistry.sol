@@ -338,9 +338,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         uint256 switchTimestamp = MIN_UNLOCK_DELAY_SECONDS + block.timestamp;
 
         // Ensure that if there is a token unlock scheduled it would be after the switch.
-        // Tokens cannot be withdrawn after the switch which is why it's safe if they unlock atter.
+        // Tokens cannot be withdrawn after the switch which is why it's safe if they unlock after.
         uint256 tokenUnlockTimestamp = getRequestUnlockTimestamp[execHash];
-        require(tokenUnlockTimestamp == 0 || tokenUnlockTimestamp > block.timestamp);
+        require(tokenUnlockTimestamp == 0 || tokenUnlockTimestamp > block.timestamp, "UNLOCK_BEFORE_SWITCH");
 
         // Get more data about the previous request.
         address previousStrategy = getRequestStrategy[execHash];

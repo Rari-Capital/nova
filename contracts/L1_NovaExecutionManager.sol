@@ -111,7 +111,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         (bool success, bytes memory returnData) = strategy.call(l1calldata);
 
         // Revert if the strategy hard reverted.
-        require(keccak256(returnData) != HARD_REVERT_HASH, HARD_REVERT_TEXT);
+        require(keccak256(returnData) != HARD_REVERT_HASH, "HARD_REVERT");
 
         // Reset execution context.
         // We reset only one of the execution context variables because it will cost us less gas to use a previously set storage slot on all future runs.

@@ -205,9 +205,7 @@ describe("L1_NovaExecutionManager", function () {
         MockStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert"),
         deployer.address,
         9999999999999
-      ).should.be.revertedWith(
-        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
-      );
+      ).should.be.revertedWith("HARD_REVERT");
     });
 
     it("soft revert should not exec to revert", async function () {
@@ -325,9 +323,7 @@ describe("L1_NovaExecutionManager", function () {
         ),
         deployer.address,
         9999999999999
-      ).should.be.revertedWith(
-        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
-      );
+      ).should.be.revertedWith("HARD_REVERT");
     });
 
     it("will properly handle a transferFrom with no return value", async function () {
@@ -365,9 +361,7 @@ describe("L1_NovaExecutionManager", function () {
         ),
         deployer.address,
         9999999999999
-      ).should.be.revertedWith(
-        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
-      );
+      ).should.be.revertedWith("HARD_REVERT");
     });
 
     it("will hard revert if transferFrom returns false without reverting", async function () {
@@ -386,9 +380,7 @@ describe("L1_NovaExecutionManager", function () {
         ),
         deployer.address,
         9999999999999
-      ).should.be.revertedWith(
-        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
-      );
+      ).should.be.revertedWith("HARD_REVERT");
     });
 
     it("will not allow anyone to call if not executing", async function () {
