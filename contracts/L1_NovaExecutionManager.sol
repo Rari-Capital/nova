@@ -87,7 +87,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     ) external nonReentrant {
         uint256 startGas = gasleft();
 
-        // Validte preconditions.
+        // Validate preconditions.
         require(block.timestamp <= deadline, "PAST_DEADLINE");
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
 
@@ -136,7 +136,6 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
             EXEC_COMPLETED_MESSAGE_GAS_LIMIT
         );
 
-        // Emit an event.
         emit Exec(execHash, msg.sender, gasUsedEstimate);
     }
 

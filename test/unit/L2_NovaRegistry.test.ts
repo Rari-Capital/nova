@@ -27,6 +27,7 @@ describe("L2_NovaRegistry", function () {
   let MockETH: MockERC20;
   let MockCrossDomainMessenger: MockCrossDomainMessenger;
 
+  const fakeStrategyAddress = "0x4200000000000000000000000000000000000069";
   const fakeExecutionManagerAddress =
     "0xDeADBEEF1337caFEBAbE1337CacAfACe1337C0dE";
 
@@ -161,6 +162,121 @@ describe("L2_NovaRegistry", function () {
         await L2_NovaRegistry.owner().should.eventually.equal(
           ethers.constants.AddressZero
         );
+      });
+    });
+
+    describe("requestExec", function () {
+      it("allows a simple request", async function () {
+        const [deployer] = signers;
+
+        const gasLimit = 420;
+        const gasPrice = 69;
+        const tip = 1;
+
+        await MockETH.approve(
+          L2_NovaRegistry.address,
+          gasLimit * gasPrice + tip
+        );
+
+        await snapshotGasCost(
+          L2_NovaRegistry.requestExec(
+            fakeStrategyAddress,
+            "0x20",
+            gasLimit,
+            gasPrice,
+            tip,
+            []
+          )
+        ).should.not.be.reverted;
+
+        await MockETH.allowance(
+          L2_NovaRegistry.address,
+          deployer.address
+        ).should.eventually.equal(0);
+      });
+
+      it("allows a simple request with one input token", async function () {
+        const [deployer] = signers;
+
+        const gasLimit = 100_000;
+        const gasPrice = 10;
+        const tip = 1337;
+
+        const inputTokenAmount = 500;
+
+        await MockETH.approve(
+          L2_NovaRegistry.address,
+          gasLimit * gasPrice + tip + inputTokenAmount
+        );
+
+        await snapshotGasCost(
+          L2_NovaRegistry.requestExec(
+            fakeStrategyAddress,
+            "0x20",
+            gasLimit,
+            gasPrice,
+            tip,
+            [{ l2Token: MockETH.address, amount: inputTokenAmount }]
+          )
+        );
+
+        await MockETH.allowance(
+          L2_NovaRegistry.address,
+          deployer.address
+        ).should.eventually.equal(0);
+      });
+
+      it("allows a simple request with 2 input tokens", async function () {
+        const [deployer] = signers;
+
+        const gasLimit = 100_000;
+        const gasPrice = 10;
+        const tip = 1337;
+
+        const inputToken1Amount = 1000;
+        const inputToken2Amount = 5000;
+
+        await MockETH.approve(
+          L2_NovaRegistry.address,
+          gasLimit * gasPrice + tip + inputToken1Amount + inputToken2Amount
+        );
+
+        await snapshotGasCost(
+          L2_NovaRegistry.requestExec(
+            fakeStrategyAddress,
+            "0x20",
+            gasLimit,
+            gasPrice,
+            tip,
+            [
+              { l2Token: MockETH.address, amount: inputToken1Amount },
+              { l2Token: MockETH.address, amount: inputToken2Amount },
+            ]
+          )
+        );
+
+        await MockETH.allowance(
+          L2_NovaRegistry.address,
+          deployer.address
+        ).should.eventually.equal(0);
+      });
+
+      it("does not allow for more than 5 input tokens", async function () {
+        await L2_NovaRegistry.requestExec(
+          fakeStrategyAddress,
+          "0x20",
+          0,
+          0,
+          0,
+          [
+            { l2Token: ethers.constants.AddressZero, amount: 0 },
+            { l2Token: ethers.constants.AddressZero, amount: 0 },
+            { l2Token: ethers.constants.AddressZero, amount: 0 },
+            { l2Token: ethers.constants.AddressZero, amount: 0 },
+            { l2Token: ethers.constants.AddressZero, amount: 0 },
+            { l2Token: ethers.constants.AddressZero, amount: 0 },
+          ]
+        ).should.be.revertedWith("TOO_MANY_INPUTS");
       });
     });
   });

@@ -232,8 +232,8 @@ describe("L1_NovaExecutionManager", function () {
         MockStrategy.address,
         MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
         deployer.address,
-        // Set a deadline 5 seconds in the past
-        Math.floor(Date.now() / 1000) - 5
+        // Set a deadline 60 seconds in the past
+        Math.floor(Date.now() / 1000) - 60
       ).should.be.revertedWith("PAST_DEADLINE");
     });
 

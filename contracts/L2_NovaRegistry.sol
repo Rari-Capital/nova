@@ -210,7 +210,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
             inputTokens[i].l2Token.safeTransferFrom(msg.sender, address(this), inputTokens[i].amount);
 
             // Copy over this index to the requestInputTokens mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
-            requestInputTokens[execHash][i] = inputTokens[i];
+            requestInputTokens[execHash].push(inputTokens[i]);
         }
     }
 
@@ -254,10 +254,14 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @param execHash The unique hash of the request to unlock.
     /// @param unlockDelaySeconds The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
     function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public auth {
+        // Ensure the request has not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
+        // Make sure that an unlock is not arleady scheduled.
         require(getRequestUnlockTimestamp[execHash] == 0, "UNLOCK_ALREADY_SCHEDULED");
+        // Make sure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
+        // Make sure the delay is greater than the minimum.
         require(unlockDelaySeconds >= MIN_UNLOCK_DELAY_SECONDS, "DELAY_TOO_SMALL");
 
         // Set the delay timestamp to (current timestamp + the delay)
@@ -270,10 +274,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @notice Cancels a scheduled unlock.
     /// @param execHash The unique hash of the request which has an unlock scheduled.
     function relockTokens(bytes32 execHash) external auth {
+        // Ensure the request has not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
+        // Make sure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
 
+        // Reset the unlock timestamp to 0.
         delete getRequestUnlockTimestamp[execHash];
 
         emit RelockTokens(execHash);
@@ -383,6 +390,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         bool reverted,
         uint64 gasUsed
     ) external nonReentrant onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
+        // Ensure that the tokens have not already been removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
 
@@ -419,8 +427,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         address inputTokenRecipient = getRequestInputTokenRecipient[execHash].recipient;
 
         if (inputTokenRecipient == address(0)) {
-            // Request has not been executed and tokens have not been withdrawn.
-
+            // This request has not been executed and tokens have not been withdrawn,
+            // but it may be a resubmitted request so we need to check its uncle to make sure it has not been executed and it has already died.
             bytes32 uncle = getRequestUncle[execHash];
             if (uncle == "") {
                 // This is a normal request, so we know tokens have/will not been removed.
