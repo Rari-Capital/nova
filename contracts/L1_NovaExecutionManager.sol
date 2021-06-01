@@ -87,9 +87,16 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     ) external nonReentrant {
         uint256 startGas = gasleft();
 
-        // Validate preconditions.
+        // Check that the deadline has not already passed.
         require(block.timestamp <= deadline, "PAST_DEADLINE");
+
+        // Check authorization of the caller (equivalent to DSAuth's `auth` modifier).
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
+
+        // We cannot allow calling the messenger, as a malicious relayer could use this to trigger
+        // execCompleted as though the execution manager did itself, which would allow them to
+        // claim bounties without actually executing the proper request(s).
+        require(strategy != messenger, "MESSENGER_CALL");
 
         // Compute the execHash.
         bytes32 execHash =
