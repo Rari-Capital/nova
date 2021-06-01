@@ -1,4 +1,8 @@
-import { getFactory, snapshotGasCost } from "../../utils/testUtils";
+import {
+  computeExecHash,
+  getFactory,
+  snapshotGasCost,
+} from "../../utils/testUtils";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -189,6 +193,17 @@ describe("L2_NovaRegistry", function () {
           )
         ).should.not.be.reverted;
 
+        const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
+          computeExecHash({
+            nonce: 1,
+            strategy: fakeStrategyAddress,
+            calldata: "0x20",
+            gasPrice,
+          })
+        );
+
+        inputTokens.length.should.equal(0);
+
         await MockETH.allowance(
           L2_NovaRegistry.address,
           deployer.address
@@ -219,6 +234,20 @@ describe("L2_NovaRegistry", function () {
             [{ l2Token: MockETH.address, amount: inputTokenAmount }]
           )
         );
+
+        const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
+          computeExecHash({
+            nonce: 2,
+            strategy: fakeStrategyAddress,
+            calldata: "0x20",
+            gasPrice,
+          })
+        );
+
+        inputTokens.length.should.equal(1);
+
+        inputTokens[0].l2Token.should.equal(MockETH.address);
+        inputTokens[0].amount.should.equal(inputTokenAmount);
 
         await MockETH.allowance(
           L2_NovaRegistry.address,
@@ -254,6 +283,23 @@ describe("L2_NovaRegistry", function () {
             ]
           )
         );
+
+        const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
+          computeExecHash({
+            nonce: 3,
+            strategy: fakeStrategyAddress,
+            calldata: "0x20",
+            gasPrice,
+          })
+        );
+
+        inputTokens.length.should.equal(2);
+
+        inputTokens[0].l2Token.should.equal(MockETH.address);
+        inputTokens[0].amount.should.equal(inputToken1Amount);
+
+        inputTokens[1].l2Token.should.equal(MockETH.address);
+        inputTokens[1].amount.should.equal(inputToken2Amount);
 
         await MockETH.allowance(
           L2_NovaRegistry.address,

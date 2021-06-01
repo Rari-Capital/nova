@@ -4,6 +4,4 @@ exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request 1
 
 exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with 2 input tokens 1`] = `307982`;
 
-exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with 2 one input tokens 1`] = `307982`;
-
 exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with one input token 1`] = `257036`;
