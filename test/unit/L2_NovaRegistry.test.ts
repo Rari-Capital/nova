@@ -185,7 +185,7 @@ describe("L2_NovaRegistry", function () {
         await snapshotGasCost(
           L2_NovaRegistry.requestExec(
             fakeStrategyAddress,
-            "0x20",
+            "0x00",
             gasLimit,
             gasPrice,
             tip,
@@ -197,7 +197,7 @@ describe("L2_NovaRegistry", function () {
           computeExecHash({
             nonce: 1,
             strategy: fakeStrategyAddress,
-            calldata: "0x20",
+            calldata: "0x00",
             gasPrice,
           })
         );
@@ -227,7 +227,7 @@ describe("L2_NovaRegistry", function () {
         await snapshotGasCost(
           L2_NovaRegistry.requestExec(
             fakeStrategyAddress,
-            "0x20",
+            "0x00",
             gasLimit,
             gasPrice,
             tip,
@@ -239,7 +239,7 @@ describe("L2_NovaRegistry", function () {
           computeExecHash({
             nonce: 2,
             strategy: fakeStrategyAddress,
-            calldata: "0x20",
+            calldata: "0x00",
             gasPrice,
           })
         );
@@ -273,7 +273,7 @@ describe("L2_NovaRegistry", function () {
         await snapshotGasCost(
           L2_NovaRegistry.requestExec(
             fakeStrategyAddress,
-            "0x20",
+            "0x00",
             gasLimit,
             gasPrice,
             tip,
@@ -288,7 +288,7 @@ describe("L2_NovaRegistry", function () {
           computeExecHash({
             nonce: 3,
             strategy: fakeStrategyAddress,
-            calldata: "0x20",
+            calldata: "0x00",
             gasPrice,
           })
         );
@@ -310,7 +310,7 @@ describe("L2_NovaRegistry", function () {
       it("does not allow for more than 5 input tokens", async function () {
         await L2_NovaRegistry.requestExec(
           fakeStrategyAddress,
-          "0x20",
+          "0x00",
           0,
           0,
           0,

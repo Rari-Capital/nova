@@ -237,6 +237,19 @@ describe("L1_NovaExecutionManager", function () {
       ).should.be.revertedWith("PAST_DEADLINE");
     });
 
+    it("should not allow calling the messenger", async function () {
+      await L1_NovaExecutionManager.exec(
+        0,
+
+        // This is what triggers the revert:
+        MockCrossDomainMessenger.address,
+
+        "0x00",
+        ethers.constants.AddressZero,
+        99999999999
+      ).should.be.revertedWith("MESSENGER_CALL");
+    });
+
     it("should properly execute a minimal exec", async function () {
       const [deployer] = signers;
 
