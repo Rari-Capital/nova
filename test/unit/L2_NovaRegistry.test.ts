@@ -17,6 +17,7 @@ import {
   MockERC20__factory,
   L2NovaRegistry,
 } from "../../typechain";
+import { BigNumber } from "ethers";
 
 describe("L2_NovaRegistry", function () {
   let signers: SignerWithAddress[];
@@ -323,6 +324,43 @@ describe("L2_NovaRegistry", function () {
             { l2Token: ethers.constants.AddressZero, amount: 0 },
           ]
         ).should.be.revertedWith("TOO_MANY_INPUTS");
+      });
+    });
+
+    describe("requestExecWithTimeout", function () {
+      it("should allow a simple request with minimum timeout", async function () {
+        const unlockDelaySeconds =
+          await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+        await snapshotGasCost(
+          L2_NovaRegistry.requestExecWithTimeout(
+            fakeStrategyAddress,
+            "0x00",
+            0,
+            0,
+            0,
+            [],
+            unlockDelaySeconds
+          )
+        );
+
+        // Unlock timestamp should be within 60 seconds of the delay passed + current timestamp.
+        await L2_NovaRegistry.getRequestUnlockTimestamp(
+          computeExecHash({
+            nonce: 4,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 0,
+          })
+
+          // We have to use closeTo because block.timestamp is off by up to 60 seconds of JS time.
+        ).should.eventually.be.closeTo(
+          // @ts-ignore
+          BigNumber.from(
+            Math.floor(Date.now() / 1000) + unlockDelaySeconds.toNumber()
+          ),
+          60
+        );
       });
     });
   });
