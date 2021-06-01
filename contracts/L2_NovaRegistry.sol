@@ -210,7 +210,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
             inputTokens[i].l2Token.safeTransferFrom(msg.sender, address(this), inputTokens[i].amount);
 
             // Copy over this index to the requestInputTokens mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
-            requestInputTokens[execHash][i] = inputTokens[i];
+            requestInputTokens[execHash].push(inputTokens[i]);
         }
     }
 
