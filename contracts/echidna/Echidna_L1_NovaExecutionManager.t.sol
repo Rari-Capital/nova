@@ -42,8 +42,9 @@ contract Echidna_L1_NovaExecutionManager {
             assert(mockCrossDomainMessenger.latestSender() == address(executionManager));
             assert(mockCrossDomainMessenger.latestGasLimit() == executionManager.EXEC_COMPLETED_MESSAGE_GAS_LIMIT());
         } catch {
-            // If it reverted, it should be because the deadline was in the past, if not, something is wrong:
-            assert(deadline < block.timestamp);
+            // If it reverted, it should be because either: The deadline was in the past or strategy == mockCrossDomainMessenger.
+            // If not, something is wrong:
+            assert(deadline < block.timestamp || strategy == address(mockCrossDomainMessenger));
         }
     }
 }
