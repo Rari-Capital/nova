@@ -2,8 +2,6 @@
 
 exports[`L2_NovaRegistry constructor/setup relockTokens allows relocking tokens 1`] = `29862`;
 
-exports[`L2_NovaRegistry constructor/setup relockTokens allows relocking tokens 2`] = `62645`;
-
 exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request 1`] = `240602`;
 
 exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with 2 input tokens 1`] = `330227`;

@@ -424,17 +424,15 @@ describe("L2_NovaRegistry", function () {
           )
         );
 
-        await snapshotGasCost(
-          L2_NovaRegistry.unlockTokens(
-            // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
-            computeExecHash({
-              nonce: 4,
-              strategy: fakeStrategyAddress,
-              calldata: "0x00",
-              gasPrice: 0,
-            }),
-            await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
-          )
+        await L2_NovaRegistry.unlockTokens(
+          // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
+          computeExecHash({
+            nonce: 4,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 0,
+          }),
+          await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
         ).should.not.be.reverted;
       });
 
