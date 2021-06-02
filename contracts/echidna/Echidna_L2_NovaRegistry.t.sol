@@ -36,7 +36,7 @@ contract Echidna_L2_NovaRegistry is HevmUser {
     ) public {
         require(
             // Don't permit unlockDelays that are below the min or cause overflows.
-            unlockDelay > registry.MIN_UNLOCK_DELAY_SECONDS() && (block.timestamp + unlockDelay) >= block.timestamp
+            (block.timestamp + unlockDelay) >= block.timestamp && unlockDelay > registry.MIN_UNLOCK_DELAY_SECONDS()
         );
 
         // Calculate how much wei the registry will bill us:
