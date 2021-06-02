@@ -43,9 +43,9 @@ contract Echidna_L2_NovaRegistry is HevmUser {
         uint256 weiOwed = (gasPrice * gasLimit) + tip;
 
         // Mint us some extra tokens if we need:
-        uint256 currentBalance = mockETH.balanceOf(address(this));
-        if (weiOwed > currentBalance) {
-            mockETH.mint(weiOwed - currentBalance);
+        uint256 startingBalance = mockETH.balanceOf(address(this));
+        if (weiOwed > startingBalance) {
+            mockETH.mint(weiOwed - startingBalance);
         }
 
         /// Approve the wei owed to the registry:
@@ -54,8 +54,8 @@ contract Echidna_L2_NovaRegistry is HevmUser {
         try
             registry.requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0))
         returns (bytes32 execHash) {
+            // Make sure the request worked.
             assert(execHash == NovaExecHashLib.compute(registry.systemNonce(), strategy, l1calldata, gasPrice));
-
             assert(registry.getRequestCreator(execHash) == address(this));
             assert(registry.getRequestStrategy(execHash) == strategy);
             assert(keccak256(registry.getRequestCalldata(execHash)) == keccak256(l1calldata));
@@ -65,16 +65,25 @@ contract Echidna_L2_NovaRegistry is HevmUser {
             assert(registry.getRequestNonce(execHash) == registry.systemNonce());
             assert(registry.getRequestInputTokens(execHash).length == 0);
 
+            // Unlock tokens.
             try registry.unlockTokens(execHash, unlockDelay) {} catch {
+                // This should not revert, if it does something is wrong.
                 assert(false);
             }
 
+            // Time travel to when the tokens unlock.
             hevm.warp(block.timestamp + unlockDelay);
 
+            // Withdraw tokens.
             try registry.withdrawTokens(execHash) {} catch {
+                // This should not revert, if it does something is wrong.
                 assert(false);
             }
+
+            // There should be no ETH left in the registry.
+            assert(mockETH.balanceOf(address(registry)) == 0);
         } catch {
+            // This should not revert, if it does something is wrong.
             assert(false);
         }
     }
