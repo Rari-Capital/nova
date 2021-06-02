@@ -449,6 +449,5 @@ describe("L2_NovaRegistry", function () {
         ).should.be.revertedWith("NOT_CREATOR");
       });
     });
-
   });
 });
