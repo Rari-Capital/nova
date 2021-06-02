@@ -17,7 +17,6 @@ import {
   MockERC20__factory,
   L2NovaRegistry,
 } from "../../typechain";
-import { BigNumber } from "ethers";
 
 describe("L2_NovaRegistry", function () {
   let signers: SignerWithAddress[];
@@ -344,7 +343,6 @@ describe("L2_NovaRegistry", function () {
           )
         );
 
-        // Unlock timestamp should be within 60 seconds of the delay passed + current timestamp.
         await L2_NovaRegistry.getRequestUnlockTimestamp(
           computeExecHash({
             nonce: 4,
@@ -352,14 +350,9 @@ describe("L2_NovaRegistry", function () {
             calldata: "0x00",
             gasPrice: 0,
           })
-
-          // We have to use closeTo because block.timestamp is off by up to 60 seconds of JS time.
-        ).should.eventually.be.closeTo(
-          // @ts-ignore
-          BigNumber.from(
-            Math.floor(Date.now() / 1000) + unlockDelaySeconds.toNumber()
-          ),
-          60
+        ).should.eventually.equal(
+          (await ethers.provider.getBlock("latest")).timestamp +
+            unlockDelaySeconds.toNumber()
         );
       });
 
