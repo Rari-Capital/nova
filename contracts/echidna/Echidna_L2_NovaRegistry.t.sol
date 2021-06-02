@@ -55,6 +55,7 @@ contract Echidna_L2_NovaRegistry {
             assert(registry.getRequestGasLimit(execHash) == gasLimit);
             assert(registry.getRequestGasPrice(execHash) == gasPrice);
             assert(registry.getRequestTip(execHash) == tip);
+            assert(registry.getRequestNonce(execHash) == registry.systemNonce());
             assert(registry.getRequestInputTokens(execHash).length == 0);
         } catch {
             assert(false);

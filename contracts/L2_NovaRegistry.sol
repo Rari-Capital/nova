@@ -106,6 +106,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     mapping(bytes32 => uint256) public getRequestGasPrice;
     /// @notice Maps execHashes to the additional tip in wei relayers will receive for executing them.
     mapping(bytes32 => uint256) public getRequestTip;
+    /// @notice Maps execHashes to the nonce of each request.
+    /// @notice This is just for convenience, does not need to be on-chain.
+    mapping(bytes32 => uint256) public getRequestNonce;
 
     /// @notice A token/amount pair that a relayer will need on L1 to execute the request (and will be returned to them on L2).
     /// @param l2Token The token on L2 to transfer to the relayer upon a successful execution.
@@ -201,6 +204,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         getRequestGasLimit[execHash] = gasLimit;
         getRequestGasPrice[execHash] = gasPrice;
         getRequestTip[execHash] = tip;
+        // Storing the nonce is just for convenience; it does not need to be on-chain.
+        getRequestNonce[execHash] = systemNonce;
 
         // Transfer in ETH to pay for max gas usage + tip.
         ETH.safeTransferFrom(msg.sender, address(this), (gasLimit * gasPrice) + tip);
@@ -362,6 +367,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         getRequestCalldata[newExecHash] = previousCalldata;
         getRequestGasLimit[newExecHash] = previousGasLimit;
         getRequestGasPrice[newExecHash] = gasPrice;
+        // Storing the nonce is just for convenience; it does not need to be on-chain.
+        getRequestNonce[execHash] = systemNonce;
 
         // Map the resubmitted request to its uncle.
         getRequestUncle[newExecHash] = execHash;

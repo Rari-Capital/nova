@@ -1,9 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request 1`] = `218345`;
+exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request 1`] = `240602`;
 
-exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with 2 input tokens 1`] = `307970`;
+exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with 2 input tokens 1`] = `330227`;
 
-exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with one input token 1`] = `257024`;
+exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with one input token 1`] = `279281`;
 
-exports[`L2_NovaRegistry constructor/setup requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `161338`;
+exports[`L2_NovaRegistry constructor/setup requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183595`;
