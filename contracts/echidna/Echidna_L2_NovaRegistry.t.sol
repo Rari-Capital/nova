@@ -6,8 +6,9 @@ pragma abicoder v2;
 import "../L2_NovaRegistry.sol";
 import "../mocks/MockCrossDomainMessenger.sol";
 import "../mocks/MockERC20.sol";
+import "./Hevm.sol";
 
-contract Echidna_L2_NovaRegistry {
+contract Echidna_L2_NovaRegistry is HevmUser {
     L2_NovaRegistry internal registry;
     MockCrossDomainMessenger internal mockCrossDomainMessenger;
     MockERC20 internal mockETH;
@@ -25,13 +26,19 @@ contract Echidna_L2_NovaRegistry {
         assert(registry.L1_NovaExecutionManagerAddress() == newExecutionManager);
     }
 
-    function requestExec_should_work_properly(
+    function requestExec_and_unlock_and_withdraw_tokens_should_work(
         address strategy,
         bytes calldata l1calldata,
         uint64 gasLimit,
         uint256 gasPrice,
-        uint256 tip
+        uint256 tip,
+        uint256 unlockDelay
     ) public {
+        require(
+            // Don't permit unlockDelays that are below the min or cause overflows.
+            unlockDelay > registry.MIN_UNLOCK_DELAY_SECONDS() && (block.timestamp + unlockDelay) >= block.timestamp
+        );
+
         // Calculate how much wei the registry will bill us:
         uint256 weiOwed = (gasPrice * gasLimit) + tip;
 
@@ -57,6 +64,16 @@ contract Echidna_L2_NovaRegistry {
             assert(registry.getRequestTip(execHash) == tip);
             assert(registry.getRequestNonce(execHash) == registry.systemNonce());
             assert(registry.getRequestInputTokens(execHash).length == 0);
+
+            try registry.unlockTokens(execHash, unlockDelay) {} catch {
+                assert(false);
+            }
+
+            hevm.warp(block.timestamp + unlockDelay);
+
+            try registry.withdrawTokens(execHash) {} catch {
+                assert(false);
+            }
         } catch {
             assert(false);
         }
