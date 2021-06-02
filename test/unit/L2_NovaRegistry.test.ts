@@ -369,5 +369,45 @@ describe("L2_NovaRegistry", function () {
         ).should.be.revertedWith("DELAY_TOO_SMALL");
       });
     });
+
+    describe("unlockTokens", function () {
+      it("does not allow unlocking random requests", async function () {
+        await L2_NovaRegistry.unlockTokens(
+          computeExecHash({
+            nonce: 0,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 0,
+          }),
+          999999999999
+        ).should.be.revertedWith("NOT_CREATOR");
+      });
+
+      it("does not allow unlocking requests with a small delay", async function () {
+        await L2_NovaRegistry.unlockTokens(
+          // This execHash is a real request we made in the `allows a simple request` test.
+          computeExecHash({
+            nonce: 1,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 69,
+          }),
+          0
+        ).should.be.revertedWith("DELAY_TOO_SMALL");
+      });
+
+      it("does not allow unlocking requests already scheduled to unlock", async function () {
+        await L2_NovaRegistry.unlockTokens(
+          // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
+          computeExecHash({
+            nonce: 4,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 0,
+          }),
+          0
+        ).should.be.revertedWith("UNLOCK_ALREADY_SCHEDULED");
+      });
+    });
   });
 });
