@@ -362,6 +362,19 @@ describe("L2_NovaRegistry", function () {
           60
         );
       });
+
+      it("should revert if delay is too small", async function () {
+        L2_NovaRegistry.requestExecWithTimeout(
+          fakeStrategyAddress,
+          "0x00",
+          0,
+          0,
+          0,
+          [],
+          // 1 second less than the min delay
+          (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).sub(1)
+        ).should.be.revertedWith("DELAY_TOO_SMALL");
+      });
     });
   });
 });
