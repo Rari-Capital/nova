@@ -191,7 +191,7 @@ describe("L2_NovaRegistry", function () {
             tip,
             []
           )
-        ).should.not.be.reverted;
+        );
 
         const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
           computeExecHash({
@@ -409,5 +409,46 @@ describe("L2_NovaRegistry", function () {
         ).should.be.revertedWith("UNLOCK_ALREADY_SCHEDULED");
       });
     });
+
+    describe("relockTokens", function () {
+      it("allows relocking tokens", async function () {
+        await snapshotGasCost(
+          L2_NovaRegistry.relockTokens(
+            // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
+            computeExecHash({
+              nonce: 4,
+              strategy: fakeStrategyAddress,
+              calldata: "0x00",
+              gasPrice: 0,
+            })
+          )
+        );
+
+        await snapshotGasCost(
+          L2_NovaRegistry.unlockTokens(
+            // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
+            computeExecHash({
+              nonce: 4,
+              strategy: fakeStrategyAddress,
+              calldata: "0x00",
+              gasPrice: 0,
+            }),
+            await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
+          )
+        ).should.not.be.reverted;
+      });
+
+      it("does not allow relocking random requests", async function () {
+        await L2_NovaRegistry.relockTokens(
+          computeExecHash({
+            nonce: 0,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 0,
+          })
+        ).should.be.revertedWith("NOT_CREATOR");
+      });
+    });
+
   });
 });
