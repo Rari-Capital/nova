@@ -1,0 +1,17 @@
+checkAsserts: true
+seqLen: 10
+
+coverage: true
+corpusDir: contracts/echidna/echidna_corpus
+
+testLimit: 999999999999999 # Run for as long as possible.
+shrinkLimit: 9999999999999 # Run for as long as possible.
+timeout: null # Do not timeout.
+
+stopOnFail: false
+
+cryticArgs: # If we add more dependencies they will need to be added as symlinks here!
+  [
+    "--solc-remaps",
+    "@openzeppelin/=node_modules/@openzeppelin/ @eth-optimism/=node_modules/@eth-optimism/ ovm-safeerc20/=node_modules/ovm-safeerc20/",
+  ]

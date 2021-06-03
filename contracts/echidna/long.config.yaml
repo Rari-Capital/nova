@@ -1,10 +1,13 @@
 checkAsserts: true
-coverage: false
-corpusDir: contracts/echidna/echidna_corpus
 seqLen: 5
-testLimit: 2000000 # 2 million
-shrinkLimit: 200000 # 200k
-timeout: 21600 # 6 hours
+
+coverage: false # Coverage slows us down, not using.
+corpusDir: null # Coverage slows us down, not using.
+
+testLimit: 999999999999999 # Run as long as possible, the timeout will decide when to stop.
+shrinkLimit: 9999999999999 # Run as long as possible, the timeout will decide when to stop.
+timeout: 18000 # Fuzz for 5 hours.
+
 stopOnFail: true # We want CI to end once we find and shrink on a failing assert.
 
 cryticArgs: # If we add more dependencies they will need to be added as symlinks here!
