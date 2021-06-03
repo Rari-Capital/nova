@@ -9,6 +9,10 @@ jobs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
       - uses: fkirc/skip-duplicate-actions@master
+        with:
+          cancel_others: true
+          concurrent_skipping: "always"
+          skip_after_successful_duplicate: true
 
   integration-tests:
     needs: pre_job
