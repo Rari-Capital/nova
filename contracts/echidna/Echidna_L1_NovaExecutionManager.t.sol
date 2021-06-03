@@ -37,6 +37,9 @@ contract Echidna_L1_NovaExecutionManager {
             // ExecHash should always be reset:
             assert(executionManager.currentExecHash() == "");
 
+            // Relayer should be us and not reset:
+            assert(executionManager.currentRelayer() == address(this));
+
             // xDomain constants should always be as expected:
             assert(mockCrossDomainMessenger.latestTarget() == L2_NovaRegistryAddress);
             assert(mockCrossDomainMessenger.latestSender() == address(executionManager));
