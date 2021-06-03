@@ -58,6 +58,9 @@ jobs:
           sudo tar -xf /tmp/echidna-test.tar.gz -C /usr/bin
           sudo chmod +x /usr/bin/echidna-test
 
+       - name: Test
+         run: echo ${{ github.base_ref }} ${{ github.ref }} 
+
       - name: Light Fuzz ${{ matrix.testName }}
         if: ${{ github.ref != 'master' && github.base_ref != 'master' }} # Only run light fuzz if we're not pushing to master or making a PR going to master.
         run: npm run light-fuzz ${{ matrix.testName }}
