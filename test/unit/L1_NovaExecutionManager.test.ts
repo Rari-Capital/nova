@@ -267,6 +267,8 @@ describe("L1_NovaExecutionManager", function () {
     it("should properly execute a stateful exec", async function () {
       const [deployer] = signers;
 
+      await MockStrategy.counter().should.eventually.equal(1);
+
       await snapshotGasCost(
         L1_NovaExecutionManager.exec(
           5,
