@@ -45,9 +45,31 @@ npm run integration-tests
 [You must install Echidna before fuzzing.](https://github.com/crytic/echidna#installation)
 
 ```bash
-npm run heavy-fuzz {{CONTRACT_NAME}}
+npm run deep-fuzz {{CONTRACT_NAME}}
 ```
 
 Replace `{{CONTRACT_NAME}}` with the name of a contract that is fuzzed in `contracts/echidna`. A full list can be found here:
 
 https://github.com/Rari-Capital/nova/blob/master/.github/workflows/fuzz.yml#L12-L15
+
+There are 3 fuzz "modes" setup for this project:
+
+- `deep-fuzz` enters coverage guided inputs until it is halted manually.
+
+  - It uses coverage guided fuzzing, **which makes it quite slow**.
+  - It is the most comprehensive mode (if run for long enough).
+  - It will not stop if it finds a counterexample.
+
+- `long-fuzz` enters random inputs for **5 hours** before halting.
+
+  - It does not use coverage guided fuzzing.
+  - Is less comprehensive than `deep-fuzz`.
+  - It will stop if it finds a counterexample.
+
+- `quick-fuzz` enters random inputs for **20 minutes** before halting.
+
+  - It does not use coverage guided fuzzing.
+  - Is less comprehensive than `long-fuzz`.
+  - It will stop if it finds a counterexample.
+
+To use any of these modes simply run the command above but replace `deep-fuzz` with the mode you wish to use (`long-fuzz`,`quick-fuzz`,`deep-fuzz`).
