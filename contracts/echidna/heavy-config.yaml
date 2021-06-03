@@ -1,7 +1,7 @@
 checkAsserts: true
 coverage: false
 corpusDir: contracts/echidna/echidna_corpus
-seqLen: 3
+seqLen: 5
 testLimit: 1000000 # 1 million
 shrinkLimit: 100000 # 100k
 timeout: 21600 # 6 hours
