@@ -441,7 +441,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
             // but it may be a resubmitted request so we need to check its uncle to make sure it has not been executed and it has already died.
             bytes32 uncle = getRequestUncle[execHash];
             if (uncle == "") {
-                // This is a normal request, so we know tokens have/will not been removed.
+                // This is a normal request, so we know tokens have/will not be removed.
                 tokensRemoved = false;
                 changeTimestamp = 0;
             } else {
