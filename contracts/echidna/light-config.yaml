@@ -2,7 +2,7 @@ checkAsserts: true
 coverage: false
 corpusDir: null
 seqLen: 3
-testLimit: 5000 # 50k
+testLimit: 50000 # 50k
 shrinkLimit: 5000 # 5k
 timeout: 3600 # 1 hour
 stopOnFail: true # We want CI to end once we find and shrink on a failing assert.
