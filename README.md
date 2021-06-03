@@ -33,6 +33,7 @@ npm run gas-changed
 ```
 
 ## Integration Tests
+
 [You must start up an instance of Optimism's "ops" repo before running integration tests.](https://github.com/ethereum-optimism/optimism/tree/develop/ops)
 
 ```bash
@@ -40,11 +41,13 @@ npm run integration-tests
 ```
 
 ## Fuzz With Echidna
+
 [You must install Echidna before fuzzing.](https://github.com/crytic/echidna#installation)
 
 ```bash
-npm run fuzz {{CONTRACT_NAME}}
+npm run heavy-fuzz {{CONTRACT_NAME}}
 ```
+
 Replace `{{CONTRACT_NAME}}` with the name of a contract that is fuzzed in `contracts/echidna`. A full list can be found here:
 
 https://github.com/Rari-Capital/nova/blob/master/.github/workflows/fuzz.yml#L12-L15

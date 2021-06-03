@@ -58,5 +58,10 @@ jobs:
           sudo tar -xf /tmp/echidna-test.tar.gz -C /usr/bin
           sudo chmod +x /usr/bin/echidna-test
 
-      - name: Fuzz ${{ matrix.testName }}
-        run: npm run fuzz ${{ matrix.testName }}
+      - name: Light Fuzz ${{ matrix.testName }}
+        if: ${{ github.ref != 'refs/heads/master' && github.base_ref != 'refs/heads/master' }}
+        run: npm run light-fuzz ${{ matrix.testName }}
+
+      - name: Heavy Fuzz ${{ matrix.testName }}
+        if: ${{ github.ref == 'refs/heads/master' || github.base_ref == 'refs/heads/master' }}
+        run: npm run heavy-fuzz ${{ matrix.testName }}
