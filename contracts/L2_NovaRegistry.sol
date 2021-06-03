@@ -399,7 +399,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         address rewardRecipient,
         bool reverted,
         uint64 gasUsed
-    ) external nonReentrant onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
+    ) external onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
         // Ensure that the tokens have not already been removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
