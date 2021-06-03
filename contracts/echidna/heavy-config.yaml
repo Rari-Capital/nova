@@ -2,8 +2,8 @@ checkAsserts: true
 coverage: false
 corpusDir: contracts/echidna/echidna_corpus
 seqLen: 5
-testLimit: 1000000 # 1 million
-shrinkLimit: 100000 # 100k
+testLimit: 2000000 # 2 million
+shrinkLimit: 200000 # 200k
 timeout: 21600 # 6 hours
 stopOnFail: true # We want CI to end once we find and shrink on a failing assert.
 
