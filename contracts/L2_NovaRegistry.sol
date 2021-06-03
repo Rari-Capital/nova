@@ -250,7 +250,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
 
         // Loop over each input token to transfer it to the recipient.
         for (uint256 i = 0; i < inputTokens.length; i++) {
-            inputTokens[i].l2Token.transfer(inputTokenRecipientData.recipient, inputTokens[i].amount);
+            inputTokens[i].l2Token.safeTransfer(inputTokenRecipientData.recipient, inputTokens[i].amount);
         }
     }
 
@@ -312,11 +312,14 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         getRequestInputTokenRecipient[execHash].isClaimed = true;
 
         // Transfer the ETH which would have been used for (gas + tip) back to the creator.
-        ETH.transfer(creator, (getRequestGasPrice[execHash] * getRequestGasLimit[execHash]) + getRequestTip[execHash]);
+        ETH.safeTransfer(
+            creator,
+            (getRequestGasPrice[execHash] * getRequestGasLimit[execHash]) + getRequestTip[execHash]
+        );
 
         // Transfer input tokens back to the creator.
         for (uint256 i = 0; i < inputTokens.length; i++) {
-            inputTokens[i].l2Token.transfer(creator, inputTokens[i].amount);
+            inputTokens[i].l2Token.safeTransfer(creator, inputTokens[i].amount);
         }
     }
 
@@ -412,9 +415,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         uint256 recipientTip = reverted ? (tip * 7) / 10 : tip;
 
         // Refund the creator any unused gas + refund some of the tip if reverted
-        ETH.transfer(creator, ((gasLimit * gasPrice) - gasPayment) + (tip - recipientTip));
+        ETH.safeTransfer(creator, ((gasLimit * gasPrice) - gasPayment) + (tip - recipientTip));
         // Pay the recipient the gas payment + the tip.
-        ETH.transfer(rewardRecipient, gasPayment + recipientTip);
+        ETH.safeTransfer(rewardRecipient, gasPayment + recipientTip);
 
         // Give the proper input token recipient the ability to claim the tokens.
         getRequestInputTokenRecipient[execHash].recipient = reverted ? creator : rewardRecipient;
