@@ -28,6 +28,10 @@ jobs:
         with:
           python-version: 3.8
 
+      - name: Test log
+        run: |
+          echo ${{ github.base_ref }} ${{ github.ref }}
+
       - name: Cache node_modules
         id: node-cache
         uses: actions/cache@v2
@@ -57,9 +61,6 @@ jobs:
           sudo wget -O /tmp/echidna-test.tar.gz https://github.com/crytic/echidna/releases/download/v1.7.1/echidna-test-1.7.1-Ubuntu-18.04.tar.gz
           sudo tar -xf /tmp/echidna-test.tar.gz -C /usr/bin
           sudo chmod +x /usr/bin/echidna-test
-
-       - name: Test
-         run: echo ${{ github.base_ref }} ${{ github.ref }} 
 
       - name: Light Fuzz ${{ matrix.testName }}
         if: ${{ github.ref != 'master' && github.base_ref != 'master' }} # Only run light fuzz if we're not pushing to master or making a PR going to master.
