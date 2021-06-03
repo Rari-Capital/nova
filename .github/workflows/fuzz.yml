@@ -59,9 +59,9 @@ jobs:
           sudo chmod +x /usr/bin/echidna-test
 
       - name: Light Fuzz ${{ matrix.testName }}
-        if: ${{ github.ref != 'refs/heads/master' && github.base_ref != 'refs/heads/master' }}
+        if: ${{ github.ref != 'master' && github.base_ref != 'master' }} # Only run light fuzz if we're not pushing to master or making a PR going to master.
         run: npm run light-fuzz ${{ matrix.testName }}
 
       - name: Heavy Fuzz ${{ matrix.testName }}
-        if: ${{ github.ref == 'refs/heads/master' || github.base_ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'master' || github.base_ref == 'master' }} # Only run heavy fuzz if we're pushing to master or making a PR going to master.
         run: npm run heavy-fuzz ${{ matrix.testName }}
