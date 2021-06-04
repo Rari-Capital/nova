@@ -237,6 +237,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
 
     /// @notice Claims input tokens earned from executing a request.
     /// @notice Request creators must also call this function if their request reverted (as input tokens are not sent to relayers if the request reverts).
+    /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recpient given in `execCompleted` or the request creator if the request reverted).
     /// @param execHash The hash of the executed request.
     function claimInputTokens(bytes32 execHash) external nonReentrant auth {
         InputTokenRecipientData memory inputTokenRecipientData = getRequestInputTokenRecipient[execHash];
@@ -254,7 +255,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         }
     }
 
-    /// @notice Unlocks a request's tokens with a delay. Once the delay has passed anyone may call `withdrawTokens` on behalf of the user to recieve their bounties/input tokens back.
+    /// @notice Unlocks a request's tokens with a delay. Once the delay has passed, anyone may call `withdrawTokens` on behalf of the creator to send the bounties/input tokens back.
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to unlock.
     /// @param unlockDelaySeconds The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
@@ -293,7 +294,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
 
     /// @notice Withdraws tokens (input/gas/bounties) from an unlocked request.
     /// @notice The creator of the request associated with `execHash` must call `unlockTokens` and wait the `unlockDelaySeconds` they specified before calling `withdrawTokens`.
-    /// @notice Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
+    /// @notice Anyone may call this function, but the tokens will still go the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to withdraw from.
     function withdrawTokens(bytes32 execHash) external nonReentrant auth {
         // Ensure that the tokens are unlocked.

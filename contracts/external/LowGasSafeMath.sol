@@ -2,7 +2,7 @@
 pragma solidity 0.7.6;
 
 /// @title Optimized overflow and underflow safe math operations.
-/// @notice Contains methods for doing math operations that revert on overflow or underflow for minimal gas cost.
+/// @notice Contains functions for doing math operations that revert on overflow or underflow for minimal gas cost.
 /// @author Uniswap (https://github.com/Uniswap/uniswap-v3-core)
 library LowGasSafeMath {
     /// @notice Returns x + y, reverts if sum overflows uint256

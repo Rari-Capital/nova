@@ -128,7 +128,7 @@ This function gives the request's creator their input tokens, tip, and gas payme
 
 The creator of the request associated with `execHash` must call [`unlockTokens`](#unlock-tokens) and wait the `unlockDelaySeconds` they specified before calling [`withdrawTokens`](#withdraw-tokens).
 
-Anyone may call this method on behalf of another user but the tokens will still go the creator of the request associated with the `execHash`.
+Anyone may call this function, but the tokens will still go the creator of the request associated with the `execHash`.
 
 ### Speed up a request
 
@@ -180,7 +180,7 @@ Claims input tokens earned from executing a request. Request creators must also 
 This function may consume a fair bit of gas as it transfers multiple ERC20s at once.
 :::
 
-Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recpient specified by the executor or the creator).
+Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recpient given in `execCompleted` or the request creator if the request reverted).
 
 ### Check if tokens are removed
 
@@ -343,13 +343,13 @@ This function will trigger a [HARD REVERT](#execute-request) if the relayer exec
 
 To integrate **Uniswap/Sushiswap** we only need to write one custom contract (a Strategy contract on L1).
 
-- This strategy would have all the same methods as the Uniswap router has
-- The `to` parameter of the strategy's methods would be hijacked and not passed into the Uniswap router.
+- This strategy would have all the same functions as the Uniswap router has
+- The `to` parameter of the strategy's functions would be hijacked and not passed into the Uniswap router.
   - The `to` param will be used as the recipient of the tokens on L2.
   - The Uniswap router will be told to send the output tokens back to the `Nova_UniswapStrategy` contract (so it can send them up to L2 via the bridge)
-- Each of the methods would require that a relayer approve the tokens necessary for the swap to the `L1_NovaExecutionManager`
-- The method would call [`transferFromRelayer`](#transfer-tokens-from-the-relayer) to get the input tokens from the relayer and then perform the corresponding method call on the Uniswap router.
-- The method would then send the output tokens through an Optimism token bridge to the `to` address.
+- Each of the functions would require that a relayer approve the tokens necessary for the swap to the `L1_NovaExecutionManager`
+- The function would call [`transferFromRelayer`](#transfer-tokens-from-the-relayer) to get the input tokens from the relayer and then perform the corresponding function call on the Uniswap router.
+- The function would then send the output tokens through an Optimism token bridge to the `to` address.
 
 **Here's what one of those wrapped router functions in the Strategy contract would look like:**
 

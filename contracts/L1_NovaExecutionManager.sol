@@ -152,7 +152,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @param token The ER20-compliant token to transfer to the currently executing strategy.
     /// @param amount The amount of `token` (scaled by its decimals) to transfer to the currently executing strategy.
     function transferFromRelayer(address token, uint256 amount) external auth {
-        // Only the currently executing strategy is allowed to call this method.
+        // Only the currently executing strategy is allowed to call this function.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
         require(msg.sender == currentlyExecutingStrategy && currentExecHash != "", "NOT_EXECUTING");
 

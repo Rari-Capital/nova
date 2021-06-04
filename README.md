@@ -72,4 +72,4 @@ There are 3 fuzz "modes" setup for this project:
   - Is less comprehensive than `long-fuzz`.
   - It will stop if it finds a counterexample.
 
-To use any of these modes simply run the command above but replace `deep-fuzz` with the mode you wish to use (`long-fuzz`,`quick-fuzz`,`deep-fuzz`).
+To use any of these modes simply run the command above but replace `deep-fuzz` with the mode you wish to use (`long-fuzz`,`quick-fuzz`, or `deep-fuzz`).

@@ -4,11 +4,11 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts/drafts/IERC20Permit.sol";
 
-/// @notice Enables calling multiple methods in a single call to the contract.
+/// @notice Enables calling multiple functions in a single call to the contract.
 /// @author Modified from uniswap-v3-periphery (https://github.com/Uniswap/uniswap-v3-periphery).
 abstract contract Multicall {
     /// @notice Call multiple functions in the current contract and return the data from all of them.
-    /// @dev The `msg.value` should not be trusted for any method callable from multicall.
+    /// @dev The `msg.value` should not be trusted for any function callable from multicall.
     /// @param data The encoded function data for each of the calls to make to this contract
     /// @param revertOnFail If true, if a call reverts, this function will revert.
     /// @return results The results from each of the calls passed in via data, if the call reverted (and revertOnFail is true) then it will be the revert data.
@@ -32,7 +32,7 @@ abstract contract Multicall {
     }
 
     /// @notice Call multiple functions in the current contract.
-    /// @dev The `msg.value` should not be trusted for any method callable from multicall.
+    /// @dev The `msg.value` should not be trusted for any function callable from multicall.
     /// @param data The encoded function data for each of the calls to make to this contract.
     /// @param revertOnFail If true, if a call reverts, this function will revert.
     function lowGasMulticall(bytes[] calldata data, bool revertOnFail) external payable {
