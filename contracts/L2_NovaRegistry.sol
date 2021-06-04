@@ -46,11 +46,16 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @param _L1_NovaExecutionManagerAddress The address to be authorized to make cross domain calls to `execCompleted`.
     function connectExecutionManager(address _L1_NovaExecutionManagerAddress) external auth {
         L1_NovaExecutionManagerAddress = _L1_NovaExecutionManagerAddress;
+
+        emit ConnectExecutionManager(_L1_NovaExecutionManagerAddress);
     }
 
     /*///////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when `connectExecutionManager` is called.
+    event ConnectExecutionManager(address _L1_NovaExecutionManagerAddress);
 
     /// @notice Emitted when `requestExec` is called.
     /// @param nonce The nonce assigned to this request.
