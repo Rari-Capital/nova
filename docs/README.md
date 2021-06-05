@@ -128,6 +128,10 @@ This function gives the request's creator their input tokens, tip, and gas payme
 
 The creator of the request associated with `execHash` must call [`unlockTokens`](#unlock-tokens) and wait the `unlockDelaySeconds` they specified before calling [`withdrawTokens`](#withdraw-tokens).
 
+::: tip
+This function may consume a fair bit of gas as it transfers multiple ERC20s at once.
+:::
+
 Anyone may call this function, but the tokens will still go the creator of the request associated with the `execHash`.
 
 ### Speed up a request
