@@ -96,13 +96,13 @@ describe("L2_NovaRegistry", function () {
       it("should properly permit authorization for specific functions", async function () {
         await SimpleDSGuard.permitAnySource(
           L2_NovaRegistry.interface.getSighash(
-            "requestExec(address,bytes,uint64,uint256,uint256,(address,uint256)[])"
+            "requestExec(address,bytes,uint256,uint256,uint256,(address,uint256)[])"
           )
         );
 
         await SimpleDSGuard.permitAnySource(
           L2_NovaRegistry.interface.getSighash(
-            "requestExecWithTimeout(address,bytes,uint64,uint256,uint256,(address,uint256)[],uint256)"
+            "requestExecWithTimeout(address,bytes,uint256,uint256,uint256,(address,uint256)[],uint256)"
           )
         );
 

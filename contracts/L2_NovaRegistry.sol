@@ -106,7 +106,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @notice Maps execHashes to the calldata associated with the request.
     mapping(bytes32 => bytes) public getRequestCalldata;
     /// @notice Maps execHashes to the gas limit a relayer should use to execute the request.
-    mapping(bytes32 => uint64) public getRequestGasLimit;
+    mapping(bytes32 => uint256) public getRequestGasLimit;
     /// @notice Maps execHashes to the gas price a relayer must use to execute the request.
     mapping(bytes32 => uint256) public getRequestGasPrice;
     /// @notice Maps execHashes to the additional tip in wei relayers will receive for executing them.
@@ -182,7 +182,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     function requestExec(
         address strategy,
         bytes calldata l1calldata,
-        uint64 gasLimit,
+        uint256 gasLimit,
         uint256 gasPrice,
         uint256 tip,
         InputToken[] calldata inputTokens
@@ -229,7 +229,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     function requestExecWithTimeout(
         address strategy,
         bytes calldata l1calldata,
-        uint64 gasLimit,
+        uint256 gasLimit,
         uint256 gasPrice,
         uint256 tip,
         InputToken[] calldata inputTokens,
@@ -359,7 +359,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Get more data about the previous request.
         address previousStrategy = getRequestStrategy[execHash];
         bytes memory previousCalldata = getRequestCalldata[execHash];
-        uint64 previousGasLimit = getRequestGasLimit[execHash];
+        uint256 previousGasLimit = getRequestGasLimit[execHash];
 
         // Generate a new execHash for the resubmitted request.
         systemNonce += 1;
@@ -404,7 +404,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         bytes32 execHash,
         address rewardRecipient,
         bool reverted,
-        uint64 gasUsed
+        uint256 gasUsed
     ) external onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
         // Ensure that the tokens have not already been removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);

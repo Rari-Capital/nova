@@ -29,7 +29,7 @@ contract Echidna_L2_NovaRegistry is HevmUser {
     function requestExec_and_unlock_and_withdraw_tokens_should_work(
         address strategy,
         bytes calldata l1calldata,
-        uint64 gasLimit,
+        uint256 gasLimit,
         uint256 gasPrice,
         uint256 tip,
         uint256 unlockDelay

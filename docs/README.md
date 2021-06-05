@@ -261,7 +261,7 @@ mapping(bytes32 => address) public getRequestStrategy;
 mapping(bytes32 => bytes) public getRequestCalldata;
 
 /// @notice Maps execHashes to the gas limit a relayer should use to execute the request.
-mapping(bytes32 => uint64) public getRequestGasLimit;
+mapping(bytes32 => uint256) public getRequestGasLimit;
 
 /// @notice Maps execHashes to the gas price a relayer must use to execute the request.
 mapping(bytes32 => uint256) public getRequestGasPrice;
