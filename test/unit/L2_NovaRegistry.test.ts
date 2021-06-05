@@ -168,10 +168,7 @@ describe("L2_NovaRegistry", function () {
         );
       });
     });
-
-    describe("requestExec", function () {
-      it("allows a simple request", async function () {
-        const [deployer] = signers;
+  });
 
   describe("requestExec", function () {
     it("allows a simple request", async function () {
