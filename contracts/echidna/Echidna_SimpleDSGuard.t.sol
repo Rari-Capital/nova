@@ -5,10 +5,14 @@ pragma solidity 0.7.6;
 import "../external/SimpleDSGuard.sol";
 
 contract Echidna_SimpleDSGuard {
-    SimpleDSGuard internal guard;
+    SimpleDSGuard internal immutable guard;
+
+    address internal immutable ANY_SENDER;
 
     constructor() {
-        guard = new SimpleDSGuard();
+        SimpleDSGuard _guard = new SimpleDSGuard();
+        guard = _guard;
+        ANY_SENDER = address(bytes20(_guard.ANY()));
     }
 
     function permit_and_forbid_should_not_affect_other_users(
@@ -16,9 +20,9 @@ contract Echidna_SimpleDSGuard {
         bytes4 sig,
         address user2
     ) public {
-        if (user1 == user2 || sig == guard.ANY() || user1 == address(bytes20(guard.ANY()))) {
-            return;
-        }
+        require(user1 != user2);
+        require(user1 != ANY_SENDER);
+        require(sig != guard.ANY());
 
         guard.permit(user1, sig);
         // Works as expected:
@@ -38,9 +42,8 @@ contract Echidna_SimpleDSGuard {
         bytes4 sig,
         address user2
     ) public {
-        if (user1 == user2 || user1 == address(bytes20(guard.ANY()))) {
-            return;
-        }
+        require(user1 != user2);
+        require(user1 != ANY_SENDER);
 
         guard.permitSourceToCallAny(user1);
         // Works as expected:
@@ -60,9 +63,8 @@ contract Echidna_SimpleDSGuard {
         bytes4 otherSig,
         address user1
     ) public {
-        if (otherSig == sig || sig == guard.ANY()) {
-            return;
-        }
+        require(otherSig != sig);
+        require(sig != guard.ANY());
 
         guard.permitAnySource(sig);
         // Works as expected:

@@ -9,15 +9,17 @@ import "../mocks/MockERC20.sol";
 import "./Hevm.sol";
 
 contract Echidna_L2_NovaRegistry is HevmUser {
-    L2_NovaRegistry internal registry;
-    MockCrossDomainMessenger internal mockCrossDomainMessenger;
-    MockERC20 internal mockETH;
+    L2_NovaRegistry internal immutable registry;
+    MockCrossDomainMessenger internal immutable mockCrossDomainMessenger;
+    MockERC20 internal immutable mockETH;
 
     constructor() {
-        mockCrossDomainMessenger = new MockCrossDomainMessenger();
-        mockETH = new MockERC20();
-        registry = new L2_NovaRegistry(address(mockETH), address(mockCrossDomainMessenger));
-        registry.connectExecutionManager(address(1));
+        MockCrossDomainMessenger _mockCrossDomainMessenger = new MockCrossDomainMessenger();
+        mockCrossDomainMessenger = _mockCrossDomainMessenger;
+        MockERC20 _mockETH = new MockERC20();
+        mockETH = _mockETH;
+
+        registry = new L2_NovaRegistry(address(_mockETH), address(_mockCrossDomainMessenger));
     }
 
     function should_always_be_able_connect_execution_manager(address newExecutionManager) public {
@@ -52,7 +54,7 @@ contract Echidna_L2_NovaRegistry is HevmUser {
         bytes32 execHash =
             registry.requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0));
 
-        // Ensure that balance properly decreased.
+        // Ensure that our balance properly decreased.
         assert(mockETH.balanceOf(address(this)) == (preRequestBalance - weiOwed));
 
         // Attempt to unlock tokens.
@@ -61,13 +63,13 @@ contract Echidna_L2_NovaRegistry is HevmUser {
             hevm.warp(block.timestamp + unlockDelay);
 
             // Attempt to withdraw tokens:
-            try registry.withdrawTokens(execHash) {} catch {
+            try registry.withdrawTokens(execHash) {
+                // Assert after withdrawing that our balance did not change.
+                assert(mockETH.balanceOf(address(this)) == preRequestBalance);
+            } catch {
                 // This should not revert, if it does something is wrong.
                 assert(false);
             }
-
-            // Assert after withdrawing that our balance did not change.
-            assert(mockETH.balanceOf(address(this)) == preRequestBalance);
         } catch {
             // This should only revert if the delay would cause overflow or is below the min.
             assert(

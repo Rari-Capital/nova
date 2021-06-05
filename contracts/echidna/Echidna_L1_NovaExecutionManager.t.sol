@@ -6,14 +6,15 @@ import "../L1_NovaExecutionManager.sol";
 import "../mocks/MockCrossDomainMessenger.sol";
 
 contract Echidna_L1_NovaExecutionManager {
-    L1_NovaExecutionManager internal executionManager;
-    MockCrossDomainMessenger internal mockCrossDomainMessenger;
+    L1_NovaExecutionManager internal immutable executionManager;
+    MockCrossDomainMessenger internal immutable mockCrossDomainMessenger;
 
     address internal constant L2_NovaRegistryAddress = address(1);
 
     constructor() {
-        mockCrossDomainMessenger = new MockCrossDomainMessenger();
-        executionManager = new L1_NovaExecutionManager(L2_NovaRegistryAddress, address(mockCrossDomainMessenger));
+        MockCrossDomainMessenger _mockCrossDomainMessenger = new MockCrossDomainMessenger();
+        mockCrossDomainMessenger = _mockCrossDomainMessenger;
+        executionManager = new L1_NovaExecutionManager(L2_NovaRegistryAddress, address(_mockCrossDomainMessenger));
     }
 
     function transferFromRelayer_should_always_be_not_executable(address token, uint256 amount) public {
