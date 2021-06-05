@@ -58,18 +58,15 @@ There are 3 fuzz "modes" setup for this project:
 
   - It uses coverage guided fuzzing, **which makes it quite slow**.
   - It is the most comprehensive mode (if run for long enough).
-  - It will not stop if it finds a counterexample.
 
 - `long-fuzz` enters random inputs for **5 hours** before halting.
 
   - It does not use coverage guided fuzzing.
   - Is less comprehensive than `deep-fuzz`.
-  - It will stop if it finds a counterexample.
 
 - `quick-fuzz` enters random inputs for **20 minutes** before halting.
 
   - It does not use coverage guided fuzzing.
   - Is less comprehensive than `long-fuzz`.
-  - It will stop if it finds a counterexample.
 
 To use any of these modes simply run the command above but replace `deep-fuzz` with the mode you wish to use (`long-fuzz`,`quick-fuzz`, or `deep-fuzz`).
