@@ -34,57 +34,45 @@ contract Echidna_L2_NovaRegistry is HevmUser {
         uint256 tip,
         uint256 unlockDelay
     ) public {
-        require(
-            // Don't permit unlockDelays that are below the min or cause overflows.
-            (block.timestamp + unlockDelay) >= block.timestamp && unlockDelay > registry.MIN_UNLOCK_DELAY_SECONDS()
-        );
-
         // Calculate how much wei the registry will bill us:
         uint256 weiOwed = (gasPrice * gasLimit) + tip;
 
         // Mint us some extra tokens if we need:
-        uint256 startingBalance = mockETH.balanceOf(address(this));
-        if (weiOwed > startingBalance) {
-            mockETH.mint(weiOwed - startingBalance);
+        uint256 preMintBalance = mockETH.balanceOf(address(this));
+        if (weiOwed > preMintBalance) {
+            mockETH.mint(weiOwed - preMintBalance);
         }
-
-        /// Approve the wei owed to the registry:
+        // Approve the wei owed to the registry:
         mockETH.approve(address(registry), weiOwed);
 
-        try
-            registry.requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0))
-        returns (bytes32 execHash) {
-            // Make sure the request worked.
-            assert(execHash == NovaExecHashLib.compute(registry.systemNonce(), strategy, l1calldata, gasPrice));
-            assert(registry.getRequestCreator(execHash) == address(this));
-            assert(registry.getRequestStrategy(execHash) == strategy);
-            assert(keccak256(registry.getRequestCalldata(execHash)) == keccak256(l1calldata));
-            assert(registry.getRequestGasLimit(execHash) == gasLimit);
-            assert(registry.getRequestGasPrice(execHash) == gasPrice);
-            assert(registry.getRequestTip(execHash) == tip);
-            assert(registry.getRequestNonce(execHash) == registry.systemNonce());
-            assert(registry.getRequestInputTokens(execHash).length == 0);
+        // Calculate how much ETH we have now before the registry consumes it:
+        uint256 preRequestBalance = mockETH.balanceOf(address(this));
 
-            // Unlock tokens.
-            try registry.unlockTokens(execHash, unlockDelay) {} catch {
-                // This should not revert, if it does something is wrong.
-                assert(false);
-            }
+        // Make the request:
+        bytes32 execHash =
+            registry.requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0));
 
-            // Time travel to when the tokens unlock.
+        // Ensure that balance properly decreased.
+        assert(mockETH.balanceOf(address(this)) == (preRequestBalance - weiOwed));
+
+        // Attempt to unlock tokens.
+        try registry.unlockTokens(execHash, unlockDelay) {
+            // Time travel to when the tokens unlock:
             hevm.warp(block.timestamp + unlockDelay);
 
-            // Withdraw tokens.
+            // Attempt to withdraw tokens:
             try registry.withdrawTokens(execHash) {} catch {
                 // This should not revert, if it does something is wrong.
                 assert(false);
             }
 
-            // There should be no ETH left in the registry.
-            assert(mockETH.balanceOf(address(registry)) == 0);
+            // Assert after withdrawing that our balance did not change.
+            assert(mockETH.balanceOf(address(this)) == preRequestBalance);
         } catch {
-            // This should not revert, if it does something is wrong.
-            assert(false);
+            // This should only revert if the delay would cause overflow or is below the min.
+            assert(
+                (block.timestamp + unlockDelay) < block.timestamp || registry.MIN_UNLOCK_DELAY_SECONDS() > unlockDelay
+            );
         }
     }
 }

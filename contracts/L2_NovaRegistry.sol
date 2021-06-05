@@ -6,8 +6,8 @@ import "ovm-safeerc20/OVM_SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
+
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
 import "./external/LowGasSafeMath.sol";
@@ -213,7 +213,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         getRequestNonce[execHash] = systemNonce;
 
         // Transfer in ETH to pay for max gas usage + tip.
-        ETH.safeTransferFrom(msg.sender, address(this), (gasLimit * gasPrice) + tip);
+        ETH.safeTransferFrom(msg.sender, address(this), gasLimit.mul(gasPrice).add(tip));
 
         // Transfer input tokens in that the msg.sender has approved.
         for (uint256 i = 0; i < inputTokens.length; i++) {
@@ -320,7 +320,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // Transfer the ETH which would have been used for (gas + tip) back to the creator.
         ETH.safeTransfer(
             creator,
-            (getRequestGasPrice[execHash] * getRequestGasLimit[execHash]) + getRequestTip[execHash]
+            getRequestGasPrice[execHash].mul(getRequestGasLimit[execHash]).add(getRequestTip[execHash])
         );
 
         // Transfer input tokens back to the creator.
@@ -349,7 +349,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         require(gasPrice > previousGasPrice, "LESS_THAN_PREVIOUS_GAS_PRICE");
 
         // Get the timestamp when the `execHash` would become uncled if this `speedUpRequest` call succeeds.
-        uint256 switchTimestamp = MIN_UNLOCK_DELAY_SECONDS + block.timestamp;
+        uint256 switchTimestamp = MIN_UNLOCK_DELAY_SECONDS.add(block.timestamp);
 
         // Ensure that if there is a token unlock scheduled it would be after the switch.
         // Tokens cannot be withdrawn after the switch which is why it's safe if they unlock after.
@@ -388,7 +388,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         emit SpeedUpRequest(execHash, newExecHash, systemNonce, switchTimestamp);
 
         // Transfer in additional ETH to pay for the new gas limit.
-        ETH.safeTransferFrom(msg.sender, address(this), (gasPrice - previousGasPrice) * previousGasLimit);
+        ETH.safeTransferFrom(msg.sender, address(this), gasPrice.sub(previousGasPrice).mul(previousGasLimit));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -416,14 +416,17 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         address creator = getRequestCreator[execHash];
 
         // The amount of ETH to pay for the gas used (capped at the gas limit).
-        uint256 gasPayment = gasPrice * (gasUsed > gasLimit ? gasLimit : gasUsed);
+        uint256 gasPayment = gasPrice.mul(gasUsed > gasLimit ? gasLimit : gasUsed);
+
         // The amount of ETH to pay as the tip to the rewardRecepient.
-        uint256 recipientTip = reverted ? (tip * 7) / 10 : tip;
+        // If the transaction reverted the recipient will get 70% of the tip
+        // and the creator will be refunded the remaining 30%.
+        uint256 recipientTip = reverted ? (tip.mul(7) / 10) : tip;
 
         // Refund the creator any unused gas + refund some of the tip if reverted
-        ETH.safeTransfer(creator, ((gasLimit * gasPrice) - gasPayment) + (tip - recipientTip));
+        ETH.safeTransfer(creator, gasLimit.mul(gasPrice).sub(gasPayment).add(tip.sub(recipientTip)));
         // Pay the recipient the gas payment + the tip.
-        ETH.safeTransfer(rewardRecipient, gasPayment + recipientTip);
+        ETH.safeTransfer(rewardRecipient, gasPayment.add(recipientTip));
 
         // Give the proper input token recipient the ability to claim the tokens.
         getRequestInputTokenRecipient[execHash].recipient = reverted ? creator : rewardRecipient;
