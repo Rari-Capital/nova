@@ -173,190 +173,159 @@ describe("L2_NovaRegistry", function () {
       it("allows a simple request", async function () {
         const [deployer] = signers;
 
-        const gasLimit = 420;
-        const gasPrice = 69;
-        const tip = 1;
+  describe("requestExec", function () {
+    it("allows a simple request", async function () {
+      const [deployer] = signers;
 
-        await MockETH.approve(
-          L2_NovaRegistry.address,
-          gasLimit * gasPrice + tip
-        );
+      const gasLimit = 420;
+      const gasPrice = 69;
+      const tip = 1;
 
-        await snapshotGasCost(
-          L2_NovaRegistry.requestExec(
-            fakeStrategyAddress,
-            "0x00",
-            gasLimit,
-            gasPrice,
-            tip,
-            []
-          )
-        );
+      await MockETH.approve(L2_NovaRegistry.address, gasLimit * gasPrice + tip);
 
-        const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
-          computeExecHash({
-            nonce: 1,
-            strategy: fakeStrategyAddress,
-            calldata: "0x00",
-            gasPrice,
-          })
-        );
-
-        inputTokens.length.should.equal(0);
-
-        await MockETH.allowance(
-          L2_NovaRegistry.address,
-          deployer.address
-        ).should.eventually.equal(0);
-      });
-
-      it("allows a simple request with one input token", async function () {
-        const [deployer] = signers;
-
-        const gasLimit = 100_000;
-        const gasPrice = 10;
-        const tip = 1337;
-
-        const inputTokenAmount = 500;
-
-        await MockETH.approve(
-          L2_NovaRegistry.address,
-          gasLimit * gasPrice + tip + inputTokenAmount
-        );
-
-        await snapshotGasCost(
-          L2_NovaRegistry.requestExec(
-            fakeStrategyAddress,
-            "0x00",
-            gasLimit,
-            gasPrice,
-            tip,
-            [{ l2Token: MockETH.address, amount: inputTokenAmount }]
-          )
-        );
-
-        const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
-          computeExecHash({
-            nonce: 2,
-            strategy: fakeStrategyAddress,
-            calldata: "0x00",
-            gasPrice,
-          })
-        );
-
-        inputTokens.length.should.equal(1);
-
-        inputTokens[0].l2Token.should.equal(MockETH.address);
-        inputTokens[0].amount.should.equal(inputTokenAmount);
-
-        await MockETH.allowance(
-          L2_NovaRegistry.address,
-          deployer.address
-        ).should.eventually.equal(0);
-      });
-
-      it("allows a simple request with 2 input tokens", async function () {
-        const [deployer] = signers;
-
-        const gasLimit = 100_000;
-        const gasPrice = 10;
-        const tip = 1337;
-
-        const inputToken1Amount = 1000;
-        const inputToken2Amount = 5000;
-
-        await MockETH.approve(
-          L2_NovaRegistry.address,
-          gasLimit * gasPrice + tip + inputToken1Amount + inputToken2Amount
-        );
-
-        await snapshotGasCost(
-          L2_NovaRegistry.requestExec(
-            fakeStrategyAddress,
-            "0x00",
-            gasLimit,
-            gasPrice,
-            tip,
-            [
-              { l2Token: MockETH.address, amount: inputToken1Amount },
-              { l2Token: MockETH.address, amount: inputToken2Amount },
-            ]
-          )
-        );
-
-        const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
-          computeExecHash({
-            nonce: 3,
-            strategy: fakeStrategyAddress,
-            calldata: "0x00",
-            gasPrice,
-          })
-        );
-
-        inputTokens.length.should.equal(2);
-
-        inputTokens[0].l2Token.should.equal(MockETH.address);
-        inputTokens[0].amount.should.equal(inputToken1Amount);
-
-        inputTokens[1].l2Token.should.equal(MockETH.address);
-        inputTokens[1].amount.should.equal(inputToken2Amount);
-
-        await MockETH.allowance(
-          L2_NovaRegistry.address,
-          deployer.address
-        ).should.eventually.equal(0);
-      });
-
-      it("does not allow for more than 5 input tokens", async function () {
-        await L2_NovaRegistry.requestExec(
+      await snapshotGasCost(
+        L2_NovaRegistry.requestExec(
           fakeStrategyAddress,
           "0x00",
-          0,
-          0,
-          0,
-          [
-            { l2Token: ethers.constants.AddressZero, amount: 0 },
-            { l2Token: ethers.constants.AddressZero, amount: 0 },
-            { l2Token: ethers.constants.AddressZero, amount: 0 },
-            { l2Token: ethers.constants.AddressZero, amount: 0 },
-            { l2Token: ethers.constants.AddressZero, amount: 0 },
-            { l2Token: ethers.constants.AddressZero, amount: 0 },
-          ]
-        ).should.be.revertedWith("TOO_MANY_INPUTS");
-      });
+          gasLimit,
+          gasPrice,
+          tip,
+          []
+        )
+      );
+
+      const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
+        computeExecHash({
+          nonce: 1,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice,
+        })
+      );
+
+      inputTokens.length.should.equal(0);
+
+      await MockETH.allowance(
+        L2_NovaRegistry.address,
+        deployer.address
+      ).should.eventually.equal(0);
     });
 
-    describe("requestExecWithTimeout", function () {
-      it("should allow a simple request with minimum timeout", async function () {
-        const unlockDelaySeconds =
-          await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+    it("allows a simple request with one input token", async function () {
+      const [deployer] = signers;
 
-        await snapshotGasCost(
-          L2_NovaRegistry.requestExecWithTimeout(
-            fakeStrategyAddress,
-            "0x00",
-            0,
-            0,
-            0,
-            [],
-            unlockDelaySeconds
-          )
-        );
+      const gasLimit = 100_000;
+      const gasPrice = 10;
+      const tip = 1337;
 
-        await L2_NovaRegistry.getRequestUnlockTimestamp(
-          computeExecHash({
-            nonce: 4,
-            strategy: fakeStrategyAddress,
-            calldata: "0x00",
-            gasPrice: 0,
-          })
-        ).should.eventually.equal(
-          (await ethers.provider.getBlock("latest")).timestamp +
-            unlockDelaySeconds.toNumber()
-        );
-      });
+      const inputTokenAmount = 500;
 
-      it("should revert if delay is too small", async function () {
+      await MockETH.approve(
+        L2_NovaRegistry.address,
+        gasLimit * gasPrice + tip + inputTokenAmount
+      );
+
+      await snapshotGasCost(
+        L2_NovaRegistry.requestExec(
+          fakeStrategyAddress,
+          "0x00",
+          gasLimit,
+          gasPrice,
+          tip,
+          [{ l2Token: MockETH.address, amount: inputTokenAmount }]
+        )
+      );
+
+      const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
+        computeExecHash({
+          nonce: 2,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice,
+        })
+      );
+
+      inputTokens.length.should.equal(1);
+
+      inputTokens[0].l2Token.should.equal(MockETH.address);
+      inputTokens[0].amount.should.equal(inputTokenAmount);
+
+      await MockETH.allowance(
+        L2_NovaRegistry.address,
+        deployer.address
+      ).should.eventually.equal(0);
+    });
+
+    it("allows a simple request with 2 input tokens", async function () {
+      const [deployer] = signers;
+
+      const gasLimit = 100_000;
+      const gasPrice = 10;
+      const tip = 1337;
+
+      const inputToken1Amount = 1000;
+      const inputToken2Amount = 5000;
+
+      await MockETH.approve(
+        L2_NovaRegistry.address,
+        gasLimit * gasPrice + tip + inputToken1Amount + inputToken2Amount
+      );
+
+      await snapshotGasCost(
+        L2_NovaRegistry.requestExec(
+          fakeStrategyAddress,
+          "0x00",
+          gasLimit,
+          gasPrice,
+          tip,
+          [
+            { l2Token: MockETH.address, amount: inputToken1Amount },
+            { l2Token: MockETH.address, amount: inputToken2Amount },
+          ]
+        )
+      );
+
+      const inputTokens = await L2_NovaRegistry.getRequestInputTokens(
+        computeExecHash({
+          nonce: 3,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice,
+        })
+      );
+
+      inputTokens.length.should.equal(2);
+
+      inputTokens[0].l2Token.should.equal(MockETH.address);
+      inputTokens[0].amount.should.equal(inputToken1Amount);
+
+      inputTokens[1].l2Token.should.equal(MockETH.address);
+      inputTokens[1].amount.should.equal(inputToken2Amount);
+
+      await MockETH.allowance(
+        L2_NovaRegistry.address,
+        deployer.address
+      ).should.eventually.equal(0);
+    });
+
+    it("does not allow for more than 5 input tokens", async function () {
+      await L2_NovaRegistry.requestExec(fakeStrategyAddress, "0x00", 0, 0, 0, [
+        { l2Token: ethers.constants.AddressZero, amount: 0 },
+        { l2Token: ethers.constants.AddressZero, amount: 0 },
+        { l2Token: ethers.constants.AddressZero, amount: 0 },
+        { l2Token: ethers.constants.AddressZero, amount: 0 },
+        { l2Token: ethers.constants.AddressZero, amount: 0 },
+        { l2Token: ethers.constants.AddressZero, amount: 0 },
+      ]).should.be.revertedWith("TOO_MANY_INPUTS");
+    });
+  });
+
+  describe("requestExecWithTimeout", function () {
+    it("should allow a simple request with minimum timeout", async function () {
+      const unlockDelaySeconds =
+        await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      await snapshotGasCost(
         L2_NovaRegistry.requestExecWithTimeout(
           fakeStrategyAddress,
           "0x00",
@@ -364,88 +333,112 @@ describe("L2_NovaRegistry", function () {
           0,
           0,
           [],
-          // 1 second less than the min delay
-          (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).sub(1)
-        ).should.be.revertedWith("DELAY_TOO_SMALL");
-      });
+          unlockDelaySeconds
+        )
+      );
+
+      await L2_NovaRegistry.getRequestUnlockTimestamp(
+        computeExecHash({
+          nonce: 4,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 0,
+        })
+      ).should.eventually.equal(
+        (await ethers.provider.getBlock("latest")).timestamp +
+          unlockDelaySeconds.toNumber()
+      );
     });
 
-    describe("unlockTokens", function () {
-      it("does not allow unlocking random requests", async function () {
-        await L2_NovaRegistry.unlockTokens(
-          computeExecHash({
-            nonce: 0,
-            strategy: fakeStrategyAddress,
-            calldata: "0x00",
-            gasPrice: 0,
-          }),
-          999999999999
-        ).should.be.revertedWith("NOT_CREATOR");
-      });
+    it("should revert if delay is too small", async function () {
+      L2_NovaRegistry.requestExecWithTimeout(
+        fakeStrategyAddress,
+        "0x00",
+        0,
+        0,
+        0,
+        [],
+        // 1 second less than the min delay
+        (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).sub(1)
+      ).should.be.revertedWith("DELAY_TOO_SMALL");
+    });
+  });
 
-      it("does not allow unlocking requests with a small delay", async function () {
-        await L2_NovaRegistry.unlockTokens(
-          // This execHash is a real request we made in the `allows a simple request` test.
-          computeExecHash({
-            nonce: 1,
-            strategy: fakeStrategyAddress,
-            calldata: "0x00",
-            gasPrice: 69,
-          }),
-          0
-        ).should.be.revertedWith("DELAY_TOO_SMALL");
-      });
+  describe("unlockTokens", function () {
+    it("does not allow unlocking random requests", async function () {
+      await L2_NovaRegistry.unlockTokens(
+        computeExecHash({
+          nonce: 0,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 0,
+        }),
+        999999999999
+      ).should.be.revertedWith("NOT_CREATOR");
+    });
 
-      it("does not allow unlocking requests already scheduled to unlock", async function () {
-        await L2_NovaRegistry.unlockTokens(
+    it("does not allow unlocking requests with a small delay", async function () {
+      await L2_NovaRegistry.unlockTokens(
+        // This execHash is a real request we made in the `allows a simple request` test.
+        computeExecHash({
+          nonce: 1,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 69,
+        }),
+        0
+      ).should.be.revertedWith("DELAY_TOO_SMALL");
+    });
+
+    it("does not allow unlocking requests already scheduled to unlock", async function () {
+      await L2_NovaRegistry.unlockTokens(
+        // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
+        computeExecHash({
+          nonce: 4,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 0,
+        }),
+        0
+      ).should.be.revertedWith("UNLOCK_ALREADY_SCHEDULED");
+    });
+  });
+
+  describe("relockTokens", function () {
+    it("allows relocking tokens", async function () {
+      await snapshotGasCost(
+        L2_NovaRegistry.relockTokens(
           // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
           computeExecHash({
             nonce: 4,
-            strategy: fakeStrategyAddress,
-            calldata: "0x00",
-            gasPrice: 0,
-          }),
-          0
-        ).should.be.revertedWith("UNLOCK_ALREADY_SCHEDULED");
-      });
-    });
-
-    describe("relockTokens", function () {
-      it("allows relocking tokens", async function () {
-        await snapshotGasCost(
-          L2_NovaRegistry.relockTokens(
-            // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
-            computeExecHash({
-              nonce: 4,
-              strategy: fakeStrategyAddress,
-              calldata: "0x00",
-              gasPrice: 0,
-            })
-          )
-        );
-
-        await L2_NovaRegistry.unlockTokens(
-          // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
-          computeExecHash({
-            nonce: 4,
-            strategy: fakeStrategyAddress,
-            calldata: "0x00",
-            gasPrice: 0,
-          }),
-          await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
-        ).should.not.be.reverted;
-      });
-
-      it("does not allow relocking random requests", async function () {
-        await L2_NovaRegistry.relockTokens(
-          computeExecHash({
-            nonce: 0,
             strategy: fakeStrategyAddress,
             calldata: "0x00",
             gasPrice: 0,
           })
-        ).should.be.revertedWith("NOT_CREATOR");
-      });
+        )
+      );
+
+      await L2_NovaRegistry.unlockTokens(
+        // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
+        computeExecHash({
+          nonce: 4,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 0,
+        }),
+        await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
+      ).should.not.be.reverted;
+    });
+
+    it("does not allow relocking random requests", async function () {
+      await L2_NovaRegistry.relockTokens(
+        computeExecHash({
+          nonce: 0,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 0,
+        })
+      ).should.be.revertedWith("NOT_CREATOR");
     });
   });
 });
