@@ -8,8 +8,6 @@ testLimit: 999999999999999 # Run as long as possible, the timeout will decide wh
 shrinkLimit: 9999999999999 # Run as long as possible, the timeout will decide when to stop.
 timeout: 1200 # Fuzz for 20 minutes.
 
-stopOnFail: true # We want CI to end once we find and shrink on a failing assert.
-
 cryticArgs: # If we add more dependencies they will need to be added as symlinks here!
   [
     "--solc-remaps",

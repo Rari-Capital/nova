@@ -8,8 +8,6 @@ testLimit: 999999999999999 # Run for as long as possible.
 shrinkLimit: 9999999999999 # Run for as long as possible.
 timeout: null # Do not timeout.
 
-stopOnFail: false # Keep going even if we find a counterexample.
-
 cryticArgs: # If we add more dependencies they will need to be added as symlinks here!
   [
     "--solc-remaps",
