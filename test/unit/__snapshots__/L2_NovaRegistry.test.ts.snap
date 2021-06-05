@@ -2,10 +2,10 @@
 
 exports[`L2_NovaRegistry constructor/setup relockTokens allows relocking tokens 1`] = `29862`;
 
-exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request 1`] = `240488`;
+exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request 1`] = `240684`;
 
-exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with 2 input tokens 1`] = `330137`;
+exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with 2 input tokens 1`] = `330333`;
 
-exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with one input token 1`] = `279179`;
+exports[`L2_NovaRegistry constructor/setup requestExec allows a simple request with one input token 1`] = `279375`;
 
-exports[`L2_NovaRegistry constructor/setup requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183502`;
+exports[`L2_NovaRegistry constructor/setup requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183649`;
