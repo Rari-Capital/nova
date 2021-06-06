@@ -415,6 +415,21 @@ describe("L2_NovaRegistry", function () {
         )
       );
     });
+
+    it("allows unlocking a valid request with input tokens", async function () {
+      await snapshotGasCost(
+        L2_NovaRegistry.unlockTokens(
+          // This is a valid execHash from `allows a simple request with 2 input tokens`
+          computeExecHash({
+            nonce: 3,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 10,
+          }),
+          await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
+        )
+      );
+    });
   });
 
   describe("relockTokens", function () {
@@ -507,6 +522,32 @@ describe("L2_NovaRegistry", function () {
       balanceAfter.should.equal(
         // This is the gas limit, gas price and tip we used in `allows a simple request`
         balanceBefore.add(420 * 69 + 1)
+      );
+    });
+
+    it("allows withdrawing from a request with input tokens", async function () {
+      const [deployer] = signers;
+
+      const balanceBefore = await MockETH.balanceOf(deployer.address);
+
+      await snapshotGasCost(
+        L2_NovaRegistry.withdrawTokens(
+          // This is a valid execHash from `allows a simple request with 2 input tokens`
+          computeExecHash({
+            nonce: 3,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 10,
+          })
+        )
+      );
+
+      const balanceAfter = await MockETH.balanceOf(deployer.address);
+
+      // Balance should properly increase.
+      balanceAfter.should.equal(
+        // This is the gas limit, gas price, tip and input token amounts we used in `allows a simple request with 2 input tokens`
+        balanceBefore.add(100_000 * 10 + 1337 + 1000 + 5000)
       );
     });
 

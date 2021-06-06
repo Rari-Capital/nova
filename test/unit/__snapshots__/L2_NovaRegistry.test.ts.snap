@@ -12,4 +12,8 @@ exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request wi
 
 exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `62633`;
 
+exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request with input tokens 1`] = `62633`;
+
+exports[`L2_NovaRegistry withdrawTokens allows withdrawing from a request with input tokens 1`] = `108267`;
+
 exports[`L2_NovaRegistry withdrawTokens allows withdrawing tokens from a simple request 1`] = `90268`;
