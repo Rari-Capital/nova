@@ -17,12 +17,12 @@ contract Echidna_L1_NovaExecutionManager {
         executionManager = new L1_NovaExecutionManager(L2_NovaRegistryAddress, address(_mockCrossDomainMessenger));
     }
 
-    function transferFromRelayer_should_always_be_not_executable(address token, uint256 amount) public {
+    function transferFromRelayer_should_always_be_not_executable(address token, uint256 amount) external {
         try executionManager.transferFromRelayer(token, amount) {
             // If the call succeeded, something is wrong:
             assert(false);
         } catch Error(string memory reason) {
-            /// If the called errored, it should be a NOT_EXECUTING error. If not, something is wrong:
+            // If the called errored, it should be a NOT_EXECUTING error. If not, something is wrong:
             assert(keccak256(abi.encodePacked(reason)) == keccak256("NOT_EXECUTING"));
         }
     }
@@ -33,7 +33,7 @@ contract Echidna_L1_NovaExecutionManager {
         bytes calldata l1calldata,
         address recipient,
         uint256 deadline
-    ) public {
+    ) external {
         try executionManager.exec(nonce, strategy, l1calldata, recipient, deadline) {
             // ExecHash should always be reset:
             assert(executionManager.currentExecHash() == "");

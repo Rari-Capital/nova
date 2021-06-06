@@ -415,6 +415,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         uint256 tip = getRequestTip[execHash];
         address creator = getRequestCreator[execHash];
 
+        // Give the proper input token recipient the ability to claim the tokens.
+        getRequestInputTokenRecipient[execHash].recipient = reverted ? creator : rewardRecipient;
+
         // The amount of ETH to pay for the gas used (capped at the gas limit).
         uint256 gasPayment = gasPrice.mul(gasUsed > gasLimit ? gasLimit : gasUsed);
 
@@ -427,9 +430,6 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         ETH.safeTransfer(creator, gasLimit.mul(gasPrice).sub(gasPayment).add(tip.sub(recipientTip)));
         // Pay the recipient the gas payment + the tip.
         ETH.safeTransfer(rewardRecipient, gasPayment.add(recipientTip));
-
-        // Give the proper input token recipient the ability to claim the tokens.
-        getRequestInputTokenRecipient[execHash].recipient = reverted ? creator : rewardRecipient;
 
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
     }

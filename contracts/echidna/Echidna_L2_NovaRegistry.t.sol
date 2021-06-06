@@ -22,7 +22,7 @@ contract Echidna_L2_NovaRegistry is HevmUser {
         registry = new L2_NovaRegistry(address(_mockETH), address(_mockCrossDomainMessenger));
     }
 
-    function should_always_be_able_connect_execution_manager(address newExecutionManager) public {
+    function should_always_be_able_connect_execution_manager(address newExecutionManager) external {
         registry.connectExecutionManager(newExecutionManager);
 
         assert(registry.L1_NovaExecutionManagerAddress() == newExecutionManager);
@@ -35,7 +35,7 @@ contract Echidna_L2_NovaRegistry is HevmUser {
         uint256 gasPrice,
         uint256 tip,
         uint256 unlockDelay
-    ) public {
+    ) external {
         // Calculate how much wei the registry will bill us:
         uint256 weiOwed = (gasPrice * gasLimit) + tip;
 
