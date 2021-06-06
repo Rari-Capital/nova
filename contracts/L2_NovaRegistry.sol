@@ -245,16 +245,19 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recpient given in `execCompleted` or the request creator if the request reverted).
     /// @param execHash The hash of the executed request.
     function claimInputTokens(bytes32 execHash) external nonReentrant auth {
-        InputTokenRecipientData memory inputTokenRecipientData = getRequestInputTokenRecipient[execHash];
+        InputTokenRecipientData storage inputTokenRecipientData = getRequestInputTokenRecipient[execHash];
 
+        require(inputTokenRecipientData.recipient != address(0), "NO_RECIPIENT");
         // Ensure that the tokens have not already been claimed.
         require(!inputTokenRecipientData.isClaimed, "ALREADY_CLAIMED");
 
-        InputToken[] memory inputTokens = requestInputTokens[execHash];
+        // Mark the input tokens as claimed.
+        inputTokenRecipientData.isClaimed = true;
 
         emit ClaimInputTokens(execHash);
 
         // Loop over each input token to transfer it to the recipient.
+        InputToken[] memory inputTokens = requestInputTokens[execHash];
         for (uint256 i = 0; i < inputTokens.length; i++) {
             inputTokens[i].l2Token.safeTransfer(inputTokenRecipientData.recipient, inputTokens[i].amount);
         }
@@ -315,7 +318,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         InputToken[] memory inputTokens = requestInputTokens[execHash];
 
         // Store that the request has had its tokens removed.
-        getRequestInputTokenRecipient[execHash].isClaimed = true;
+        getRequestInputTokenRecipient[execHash] = InputTokenRecipientData(creator, true);
 
         // Transfer the ETH which would have been used for (gas + tip) back to the creator.
         ETH.safeTransfer(
