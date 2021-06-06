@@ -18,5 +18,5 @@ interface Hevm {
 
 abstract contract HevmUser {
     bytes20 internal constant CHEAT_CODE = bytes20(uint160(uint256(keccak256("hevm cheat code"))));
-    Hevm internal hevm = Hevm(address(CHEAT_CODE));
+    Hevm internal constant hevm = Hevm(address(CHEAT_CODE));
 }

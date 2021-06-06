@@ -1,6 +1,7 @@
 import {
   computeExecHash,
   getFactory,
+  increaseTimeAndMine,
   snapshotGasCost,
 } from "../../utils/testUtils";
 
@@ -399,6 +400,21 @@ describe("L2_NovaRegistry", function () {
         0
       ).should.be.revertedWith("UNLOCK_ALREADY_SCHEDULED");
     });
+
+    it("allows unlocking a valid request", async function () {
+      await snapshotGasCost(
+        L2_NovaRegistry.unlockTokens(
+          // This is a valid execHash from `allows a simple request`
+          computeExecHash({
+            nonce: 1,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 69,
+          }),
+          await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
+        )
+      );
+    });
   });
 
   describe("relockTokens", function () {
@@ -436,6 +452,97 @@ describe("L2_NovaRegistry", function () {
           gasPrice: 0,
         })
       ).should.be.revertedWith("NOT_CREATOR");
+    });
+  });
+
+  describe("withdrawTokens", function () {
+    it("does not allow withdrawing from a random request", async function () {
+      await L2_NovaRegistry.withdrawTokens(
+        computeExecHash({
+          nonce: 1,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 69,
+        })
+      ).should.be.revertedWith("NOT_UNLOCKED");
+    });
+
+    it("does not allow withdrawing from a random request before the unlock delay", async function () {
+      L2_NovaRegistry.withdrawTokens(
+        // This is a valid execHash from `allows a simple request`
+        computeExecHash({
+          nonce: 1,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 69,
+        })
+      ).should.be.revertedWith("NOT_UNLOCKED");
+    });
+
+    it("allows withdrawing tokens from a simple request", async function () {
+      const [deployer] = signers;
+
+      await increaseTimeAndMine(
+        // Forward time to be after the delay.
+        (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).toNumber()
+      );
+
+      const balanceBefore = await MockETH.balanceOf(deployer.address);
+
+      await snapshotGasCost(
+        L2_NovaRegistry.withdrawTokens(
+          // This is a valid execHash from `allows a simple request`
+          computeExecHash({
+            nonce: 1,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 69,
+          })
+        )
+      );
+
+      const balanceAfter = await MockETH.balanceOf(deployer.address);
+
+      // Balance should properly increase.
+      balanceAfter.should.equal(
+        // This is the gas limit, gas price and tip we used in `allows a simple request`
+        balanceBefore.add(420 * 69 + 1)
+      );
+    });
+
+    it("does not allow withdrawing after tokens removed", async function () {
+      await L2_NovaRegistry.withdrawTokens(
+        // This is a valid execHash from `allows a simple request`
+        computeExecHash({
+          nonce: 1,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 69,
+        })
+      ).should.be.revertedWith("TOKENS_REMOVED");
+    });
+
+    it("does not allow unlocking tokens after tokens removed", async function () {
+      await L2_NovaRegistry.unlockTokens(
+        computeExecHash({
+          nonce: 1,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 69,
+        }),
+        999999999
+      ).should.be.revertedWith("TOKENS_REMOVED");
+    });
+
+    it("does not allow relocking tokens after tokens removed", async function () {
+      await L2_NovaRegistry.relockTokens(
+        computeExecHash({
+          nonce: 1,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 69,
+        })
+      ).should.be.revertedWith("TOKENS_REMOVED");
     });
   });
 });
