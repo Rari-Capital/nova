@@ -2,14 +2,14 @@
 
 exports[`L2_NovaRegistry relockTokens allows relocking tokens 1`] = `29862`;
 
-exports[`L2_NovaRegistry requestExec allows a simple request 1`] = `240684`;
+exports[`L2_NovaRegistry requestExec allows a simple request 1`] = `240733`;
 
-exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `330333`;
+exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `330382`;
 
-exports[`L2_NovaRegistry requestExec allows a simple request with one input token 1`] = `279375`;
+exports[`L2_NovaRegistry requestExec allows a simple request with one input token 1`] = `279424`;
 
-exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183649`;
+exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183698`;
 
 exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `62633`;
 
-exports[`L2_NovaRegistry withdrawTokens allows withdrawing tokens from a simple request 1`] = `90250`;
+exports[`L2_NovaRegistry withdrawTokens allows withdrawing tokens from a simple request 1`] = `90268`;

@@ -200,8 +200,6 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
             gasPrice: gasPrice
         });
 
-        emit RequestExec(execHash, strategy, systemNonce);
-
         // Store all critical request data.
         getRequestCreator[execHash] = msg.sender;
         getRequestStrategy[execHash] = strategy;
@@ -211,6 +209,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         getRequestTip[execHash] = tip;
         // Storing the nonce is just for convenience; it does not need to be on-chain.
         getRequestNonce[execHash] = systemNonce;
+
+        emit RequestExec(execHash, strategy, systemNonce);
 
         // Transfer in ETH to pay for max gas usage + tip.
         ETH.safeTransferFrom(msg.sender, address(this), gasLimit.mul(gasPrice).add(tip));
@@ -245,8 +245,10 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
     /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recpient given in `execCompleted` or the request creator if the request reverted).
     /// @param execHash The hash of the executed request.
     function claimInputTokens(bytes32 execHash) external nonReentrant auth {
+        // Get a pointer to the input token recipient data.
         InputTokenRecipientData storage inputTokenRecipientData = getRequestInputTokenRecipient[execHash];
 
+        // Ensure input tokens for this request are ready to be sent to a recipient.
         require(inputTokenRecipientData.recipient != address(0), "NO_RECIPIENT");
         // Ensure that the tokens have not already been claimed.
         require(!inputTokenRecipientData.isClaimed, "ALREADY_CLAIMED");
@@ -312,13 +314,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
 
-        emit WithdrawTokens(execHash);
-
+        // Get the request creator.
         address creator = getRequestCreator[execHash];
-        InputToken[] memory inputTokens = requestInputTokens[execHash];
 
-        // Store that the request has had its tokens removed.
+        // Store that the request has had its input tokens removed.
         getRequestInputTokenRecipient[execHash] = InputTokenRecipientData(creator, true);
+
+        emit WithdrawTokens(execHash);
 
         // Transfer the ETH which would have been used for (gas + tip) back to the creator.
         ETH.safeTransfer(
@@ -327,6 +329,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         );
 
         // Transfer input tokens back to the creator.
+        InputToken[] memory inputTokens = requestInputTokens[execHash];
         for (uint256 i = 0; i < inputTokens.length; i++) {
             inputTokens[i].l2Token.safeTransfer(creator, inputTokens[i].amount);
         }
@@ -441,9 +444,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
                              VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Checks if the request has had one of its tokens removed.
+    /// @notice Checks if the request has had any of its tokens removed.
     /// @param execHash The request to check.
-    /// @return tokensRemoved A boolean indicating if the request has had one of its tokens removed.
+    /// @return tokensRemoved A boolean indicating if the request has had any of its tokens removed.
     /// @return changeTimestamp A timestamp indicating when the request might have one of its tokens removed or added. Will be 0 if there is no removal/addition expected. It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request).
     function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
         address inputTokenRecipient = getRequestInputTokenRecipient[execHash].recipient;
