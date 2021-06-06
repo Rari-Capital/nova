@@ -426,12 +426,12 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // and the creator will be refunded the remaining 30%.
         uint256 recipientTip = reverted ? (tip.mul(7) / 10) : tip;
 
+        emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
+
         // Refund the creator any unused gas + refund some of the tip if reverted
         ETH.safeTransfer(creator, gasLimit.mul(gasPrice).sub(gasPayment).add(tip.sub(recipientTip)));
         // Pay the recipient the gas payment + the tip.
         ETH.safeTransfer(rewardRecipient, gasPayment.add(recipientTip));
-
-        emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
     }
 
     /*///////////////////////////////////////////////////////////////

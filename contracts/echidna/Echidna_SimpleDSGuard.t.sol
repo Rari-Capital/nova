@@ -19,7 +19,7 @@ contract Echidna_SimpleDSGuard {
         address user1,
         bytes4 sig,
         address user2
-    ) public {
+    ) external {
         require(user1 != user2);
         require(user1 != ANY_SENDER);
         require(sig != guard.ANY());
@@ -41,7 +41,7 @@ contract Echidna_SimpleDSGuard {
         address user1,
         bytes4 sig,
         address user2
-    ) public {
+    ) external {
         require(user1 != user2);
         require(user1 != ANY_SENDER);
 
@@ -62,7 +62,7 @@ contract Echidna_SimpleDSGuard {
         bytes4 sig,
         bytes4 otherSig,
         address user1
-    ) public {
+    ) external {
         require(otherSig != sig);
         require(sig != guard.ANY());
 

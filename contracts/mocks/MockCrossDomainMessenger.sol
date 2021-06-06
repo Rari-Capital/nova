@@ -13,7 +13,7 @@ contract MockCrossDomainMessenger is iAbs_BaseCrossDomainMessenger {
         return latestSender;
     }
 
-    function setSender(address newSender) public {
+    function setSender(address newSender) external {
         latestSender = newSender;
     }
 
