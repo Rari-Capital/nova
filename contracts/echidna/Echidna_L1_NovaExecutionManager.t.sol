@@ -47,9 +47,9 @@ contract Echidna_L1_NovaExecutionManager {
             assert(mockCrossDomainMessenger.latestGasLimit() == executionManager.EXEC_COMPLETED_MESSAGE_GAS_LIMIT());
         } catch {
             // If it reverted, it should be because either;
-            // - The deadline was in the past
             // - strategy == mockCrossDomainMessenger
             // - strategy == executionManager
+            // - the deadline was in the past
             // - the calldata had transferFrom as the sig
             // If not, something is wrong:
             bytes4 l1CalldataSig;
