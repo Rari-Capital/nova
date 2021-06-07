@@ -46,14 +46,6 @@ export async function snapshotGasCost(
 
     try {
       receipt.gasUsed.toNumber().should.toMatchSnapshot();
-
-      console.log(
-        chalk.yellow(
-          "(NO CHANGE) Below is consuming " +
-            receipt.gasUsed.toString() +
-            " gas. "
-        )
-      );
     } catch (e) {
       console.log(
         chalk.red(

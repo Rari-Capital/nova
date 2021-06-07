@@ -8,13 +8,12 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 
-import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
 import "./external/LowGasSafeMath.sol";
 
 import "./libraries/NovaExecHashLib.sol";
 
-contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
+contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     using OVM_SafeERC20 for IERC20;
     using LowGasSafeMath for uint256;
 
