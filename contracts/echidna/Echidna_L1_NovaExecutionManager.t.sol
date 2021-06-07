@@ -29,7 +29,7 @@ contract Echidna_L1_NovaExecutionManager {
     function exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
         uint256 nonce,
         address strategy,
-        bytes calldata l1calldata,
+        bytes memory l1calldata,
         address recipient,
         uint256 deadline
     ) public {
@@ -42,8 +42,17 @@ contract Echidna_L1_NovaExecutionManager {
             assert(mockCrossDomainMessenger.latestSender() == address(executionManager));
             assert(mockCrossDomainMessenger.latestGasLimit() == executionManager.EXEC_COMPLETED_MESSAGE_GAS_LIMIT());
         } catch {
-            // If it reverted, it should be because the deadline was in the past, if not, something is wrong:
-            assert(deadline < block.timestamp);
+            // If it reverted, it should be because either: The deadline was in the past, strategy == mockCrossDomainMessenger or the calldata had transferFrom as the sig.
+            // If not, something is wrong:
+            bytes4 l1CalldataSig;
+            assembly {
+                l1CalldataSig := mload(add(l1calldata, 0x20))
+            }
+            assert(
+                deadline < block.timestamp ||
+                    strategy == address(mockCrossDomainMessenger) ||
+                    l1CalldataSig == IERC20.transferFrom.selector
+            );
         }
     }
 }
