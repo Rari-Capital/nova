@@ -82,6 +82,10 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         require(block.timestamp <= deadline, "PAST_DEADLINE");
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
 
+        // We cannot allow calling the execution manager itself, as a malicious relayer could
+        // call DSAuth methods like setOwner and setAuthority as though it were the execution manager.
+        require(strategy != address(this), "EVIL_STRATEGY");
+
         // Compute the execHash.
         bytes32 execHash =
             NovaExecHashLib.compute({nonce: nonce, strategy: strategy, l1calldata: l1calldata, gasPrice: tx.gasprice});
