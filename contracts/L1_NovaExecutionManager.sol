@@ -85,7 +85,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // We cannot allow calling the messenger, as a malicious relayer could use this to trigger
         // execCompleted as though the execution manager did itself, which would allow them to
         // claim bounties without actually executing the proper request(s).
-        require(strategy != messenger, "BAD_TARGET");
+        require(strategy != messenger, "EVIL_STRATEGY");
 
         // We canot allow calling the `IERC20.transferFrom` function directly as a malicious actor could
         // steal tokens approved to the registry by other relayers. Use `transferFromRelayer` instead of
@@ -94,7 +94,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         assembly {
             l1CalldataSig := mload(add(l1calldata, 0x20))
         }
-        require(l1CalldataSig != IERC20.transferFrom.selector, "BAD_PAYLOAD");
+        require(l1CalldataSig != IERC20.transferFrom.selector, "EVIL_PAYLOAD");
 
         // Compute the execHash.
         bytes32 execHash =
