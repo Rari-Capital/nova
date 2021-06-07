@@ -9,9 +9,9 @@
     "gas-changed": "UPDATE_SNAPSHOT=1 CI=true hardhat test && npx codechecks",
     "coverage": "hardhat coverage",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
-    "quick-fuzz": "./contracts/echidna/quick.fuzz.sh",
-    "long-fuzz": "./contracts/echidna/long.fuzz.sh",
-    "deep-fuzz": "./contracts/echidna/deep.fuzz.sh",
+    "quick-fuzz": "./fuzz.sh quick",
+    "long-fuzz": "./fuzz.sh long",
+    "deep-fuzz": "./fuzz.sh deep",
     "deploy": "hardhat deploy",
     "verify": "hardhat verify",
     "clean": "hardhat clean && rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm ./coverage ./crytic-export ./contracts/echidna/echidna_corpus ./contracts/echidna/contracts"
