@@ -248,6 +248,19 @@ describe("L1_NovaExecutionManager", function () {
       ).should.be.revertedWith("EVIL_STRATEGY");
     });
 
+    it("should not allow self calls", async function () {
+      await L1_NovaExecutionManager.exec(
+        0,
+
+        // This is what triggers the revert:
+        L1_NovaExecutionManager.address,
+
+        "0x00",
+        ethers.constants.AddressZero,
+        99999999999
+      ).should.be.revertedWith("EVIL_STRATEGY");
+    });
+
     it("should not allow calling transferFrom", async function () {
       await L1_NovaExecutionManager.exec(
         0,
