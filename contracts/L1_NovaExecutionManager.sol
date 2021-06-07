@@ -95,14 +95,14 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // Check authorization of the caller (equivalent to DSAuth's `auth` modifier).
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
 
+        // We cannot allow calling the execution manager itself, as a malicious relayer could
+        // call DSAuth methods like setOwner and setAuthority as though it were the execution manager.
+        require(strategy != address(this), "EVIL_STRATEGY");
+
         // We cannot allow calling the messenger, as a malicious relayer could use this to trigger
         // execCompleted as though the execution manager did itself, which would allow them to
         // claim bounties without actually executing the proper request(s).
         require(strategy != messenger, "EVIL_STRATEGY");
-
-        // We cannot allow calling the execution manager itself, as a malicious relayer could
-        // call DSAuth methods like setOwner and setAuthority as though it were the execution manager.
-        require(strategy != address(this), "EVIL_STRATEGY");
 
         // We canot allow calling the `IERC20.transferFrom` function directly as a malicious actor could
         // steal tokens approved to the registry by other relayers. Use a strategy with `transferFromRelayer`
