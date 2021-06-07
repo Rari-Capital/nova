@@ -245,7 +245,24 @@ describe("L1_NovaExecutionManager", function () {
         "0x00",
         ethers.constants.AddressZero,
         99999999999
-      ).should.be.revertedWith("MESSENGER_CALL");
+      ).should.be.revertedWith("EVIL_STRATEGY");
+    });
+
+    it("should not allow calling transferFrom", async function () {
+      await L1_NovaExecutionManager.exec(
+        0,
+        MockERC20.address,
+
+        // This is what triggers the revert:
+        MockERC20.interface.encodeFunctionData("transferFrom", [
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+          0,
+        ]),
+
+        ethers.constants.AddressZero,
+        99999999999
+      ).should.be.revertedWith("EVIL_PAYLOAD");
     });
 
     it("should properly execute a minimal exec", async function () {

@@ -82,7 +82,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     function exec(
         uint256 nonce,
         address strategy,
-        bytes calldata l1calldata,
+        bytes memory l1calldata,
         address l2Recipient,
         uint256 deadline
     ) external nonReentrant {
@@ -97,7 +97,16 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // We cannot allow calling the messenger, as a malicious relayer could use this to trigger
         // execCompleted as though the execution manager did itself, which would allow them to
         // claim bounties without actually executing the proper request(s).
-        require(strategy != messenger, "MESSENGER_CALL");
+        require(strategy != messenger, "EVIL_STRATEGY");
+
+        // We canot allow calling the `IERC20.transferFrom` function directly as a malicious actor could
+        // steal tokens approved to the registry by other relayers. Use `transferFromRelayer` instead of
+        // calling `IERC20.transferFrom` directly if you wish to transfer tokens from the relayer.
+        bytes4 l1CalldataSig;
+        assembly {
+            l1CalldataSig := mload(add(l1calldata, 0x20))
+        }
+        require(l1CalldataSig != IERC20.transferFrom.selector, "EVIL_PAYLOAD");
 
         // Compute the execHash.
         bytes32 execHash =
