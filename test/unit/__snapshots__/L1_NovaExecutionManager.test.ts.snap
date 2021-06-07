@@ -1,9 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a minimal exec 1`] = `145519`;
+exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a minimal exec 1`] = `145539`;
 
-exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a stateful exec 1`] = `165495`;
+exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a stateful exec 1`] = `165515`;
 
-exports[`L1_NovaExecutionManager exec/execWithRecipient soft revert should not exec to revert 1`] = `161224`;
+exports[`L1_NovaExecutionManager exec/execWithRecipient soft revert should not exec to revert 1`] = `161244`;
 
-exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `190298`;
+exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `190203`;
