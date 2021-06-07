@@ -51,8 +51,9 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
 
     /// @notice Emitted when `exec` is called.
     /// @param execHash The execHash computed from arguments and transaction context.
+    /// @param reverted Will be true if the strategy call reverted, will be false if not.
     /// @param gasUsed The gas estimate computed during the call.
-    event Exec(bytes32 indexed execHash, address relayer, uint256 gasUsed);
+    event Exec(bytes32 indexed execHash, address relayer, bool reverted, uint256 gasUsed);
 
     /*///////////////////////////////////////////////////////////////
                         EXECUTION CONTEXT STORAGE
@@ -143,7 +144,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
             EXEC_COMPLETED_MESSAGE_GAS_LIMIT
         );
 
-        emit Exec(execHash, msg.sender, gasUsedEstimate);
+        emit Exec(execHash, msg.sender, !success, gasUsedEstimate);
     }
 
     /// @notice Transfers tokens from the relayer (the account that called execute) has approved to the execution manager for the currently executing strategy.
