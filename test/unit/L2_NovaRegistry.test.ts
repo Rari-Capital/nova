@@ -377,7 +377,7 @@ describe("L2_NovaRegistry", function () {
 
     it("does not allow unlocking requests with a small delay", async function () {
       await L2_NovaRegistry.unlockTokens(
-        // This execHash is a real request we made in the `allows a simple request` test.
+        // This execHash is a real request we made in `allows a simple request`
         computeExecHash({
           nonce: 1,
           strategy: fakeStrategyAddress,
@@ -390,7 +390,7 @@ describe("L2_NovaRegistry", function () {
 
     it("does not allow unlocking requests already scheduled to unlock", async function () {
       await L2_NovaRegistry.unlockTokens(
-        // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
+        // This execHash is a real request we made in `should allow a simple request with minimum timeout`
         computeExecHash({
           nonce: 4,
           strategy: fakeStrategyAddress,
@@ -436,7 +436,7 @@ describe("L2_NovaRegistry", function () {
     it("allows relocking tokens", async function () {
       await snapshotGasCost(
         L2_NovaRegistry.relockTokens(
-          // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
+          // This execHash is a real request we made in `should allow a simple request with minimum timeout`
           computeExecHash({
             nonce: 4,
             strategy: fakeStrategyAddress,
@@ -447,7 +447,7 @@ describe("L2_NovaRegistry", function () {
       );
 
       await L2_NovaRegistry.unlockTokens(
-        // This execHash is a real request we made in the `should allow a simple request with minimum timeout` test.
+        // This execHash is a real request we made in `should allow a simple request with minimum timeout`
         computeExecHash({
           nonce: 4,
           strategy: fakeStrategyAddress,
@@ -585,5 +585,65 @@ describe("L2_NovaRegistry", function () {
         })
       ).should.be.revertedWith("TOKENS_REMOVED");
     });
+  });
+
+  describe("speedUpRequest", function () {
+    it("does not allow speeding up random requests", async function () {
+      await L2_NovaRegistry.speedUpRequest(
+        computeExecHash({
+          nonce: 8843720948702139,
+          strategy: fakeStrategyAddress,
+          calldata: "0x20",
+          gasPrice: 0,
+        }),
+        999999999
+      ).should.be.revertedWith("NOT_CREATOR");
+    });
+
+    it("does not allow speeding up withdrawn rquests", async function () {
+      await L2_NovaRegistry.speedUpRequest(
+        // This execHash is a real request we made in `allows a simple request`
+        computeExecHash({
+          nonce: 1,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 69,
+        }),
+        999999999
+      ).should.be.revertedWith("TOKENS_REMOVED");
+    });
+
+    it("does not allow slowing down a request", async function () {
+      await L2_NovaRegistry.speedUpRequest(
+        // This execHash is a real request we made in `allows a simple request with one input token`
+        computeExecHash({
+          nonce: 2,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 10,
+        }),
+        9
+      ).should.be.revertedWith("LESS_THAN_PREVIOUS_GAS_PRICE");
+    });
+
+    it("does now allow speeding up a request scheduled to unlock soon", async function () {});
+
+    it("allows speeding up a simple request", async function () {});
+  });
+
+  describe("execCompleted", function () {
+    it("allows completing a simple request", async function () {});
+
+    it("allows completing a request with input tokens", async function () {});
+
+    it("does not allow completing a request with tokens removed", async function () {});
+  });
+
+  describe("claimInputTokens", function () {
+    it("does not allow claiming a random request", async function () {});
+
+    it("allows claiming tokens for an executed request", async function () {});
+
+    it("does not allow claiming a request that is already claimed", async function () {});
   });
 });
