@@ -434,26 +434,18 @@ describe("L2_NovaRegistry", function () {
 
   describe("relockTokens", function () {
     it("allows relocking tokens", async function () {
-      await snapshotGasCost(
-        L2_NovaRegistry.relockTokens(
-          // This execHash is a real request we made in `should allow a simple request with minimum timeout`
-          computeExecHash({
-            nonce: 4,
-            strategy: fakeStrategyAddress,
-            calldata: "0x00",
-            gasPrice: 0,
-          })
-        )
-      );
+      const execHash = computeExecHash({
+        // This execHash is a real request we made in `should allow a simple request with minimum timeout`
+        nonce: 4,
+        strategy: fakeStrategyAddress,
+        calldata: "0x00",
+        gasPrice: 0,
+      });
+
+      await snapshotGasCost(L2_NovaRegistry.relockTokens(execHash));
 
       await L2_NovaRegistry.unlockTokens(
-        // This execHash is a real request we made in `should allow a simple request with minimum timeout`
-        computeExecHash({
-          nonce: 4,
-          strategy: fakeStrategyAddress,
-          calldata: "0x00",
-          gasPrice: 0,
-        }),
+        execHash,
         await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
       ).should.not.be.reverted;
     });
@@ -474,15 +466,15 @@ describe("L2_NovaRegistry", function () {
     it("does not allow withdrawing from a random request", async function () {
       await L2_NovaRegistry.withdrawTokens(
         computeExecHash({
-          nonce: 1,
+          nonce: 5555,
           strategy: fakeStrategyAddress,
-          calldata: "0x00",
-          gasPrice: 69,
+          calldata: "0x20",
+          gasPrice: 12134,
         })
       ).should.be.revertedWith("NOT_UNLOCKED");
     });
 
-    it("does not allow withdrawing from a random request before the unlock delay", async function () {
+    it("does not allow withdrawing from a request before the unlock delay", async function () {
       L2_NovaRegistry.withdrawTokens(
         // This is a valid execHash from `allows a simple request`
         computeExecHash({
@@ -506,8 +498,8 @@ describe("L2_NovaRegistry", function () {
 
       await snapshotGasCost(
         L2_NovaRegistry.withdrawTokens(
-          // This is a valid execHash from `allows a simple request`
           computeExecHash({
+            // This is a valid execHash from `allows a simple request`
             nonce: 1,
             strategy: fakeStrategyAddress,
             calldata: "0x00",
