@@ -1,4 +1,4 @@
-<img width="320" src="/images/white-bg-small.png" alt="Logo">
+<img width="320" src="/docs/images/white-bg-small.png" alt="Logo">
 
 [![Coverage Status](https://coveralls.io/repos/github/Rari-Capital/nova/badge.svg?branch=master)](https://coveralls.io/github/Rari-Capital/nova?branch=master) [![Fuzz Tests](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml) [![Integration Tests](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml) [![Unit Tests](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml) [![Nova Docs](https://img.shields.io/badge/Developer%20Docs-up%20to%20date-31C151?labelColor=333941&logo=github&logoColor=949DA5)](https://docs.rari.capital/nova)
 
