@@ -626,9 +626,47 @@ describe("L2_NovaRegistry", function () {
       ).should.be.revertedWith("LESS_THAN_PREVIOUS_GAS_PRICE");
     });
 
-    it("does now allow speeding up a request scheduled to unlock soon", async function () {});
+    it("does now allow speeding up a request scheduled to unlock soon", async function () {
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+      const execHash = computeExecHash({
+        // This execHash is a real request we made in `allows a simple request with one input token`
+        nonce: 2,
+        strategy: fakeStrategyAddress,
+        calldata: "0x00",
+        gasPrice: 10,
+      });
 
-    it("allows speeding up a simple request", async function () {});
+      // Unlock the request's tokens with the min delay.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time so the request is half way to expiring.
+      await increaseTimeAndMine(unlockDelay.div(2).toNumber());
+
+      await L2_NovaRegistry.speedUpRequest(execHash, 11).should.be.revertedWith(
+        "UNLOCK_BEFORE_SWITCH"
+      );
+    });
+
+    it("allows speeding up a simple request", async function () {
+      const execHash = computeExecHash({
+        // This execHash is a real request we made in `allows a simple request with one input token`
+        nonce: 2,
+        strategy: fakeStrategyAddress,
+        calldata: "0x00",
+        gasPrice: 10,
+      });
+
+      // Relock the tokens from the last test.
+      await L2_NovaRegistry.relockTokens(execHash);
+
+      await MockETH.approve(
+        L2_NovaRegistry.address,
+        // (gas price diff) * previousGasLimit
+        (11 - 10) * 100_000
+      );
+
+      await snapshotGasCost(L2_NovaRegistry.speedUpRequest(execHash, 11));
+    });
   });
 
   describe("execCompleted", function () {
