@@ -666,6 +666,8 @@ describe("L2_NovaRegistry", function () {
 
     it("allows completing a request with input tokens", async function () {});
 
+    it("allows completing a resubmitted request", async function () {});
+
     it("does not allow completing a request with tokens removed", async function () {});
   });
 
