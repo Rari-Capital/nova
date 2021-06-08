@@ -1,6 +1,6 @@
 # Nova
 
-**Nova is a <u>set of contracts</u> & <u>network of relayers</u> that enable seamless <u>L1-L2 interop</u> a trustless and <u>composable</u> manner.**
+**Nova is a <u>set of contracts</u> & <u>network of relayers</u> that enable seamless <u>L1-L2 interop</u> in a <u>trustless</u> and <u>composable</u> manner.**
 
 <img width="500" style="float: right;" alt="Explainer" src="https://i.imgur.com/TbbAhLd.png">
 

@@ -52,15 +52,11 @@ contract Echidna_L1_NovaExecutionManager {
             // - the deadline was in the past
             // - the calldata had transferFrom as the sig
             // If not, something is wrong:
-            bytes4 l1CalldataSig;
-            assembly {
-                l1CalldataSig := mload(add(l1calldata, 0x20))
-            }
             assert(
                 deadline < block.timestamp ||
                     strategy == address(mockCrossDomainMessenger) ||
                     strategy == address(executionManager) ||
-                    l1CalldataSig == IERC20.transferFrom.selector
+                    SigLib.fromCalldata(l1calldata) == IERC20.transferFrom.selector
             );
         }
     }
