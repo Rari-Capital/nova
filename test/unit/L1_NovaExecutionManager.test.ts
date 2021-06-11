@@ -235,30 +235,21 @@ describe("L1_NovaExecutionManager", function () {
       ).should.be.revertedWith("PAST_DEADLINE");
     });
 
-    it("should not allow calling the messenger", async function () {
+    it("should not allow calling sendMessage", async function () {
       await L1_NovaExecutionManager.exec(
         0,
-
-        // This is what triggers the revert:
         MockCrossDomainMessenger.address,
 
-        "0x00",
-        ethers.constants.AddressZero,
-        99999999999
-      ).should.be.revertedWith("EVIL_STRATEGY");
-    });
-
-    it("should not allow self calls", async function () {
-      await L1_NovaExecutionManager.exec(
-        0,
-
         // This is what triggers the revert:
-        L1_NovaExecutionManager.address,
+        MockCrossDomainMessenger.interface.encodeFunctionData("sendMessage", [
+          ethers.constants.AddressZero,
+          "0x00",
+          0,
+        ]),
 
-        "0x00",
         ethers.constants.AddressZero,
         99999999999
-      ).should.be.revertedWith("EVIL_STRATEGY");
+      ).should.be.revertedWith("UNSAFE_CALLDATA");
     });
 
     it("should not allow calling transferFrom", async function () {
@@ -275,7 +266,20 @@ describe("L1_NovaExecutionManager", function () {
 
         ethers.constants.AddressZero,
         99999999999
-      ).should.be.revertedWith("EVIL_PAYLOAD");
+      ).should.be.revertedWith("UNSAFE_CALLDATA");
+    });
+
+    it("should not allow self calls", async function () {
+      await L1_NovaExecutionManager.exec(
+        0,
+
+        // This is what triggers the revert:
+        L1_NovaExecutionManager.address,
+
+        "0x00",
+        ethers.constants.AddressZero,
+        99999999999
+      ).should.be.revertedWith("UNSAFE_STRATEGY");
     });
 
     it("should properly execute a minimal exec", async function () {
