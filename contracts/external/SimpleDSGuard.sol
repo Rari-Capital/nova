@@ -21,7 +21,7 @@ contract SimpleDSGuard is DSAuth, DSAuthority {
     ) external view override returns (bool) {
         bytes32 src = bytes32(bytes20(src_));
 
-        return acl[ANY][sig] || acl[src][ANY] || acl[src][sig] || acl[ANY][ANY];
+        return acl[ANY][sig] || acl[src][sig] || acl[src][ANY] || acl[ANY][ANY];
     }
 
     // Internal Utils //
