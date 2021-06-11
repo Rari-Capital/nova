@@ -95,22 +95,22 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // Check authorization of the caller (equivalent to DSAuth's `auth` modifier).
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
 
-        // We cannot allow calling the execution manager itself, as a malicious
-        // relayer could call DSAuth and OVM_CrossDomainEnabled inherited functions
-        // to change owners, blacklist relayers, and send cross domain messages at will.
-        require(strategy != address(this), "UNSAFE_STRATEGY");
-
         // Extract the 4 byte function signature from l1calldata.
         bytes4 calldataSig = SigLib.fromCalldata(l1calldata);
+
+        // We canot allow calling IERC20.transferFrom directly, as a malicious
+        // relayer could steal tokens approved to the registry by other relayers.
+        require(calldataSig != IERC20.transferFrom.selector, "UNSAFE_CALLDATA");
 
         // We cannot allow calling iAbs_BaseCrossDomainMessenger.sendMessage directly,
         // as a malicious relayer could use it to trigger the registry's execCompleted
         // function and claim bounties without actually executing the proper request(s).
         require(calldataSig != iAbs_BaseCrossDomainMessenger.sendMessage.selector, "UNSAFE_CALLDATA");
 
-        // We canot allow calling IERC20.transferFrom directly, as a malicious
-        // relayer could steal tokens approved to the registry by other relayers.
-        require(calldataSig != IERC20.transferFrom.selector, "UNSAFE_CALLDATA");
+        // We cannot allow calling the execution manager itself, as a malicious
+        // relayer could call DSAuth and OVM_CrossDomainEnabled inherited functions
+        // to change owners, blacklist relayers, and send cross domain messages at will.
+        require(strategy != address(this), "UNSAFE_STRATEGY");
 
         // Compute the execHash.
         bytes32 execHash =
