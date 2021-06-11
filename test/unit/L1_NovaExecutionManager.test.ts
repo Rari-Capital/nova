@@ -237,6 +237,53 @@ describe("L1_NovaExecutionManager", function () {
       ).should.be.revertedWith("PAST_DEADLINE");
     });
 
+    it("should not allow calling sendMessage", async function () {
+      await L1_NovaExecutionManager.exec(
+        0,
+        MockCrossDomainMessenger.address,
+
+        // This is what triggers the revert:
+        MockCrossDomainMessenger.interface.encodeFunctionData("sendMessage", [
+          ethers.constants.AddressZero,
+          "0x00",
+          0,
+        ]),
+
+        ethers.constants.AddressZero,
+        99999999999
+      ).should.be.revertedWith("UNSAFE_CALLDATA");
+    });
+
+    it("should not allow calling transferFrom", async function () {
+      await L1_NovaExecutionManager.exec(
+        0,
+        MockERC20.address,
+
+        // This is what triggers the revert:
+        MockERC20.interface.encodeFunctionData("transferFrom", [
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+          0,
+        ]),
+
+        ethers.constants.AddressZero,
+        99999999999
+      ).should.be.revertedWith("UNSAFE_CALLDATA");
+    });
+
+    it("should not allow self calls", async function () {
+      await L1_NovaExecutionManager.exec(
+        0,
+
+        // This is what triggers the revert:
+        L1_NovaExecutionManager.address,
+
+        "0x00",
+        ethers.constants.AddressZero,
+        99999999999
+      ).should.be.revertedWith("UNSAFE_STRATEGY");
+    });
+
     it("should properly execute a minimal exec", async function () {
       const [deployer] = signers;
 
