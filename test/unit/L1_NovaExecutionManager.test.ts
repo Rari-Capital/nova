@@ -196,7 +196,7 @@ describe("L1_NovaExecutionManager", function () {
       ).should.not.be.reverted;
     });
 
-    it("hard revert should cause exec to revert", async function () {
+    it("should revert if a hard revert is triggered", async function () {
       const [deployer] = signers;
 
       await L1_NovaExecutionManager.exec(
@@ -208,7 +208,7 @@ describe("L1_NovaExecutionManager", function () {
       ).should.be.revertedWith("HARD_REVERT");
     });
 
-    it("soft revert should not exec to revert", async function () {
+    it("should not revert due to a soft revert", async function () {
       const [deployer] = signers;
 
       await snapshotGasCost(
