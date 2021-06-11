@@ -83,6 +83,9 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         require(block.timestamp <= deadline, "PAST_DEADLINE");
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
 
+        // Check that there is a non-zero recipient specified.
+        require(l2Recipient != address(0), "NEED_RECIPIENT");
+
         // We cannot allow calling the execution manager itself, as a malicious
         // relayer could call DSAuth and OVM_CrossDomainEnabled inherited functions
         // to change owners, blacklist relayers, and send cross domain messages at will.
