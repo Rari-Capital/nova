@@ -672,7 +672,28 @@ describe("L2_NovaRegistry", function () {
   });
 
   describe("claimInputTokens", function () {
-    it("does not allow claiming a random request", async function () {});
+    it("does not allow claiming a random request", async function () {
+      await L2_NovaRegistry.claimInputTokens(
+        computeExecHash({
+          nonce: 8843720948702139,
+          strategy: fakeStrategyAddress,
+          calldata: "0x20",
+          gasPrice: 0,
+        })
+      ).should.be.revertedWith("NO_RECIPIENT");
+    });
+
+    it("does not allow claiming a request not exected yet", async function () {
+      await L2_NovaRegistry.claimInputTokens(
+        computeExecHash({
+          // This execHash is a real request we made in `allows a simple request with one input token`
+          nonce: 2,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 10,
+        })
+      ).should.be.revertedWith("NO_RECIPIENT");
+    });
 
     it("allows claiming tokens for an executed request", async function () {});
 
