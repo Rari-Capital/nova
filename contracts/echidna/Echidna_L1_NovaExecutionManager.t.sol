@@ -42,8 +42,19 @@ contract Echidna_L1_NovaExecutionManager {
             assert(mockCrossDomainMessenger.latestSender() == address(executionManager));
             assert(mockCrossDomainMessenger.latestGasLimit() == executionManager.EXEC_COMPLETED_MESSAGE_GAS_LIMIT());
         } catch {
-            // If it reverted, it should be because the deadline was in the past, if not, something is wrong:
-            assert(deadline < block.timestamp);
+            // If it reverted, it should be because either;
+            // - the deadline was in the past
+            // - strategy == executionManager
+            // - the calldata had transferFrom as the sig
+            // - the calldata had sendMessage as the sig
+            // If not, something is wrong:
+            bytes4 calldataSig = SigLib.fromCalldata(l1calldata);
+            assert(
+                deadline < block.timestamp ||
+                    strategy == address(executionManager) ||
+                    calldataSig == iAbs_BaseCrossDomainMessenger.sendMessage.selector ||
+                    calldataSig == IERC20.transferFrom.selector
+            );
         }
     }
 }
