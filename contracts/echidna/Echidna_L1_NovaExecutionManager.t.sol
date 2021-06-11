@@ -49,12 +49,14 @@ contract Echidna_L1_NovaExecutionManager {
             // If it reverted, it should be because either;
             // - the deadline was in the past
             // - strategy == executionManager
+            // - recipient == address(0)
             // - the calldata had transferFrom as the sig
             // - the calldata had sendMessage as the sig
             // If not, something is wrong:
             bytes4 calldataSig = SigLib.fromCalldata(l1calldata);
             assert(
                 deadline < block.timestamp ||
+                    recipient == address(0) ||
                     strategy == address(executionManager) ||
                     calldataSig == iAbs_BaseCrossDomainMessenger.sendMessage.selector ||
                     calldataSig == IERC20.transferFrom.selector

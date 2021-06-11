@@ -95,6 +95,9 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // Check authorization of the caller (equivalent to DSAuth's `auth` modifier).
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
 
+        // Check that there is a non-zero recipient specified.
+        require(l2Recipient != address(0), "NEED_RECIPIENT");
+
         // Extract the 4 byte function signature from l1calldata.
         bytes4 calldataSig = SigLib.fromCalldata(l1calldata);
 
