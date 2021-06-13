@@ -715,7 +715,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows completing a simple request", async function () {
-      const [deployer] = signers;
+      const [deployer, rewardRecipient] = signers;
 
       const gasLimit = 1337;
       const gasPrice = 69;
@@ -749,7 +749,7 @@ describe("L2_NovaRegistry", function () {
               gasPrice,
             }),
 
-            rewardRecipient: deployer.address,
+            rewardRecipient: rewardRecipient.address,
 
             reverted: false,
 
@@ -757,9 +757,76 @@ describe("L2_NovaRegistry", function () {
           }
         )
       );
+
+      // TODO: ASSERT ON ETH BEING RETURNED
     });
 
-    it("allows completing a request with input tokens", async function () {});
+    it("allows completing a request with input tokens", async function () {
+      const [deployer, rewardRecipient] = signers;
+
+      const gasLimit = 100_000;
+      const gasPrice = 10;
+      const tip = 1337;
+
+      const inputTokenAmount = 500;
+
+      await MockETH.approve(
+        L2_NovaRegistry.address,
+        gasLimit * gasPrice + tip + inputTokenAmount
+      );
+
+      await L2_NovaRegistry.requestExec(
+        fakeStrategyAddress,
+        "0x00",
+        gasLimit,
+        gasPrice,
+        tip,
+        [{ l2Token: MockETH.address, amount: inputTokenAmount }]
+      );
+
+      const preCompleteRecipientBalance = await MockETH.balanceOf(
+        rewardRecipient.address
+      );
+      const preCompleteDeployerBalance = await MockETH.balanceOf(
+        deployer.address
+      );
+
+      const fakeGasConsumed = 42069;
+      await snapshotGasCost(
+        forceExecCompleted(
+          fakeExecutionManagerAddress,
+          MockCrossDomainMessenger,
+          L2_NovaRegistry,
+
+          {
+            execHash: computeExecHash({
+              // Latest nonce.
+              nonce: (await L2_NovaRegistry.systemNonce()).toNumber(),
+              strategy: fakeStrategyAddress,
+              calldata: "0x00",
+              gasPrice,
+            }),
+
+            rewardRecipient: rewardRecipient.address,
+
+            reverted: false,
+
+            gasUsed: fakeGasConsumed,
+          }
+        )
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+        // Input tokens are claimed using `claimInputTokens`, not sent right after.
+        preCompleteRecipientBalance.add(fakeGasConsumed * gasPrice).add(tip)
+      );
+
+      // Ensure the balance of the deployer increased properly.
+      await MockETH.balanceOf(deployer.address).should.eventually.equal(
+        preCompleteDeployerBalance.add((gasLimit - fakeGasConsumed) * gasPrice)
+      );
+    });
 
     it("allows completing a reverted request with input tokens", async function () {});
 
@@ -784,17 +851,7 @@ describe("L2_NovaRegistry", function () {
       ).should.be.revertedWith("NO_RECIPIENT");
     });
 
-    it("does not allow claiming a request not exected yet", async function () {
-      await L2_NovaRegistry.claimInputTokens(
-        computeExecHash({
-          // This execHash is a real request we made in `allows a simple request with one input token`
-          nonce: 2,
-          strategy: fakeStrategyAddress,
-          calldata: "0x00",
-          gasPrice: 10,
-        })
-      ).should.be.revertedWith("NO_RECIPIENT");
-    });
+    it("does not allow claiming a request not exected yet", async function () {});
 
     it("allows claiming tokens for an executed request", async function () {});
 
