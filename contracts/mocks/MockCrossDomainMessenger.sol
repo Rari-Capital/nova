@@ -13,20 +13,17 @@ contract MockCrossDomainMessenger is iAbs_BaseCrossDomainMessenger {
         return latestSender;
     }
 
-    function setSender(address newSender) external {
-        latestSender = newSender;
-    }
-
-    function sendMessage(
+    function sendMessageWithSender(
         address _target,
         bytes memory _message,
-        uint32 _gasLimit
-    ) external override {
+        uint32 _gasLimit,
+        address _sender
+    ) public {
         uint256 startingGas = gasleft();
         latestTarget = _target;
         latestMessage = _message;
         latestGasLimit = _gasLimit;
-        latestSender = msg.sender;
+        latestSender = _sender;
 
         // Mimic enqueue gas burn (https://github.com/ethereum-optimism/optimism/blob/master/packages/contracts/contracts/optimistic-ethereum/OVM/chain/OVM_CanonicalTransactionChain.sol) + sendMessage overhead.
         uint256 gasToConsume = (_gasLimit / 32) + 74000;
@@ -34,6 +31,14 @@ contract MockCrossDomainMessenger is iAbs_BaseCrossDomainMessenger {
         while (startingGas - gasleft() < gasToConsume) {
             i++;
         }
+    }
+
+    function sendMessage(
+        address _target,
+        bytes memory _message,
+        uint32 _gasLimit
+    ) external override {
+        sendMessageWithSender(_target, _message, _gasLimit, msg.sender);
     }
 
     function relayCurrentMessage() external {

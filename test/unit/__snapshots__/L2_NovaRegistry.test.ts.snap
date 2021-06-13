@@ -1,5 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = `104091`;
+
 exports[`L2_NovaRegistry relockTokens allows relocking tokens 1`] = `29884`;
 
 exports[`L2_NovaRegistry requestExec allows a simple request 1`] = `240733`;

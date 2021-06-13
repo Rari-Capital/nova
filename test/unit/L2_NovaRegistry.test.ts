@@ -1,5 +1,6 @@
 import {
   computeExecHash,
+  forceExecCompleted,
   getFactory,
   increaseTimeAndMine,
   snapshotGasCost,
@@ -662,13 +663,113 @@ describe("L2_NovaRegistry", function () {
   });
 
   describe("execCompleted", function () {
-    it("allows completing a simple request", async function () {});
+    it("does not allow completing a random request", async function () {
+      const [deployer] = signers;
+
+      await forceExecCompleted(
+        fakeExecutionManagerAddress,
+        MockCrossDomainMessenger,
+        L2_NovaRegistry,
+
+        {
+          execHash: computeExecHash({
+            nonce: 8843720948702139,
+            strategy: fakeStrategyAddress,
+            calldata: "0x20",
+            gasPrice: 0,
+          }),
+
+          rewardRecipient: deployer.address,
+
+          reverted: false,
+
+          gasUsed: 100,
+        }
+      ).should.be.revertedWith("NOT_CREATED");
+    });
+
+    it("does not allow completing a request with tokens removed", async function () {
+      const [deployer] = signers;
+
+      await forceExecCompleted(
+        fakeExecutionManagerAddress,
+        MockCrossDomainMessenger,
+        L2_NovaRegistry,
+
+        {
+          execHash: computeExecHash({
+            // This is a valid execHash from `allows a simple request`
+            nonce: 1,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 69,
+          }),
+
+          rewardRecipient: deployer.address,
+
+          reverted: false,
+
+          gasUsed: 100,
+        }
+      ).should.be.revertedWith("TOKENS_REMOVED");
+    });
+
+    it("allows completing a simple request", async function () {
+      const [deployer] = signers;
+
+      const gasLimit = 1337;
+      const gasPrice = 69;
+      const tip = 5;
+
+      await MockETH.approve(L2_NovaRegistry.address, gasLimit * gasPrice + tip);
+
+      L2_NovaRegistry.requestExec(
+        fakeStrategyAddress,
+        "0x00",
+        gasLimit,
+        gasPrice,
+        tip,
+        []
+      );
+
+      const fakeGasConsumed = 1000;
+
+      await snapshotGasCost(
+        forceExecCompleted(
+          fakeExecutionManagerAddress,
+          MockCrossDomainMessenger,
+          L2_NovaRegistry,
+
+          {
+            execHash: computeExecHash({
+              // Latest nonce.
+              nonce: (await L2_NovaRegistry.systemNonce()).toNumber(),
+              strategy: fakeStrategyAddress,
+              calldata: "0x00",
+              gasPrice,
+            }),
+
+            rewardRecipient: deployer.address,
+
+            reverted: false,
+
+            gasUsed: fakeGasConsumed,
+          }
+        )
+      );
+    });
 
     it("allows completing a request with input tokens", async function () {});
 
+    it("allows completing a reverted request with input tokens", async function () {});
+
+    it("allows completing an uncled request before it dies", async function () {});
+
+    it("does not allow completing a resubmitted request with an uncle that has no tokens", async function () {});
+
     it("allows completing a resubmitted request", async function () {});
 
-    it("does not allow completing a request with tokens removed", async function () {});
+    it("does not allow completing an already completed request", async function () {});
   });
 
   describe("claimInputTokens", function () {

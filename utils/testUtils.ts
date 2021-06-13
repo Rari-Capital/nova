@@ -9,6 +9,7 @@ import { ethers, network } from "hardhat";
 import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
 
 import chalk from "chalk";
+import { L2NovaRegistry, MockCrossDomainMessenger } from "../typechain";
 
 export function computeExecHash({
   nonce,
@@ -66,6 +67,38 @@ export async function snapshotGasCost(
   }
 
   return x;
+}
+
+export async function forceExecCompleted(
+  fakeExecutionManagerAddress: string,
+  mockCrossDomainMessenger: MockCrossDomainMessenger,
+  L2_NovaRegistry: L2NovaRegistry,
+
+  {
+    execHash,
+    rewardRecipient,
+    reverted,
+    gasUsed,
+  }: {
+    execHash: string;
+    rewardRecipient: string;
+    reverted: boolean;
+    gasUsed: number;
+  }
+): Promise<ContractTransaction> {
+  await mockCrossDomainMessenger.sendMessageWithSender(
+    L2_NovaRegistry.address,
+    L2_NovaRegistry.interface.encodeFunctionData("execCompleted", [
+      execHash,
+      rewardRecipient,
+      reverted,
+      gasUsed,
+    ]),
+    1_000_000,
+    fakeExecutionManagerAddress
+  );
+
+  return mockCrossDomainMessenger.relayCurrentMessage();
 }
 
 export async function increaseTimeAndMine(seconds: number) {
