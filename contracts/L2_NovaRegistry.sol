@@ -383,9 +383,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         bool reverted,
         uint64 gasUsed
     ) external nonReentrant onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
+        // Ensure that this request exists.
+        require(getRequestCreator[execHash] != address(0), "NOT_CREATED");
+        // Ensure tokens have not already been removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
 
+        // Get relevant request data.
         uint256 gasLimit = getRequestGasLimit[execHash];
         uint256 gasPrice = getRequestGasPrice[execHash];
         uint256 tip = getRequestTip[execHash];
