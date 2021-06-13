@@ -732,8 +732,13 @@ describe("L2_NovaRegistry", function () {
         []
       );
 
-      const fakeGasConsumed = 1000;
+      // Get the balances of the reward recipient and user before we call execCompleted.
+      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
+      const preCompleteRecipientBalance = await MockETH.balanceOf(
+        rewardRecipient.address
+      );
 
+      const fakeGasConsumed = 1000;
       await snapshotGasCost(
         forceExecCompleted(
           fakeExecutionManagerAddress,
@@ -758,7 +763,16 @@ describe("L2_NovaRegistry", function () {
         )
       );
 
-      // TODO: ASSERT ON ETH BEING RETURNED
+      // Ensure the balance of the user increased properly.
+      await MockETH.balanceOf(user.address).should.eventually.equal(
+        preCompleteUserBalance.add((gasLimit - fakeGasConsumed) * gasPrice)
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+        // Input tokens are claimed using `claimInputTokens`, not sent right after.
+        preCompleteRecipientBalance.add(fakeGasConsumed * gasPrice).add(tip)
+      );
     });
 
     it("allows completing a request with input tokens", async function () {
@@ -784,10 +798,11 @@ describe("L2_NovaRegistry", function () {
         [{ l2Token: MockETH.address, amount: inputTokenAmount }]
       );
 
+      // Get the balances of the reward recipient and user before we call execCompleted.
+      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
       const preCompleteRecipientBalance = await MockETH.balanceOf(
         rewardRecipient.address
       );
-      const preCompleteDeployerBalance = await MockETH.balanceOf(user.address);
 
       const fakeGasConsumed = 42069;
       await snapshotGasCost(
@@ -814,15 +829,15 @@ describe("L2_NovaRegistry", function () {
         )
       );
 
+      // Ensure the balance of the user increased properly.
+      await MockETH.balanceOf(user.address).should.eventually.equal(
+        preCompleteUserBalance.add((gasLimit - fakeGasConsumed) * gasPrice)
+      );
+
       // Ensure the balance of the reward recipient increased properly.
       await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
         // Input tokens are claimed using `claimInputTokens`, not sent right after.
         preCompleteRecipientBalance.add(fakeGasConsumed * gasPrice).add(tip)
-      );
-
-      // Ensure the balance of the user increased properly.
-      await MockETH.balanceOf(user.address).should.eventually.equal(
-        preCompleteDeployerBalance.add((gasLimit - fakeGasConsumed) * gasPrice)
       );
     });
 
