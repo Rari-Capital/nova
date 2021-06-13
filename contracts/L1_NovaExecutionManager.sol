@@ -95,8 +95,14 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // Check authorization of the caller (equivalent to DSAuth's `auth` modifier).
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
 
-        // Check that there is a non-zero recipient specified.
+        // We cannot allow providing address(0) for l2Recipient, as the registry
+        // uses address(0) to indicate a request has not had its tokens removed yet.
         require(l2Recipient != address(0), "NEED_RECIPIENT");
+
+        // We cannot allow calling the execution manager itself, as a malicious
+        // relayer could call DSAuth and OVM_CrossDomainEnabled inherited functions
+        // to change owners, blacklist relayers, and send cross domain messages at will.
+        require(strategy != address(this), "UNSAFE_STRATEGY");
 
         // Extract the 4 byte function signature from l1calldata.
         bytes4 calldataSig = SigLib.fromCalldata(l1calldata);
@@ -109,11 +115,6 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // as a malicious relayer could use it to trigger the registry's execCompleted
         // function and claim bounties without actually executing the proper request(s).
         require(calldataSig != iAbs_BaseCrossDomainMessenger.sendMessage.selector, "UNSAFE_CALLDATA");
-
-        // We cannot allow calling the execution manager itself, as a malicious
-        // relayer could call DSAuth and OVM_CrossDomainEnabled inherited functions
-        // to change owners, blacklist relayers, and send cross domain messages at will.
-        require(strategy != address(this), "UNSAFE_STRATEGY");
 
         // Compute the execHash.
         bytes32 execHash =
