@@ -430,9 +430,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         uint256 gasPayment = gasPrice.mul(gasUsed > gasLimit ? gasLimit : gasUsed);
 
         // The amount of ETH to pay as the tip to the rewardRecepient.
-        // If the transaction reverted the recipient will get 70% of the tip
-        // and the creator will be refunded the remaining 30%.
-        uint256 recipientTip = reverted ? (tip.mul(7) / 10) : tip;
+        // If the transaction reverted the recipient will get 50% of the tip
+        // and the creator will be refunded the remaining portion.
+        uint256 recipientTip = reverted ? (tip / 2) : tip;
 
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
 

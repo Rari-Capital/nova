@@ -19,6 +19,7 @@ import {
   MockERC20__factory,
   L2NovaRegistry,
 } from "../../typechain";
+import { BigNumber } from "ethers";
 
 describe("L2_NovaRegistry", function () {
   let signers: SignerWithAddress[];
@@ -775,6 +776,67 @@ describe("L2_NovaRegistry", function () {
       );
     });
 
+    it("allows completing a request that overflows gas usage", async function () {
+      const [user, rewardRecipient] = signers;
+
+      const gasLimit = 1337;
+      const gasPrice = 69;
+      const tip = 5;
+
+      await MockETH.approve(L2_NovaRegistry.address, gasLimit * gasPrice + tip);
+
+      L2_NovaRegistry.requestExec(
+        fakeStrategyAddress,
+        "0x00",
+        gasLimit,
+        gasPrice,
+        tip,
+        []
+      );
+
+      // Get the balances of the reward recipient and user before we call execCompleted.
+      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
+      const preCompleteRecipientBalance = await MockETH.balanceOf(
+        rewardRecipient.address
+      );
+
+      const fakeGasConsumed = gasLimit + 500;
+      await snapshotGasCost(
+        forceExecCompleted(
+          fakeExecutionManagerAddress,
+          MockCrossDomainMessenger,
+          L2_NovaRegistry,
+
+          {
+            execHash: computeExecHash({
+              // Latest nonce.
+              nonce: (await L2_NovaRegistry.systemNonce()).toNumber(),
+              strategy: fakeStrategyAddress,
+              calldata: "0x00",
+              gasPrice,
+            }),
+
+            rewardRecipient: rewardRecipient.address,
+
+            reverted: false,
+
+            gasUsed: fakeGasConsumed,
+          }
+        )
+      );
+
+      // Ensure the balance of the user remained the same.
+      await MockETH.balanceOf(user.address).should.eventually.equal(
+        preCompleteUserBalance
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+        // We use gasLimit instead of fakeGasConsumed here because fakeGasConsumed is over the limit.
+        preCompleteRecipientBalance.add(gasLimit * gasPrice).add(tip)
+      );
+    });
+
     it("allows completing a request with input tokens", async function () {
       const [user, rewardRecipient] = signers;
 
@@ -841,7 +903,78 @@ describe("L2_NovaRegistry", function () {
       );
     });
 
-    it("allows completing a reverted request with input tokens", async function () {});
+    it("allows completing a reverted request with input tokens", async function () {
+      const [user, rewardRecipient] = signers;
+
+      const gasLimit = 100_000;
+      const gasPrice = 10;
+      const tip = 1337;
+
+      const inputTokenAmount = 510;
+
+      await MockETH.approve(
+        L2_NovaRegistry.address,
+        gasLimit * gasPrice + tip + inputTokenAmount
+      );
+
+      await L2_NovaRegistry.requestExec(
+        fakeStrategyAddress,
+        "0x00",
+        gasLimit,
+        gasPrice,
+        tip,
+        [{ l2Token: MockETH.address, amount: inputTokenAmount }]
+      );
+
+      // Get the balances of the reward recipient and user before we call execCompleted.
+      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
+      const preCompleteRecipientBalance = await MockETH.balanceOf(
+        rewardRecipient.address
+      );
+
+      const fakeGasConsumed = 42069;
+      await snapshotGasCost(
+        forceExecCompleted(
+          fakeExecutionManagerAddress,
+          MockCrossDomainMessenger,
+          L2_NovaRegistry,
+
+          {
+            execHash: computeExecHash({
+              // Latest nonce.
+              nonce: (await L2_NovaRegistry.systemNonce()).toNumber(),
+              strategy: fakeStrategyAddress,
+              calldata: "0x00",
+              gasPrice,
+            }),
+
+            rewardRecipient: rewardRecipient.address,
+
+            reverted: true,
+
+            gasUsed: fakeGasConsumed,
+          }
+        )
+      );
+
+      // We need to simulate using Solidity's unsigned ints.
+      const BNtip = BigNumber.from(tip);
+
+      // Ensure the balance of the reward recipient increased properly.
+      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+        preCompleteRecipientBalance
+          .add(fakeGasConsumed * gasPrice)
+          .add(BNtip.div(2))
+      );
+
+      // Ensure the balance of the user increased properly.
+      await MockETH.balanceOf(user.address).should.eventually.equal(
+        preCompleteUserBalance
+          .add((gasLimit - fakeGasConsumed) * gasPrice)
+          // Solidity rounds down so user may get slightly more as it uses the difference from the total.
+          .add(BNtip.sub(BNtip.div(2)))
+      );
+    });
 
     it("allows completing an uncled request before it dies", async function () {});
 
@@ -866,7 +999,9 @@ describe("L2_NovaRegistry", function () {
 
     it("does not allow claiming a request not exected yet", async function () {});
 
-    it("allows claiming tokens for an executed request", async function () {});
+    it("allows claiming input tokens for an executed request", async function () {});
+
+    it("allows claiming input tokens for a reverted request", async function () {});
 
     it("does not allow claiming a request that is already claimed", async function () {});
   });

@@ -242,7 +242,7 @@ Once the registry verifies that the `execHash` was previously registered (meanin
 
 - It will first pay for the gas cost of L1 execution by calculating the ETH to send to the `relayer` using `(gasLimit > gasUsed ? gasUsed : gasLimit) * gasPrice`. Any remaining ETH will be sent back to the user who requested execution (just like how gas is refunded on L1 if the gas limit exceeds gas used).
 
-- It will then send the `rewardRecipient` the tip. If the request reverted, the recipient will only recieve 70% of the tip and the creator will be refunded the remaining 30%. **This is to incentivize relayers to act honestly.**
+- It will then send the `rewardRecipient` the tip. If the request reverted, the recipient will only recieve 50% of the tip and the creator will be refunded the remaining portion. **This is to incentivize relayers to act honestly.**
 
 - If the request did not revert, the `rewardRecipient` will be marked as the input token recipient for this request so they can claim the input tokens via [`claimInputTokens`](#claim-input-tokens). If the request reverted the creator of the request will be marked as the input token recipient.
 
@@ -297,7 +297,7 @@ The call to `strategy` is wrapped in a try-catch block:
   - Strategy contracts should only **hard revert** if the relayer has not properly set up the execution context (like not approving the right amount input of tokens, etc)
 - If the call reverts and the revert message is empty or is not `__NOVA__HARD__REVERT__`, **[`exec`](#execute-request) will continue with sending a message to L2.**
   - [This is called a SOFT REVERT.](#execute-request)
-  - If a strategy **soft reverts**, the `inputTokens` for the request will **not be sent** to the relayer and **only 70% of the tip** will be sent (instead of the usual 100%). The **30% tip penalty** is to prevent relayers from attempting to cause or wait for soft reverts and **act in good faith** instead.
+  - If a strategy **soft reverts**, the `inputTokens` for the request will **not be sent** to the relayer and **only 50% of the tip** will be sent (instead of the usual 100%). The **50% tip penalty** is to prevent relayers from attempting to cause or wait for soft reverts and **act in good faith** instead.
 
 This function also keeps track of how much gas is consumed by the strategy and [`exec`](#execute-request) itself.
 

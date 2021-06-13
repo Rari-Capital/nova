@@ -1,6 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`L2_NovaRegistry execCompleted allows completing a request that overflows gas usage 1`] = `106081`;
+
 exports[`L2_NovaRegistry execCompleted allows completing a request with input tokens 1`] = `108891`;
+
+exports[`L2_NovaRegistry execCompleted allows completing a reverted request with input tokens 1`] = `108879`;
 
 exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = `125991`;
 
