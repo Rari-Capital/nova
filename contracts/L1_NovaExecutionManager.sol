@@ -83,7 +83,8 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         require(block.timestamp <= deadline, "PAST_DEADLINE");
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
 
-        // Check that there is a non-zero recipient specified.
+        // We cannot allow providing address(0) for l2Recipient, as the registry
+        // uses address(0) to indicate a request has not had its tokens removed yet.
         require(l2Recipient != address(0), "NEED_RECIPIENT");
 
         // We cannot allow calling the execution manager itself, as a malicious
