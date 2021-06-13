@@ -174,7 +174,7 @@ describe("L2_NovaRegistry", function () {
 
   describe("requestExec", function () {
     it("allows a simple request", async function () {
-      const [deployer] = signers;
+      const [user] = signers;
 
       const gasLimit = 420;
       const gasPrice = 69;
@@ -206,12 +206,12 @@ describe("L2_NovaRegistry", function () {
 
       await MockETH.allowance(
         L2_NovaRegistry.address,
-        deployer.address
+        user.address
       ).should.eventually.equal(0);
     });
 
     it("allows a simple request with one input token", async function () {
-      const [deployer] = signers;
+      const [user] = signers;
 
       const gasLimit = 100_000;
       const gasPrice = 10;
@@ -251,12 +251,12 @@ describe("L2_NovaRegistry", function () {
 
       await MockETH.allowance(
         L2_NovaRegistry.address,
-        deployer.address
+        user.address
       ).should.eventually.equal(0);
     });
 
     it("allows a simple request with 2 input tokens", async function () {
-      const [deployer] = signers;
+      const [user] = signers;
 
       const gasLimit = 100_000;
       const gasPrice = 10;
@@ -303,7 +303,7 @@ describe("L2_NovaRegistry", function () {
 
       await MockETH.allowance(
         L2_NovaRegistry.address,
-        deployer.address
+        user.address
       ).should.eventually.equal(0);
     });
 
@@ -488,14 +488,14 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows withdrawing tokens from a simple request", async function () {
-      const [deployer] = signers;
+      const [user] = signers;
 
       await increaseTimeAndMine(
         // Forward time to be after the delay.
         (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).toNumber()
       );
 
-      const balanceBefore = await MockETH.balanceOf(deployer.address);
+      const balanceBefore = await MockETH.balanceOf(user.address);
 
       await snapshotGasCost(
         L2_NovaRegistry.withdrawTokens(
@@ -509,7 +509,7 @@ describe("L2_NovaRegistry", function () {
         )
       );
 
-      const balanceAfter = await MockETH.balanceOf(deployer.address);
+      const balanceAfter = await MockETH.balanceOf(user.address);
 
       // Balance should properly increase.
       balanceAfter.should.equal(
@@ -519,9 +519,9 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows withdrawing from a request with input tokens", async function () {
-      const [deployer] = signers;
+      const [user] = signers;
 
-      const balanceBefore = await MockETH.balanceOf(deployer.address);
+      const balanceBefore = await MockETH.balanceOf(user.address);
 
       await snapshotGasCost(
         L2_NovaRegistry.withdrawTokens(
@@ -535,7 +535,7 @@ describe("L2_NovaRegistry", function () {
         )
       );
 
-      const balanceAfter = await MockETH.balanceOf(deployer.address);
+      const balanceAfter = await MockETH.balanceOf(user.address);
 
       // Balance should properly increase.
       balanceAfter.should.equal(
@@ -664,7 +664,7 @@ describe("L2_NovaRegistry", function () {
 
   describe("execCompleted", function () {
     it("does not allow completing a random request", async function () {
-      const [deployer] = signers;
+      const [user] = signers;
 
       await forceExecCompleted(
         fakeExecutionManagerAddress,
@@ -679,7 +679,7 @@ describe("L2_NovaRegistry", function () {
             gasPrice: 0,
           }),
 
-          rewardRecipient: deployer.address,
+          rewardRecipient: user.address,
 
           reverted: false,
 
@@ -689,7 +689,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does not allow completing a request with tokens removed", async function () {
-      const [deployer] = signers;
+      const [user] = signers;
 
       await forceExecCompleted(
         fakeExecutionManagerAddress,
@@ -705,7 +705,7 @@ describe("L2_NovaRegistry", function () {
             gasPrice: 69,
           }),
 
-          rewardRecipient: deployer.address,
+          rewardRecipient: user.address,
 
           reverted: false,
 
@@ -715,7 +715,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows completing a simple request", async function () {
-      const [deployer, rewardRecipient] = signers;
+      const [user, rewardRecipient] = signers;
 
       const gasLimit = 1337;
       const gasPrice = 69;
@@ -762,7 +762,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows completing a request with input tokens", async function () {
-      const [deployer, rewardRecipient] = signers;
+      const [user, rewardRecipient] = signers;
 
       const gasLimit = 100_000;
       const gasPrice = 10;
@@ -787,9 +787,7 @@ describe("L2_NovaRegistry", function () {
       const preCompleteRecipientBalance = await MockETH.balanceOf(
         rewardRecipient.address
       );
-      const preCompleteDeployerBalance = await MockETH.balanceOf(
-        deployer.address
-      );
+      const preCompleteDeployerBalance = await MockETH.balanceOf(user.address);
 
       const fakeGasConsumed = 42069;
       await snapshotGasCost(
@@ -822,8 +820,8 @@ describe("L2_NovaRegistry", function () {
         preCompleteRecipientBalance.add(fakeGasConsumed * gasPrice).add(tip)
       );
 
-      // Ensure the balance of the deployer increased properly.
-      await MockETH.balanceOf(deployer.address).should.eventually.equal(
+      // Ensure the balance of the user increased properly.
+      await MockETH.balanceOf(user.address).should.eventually.equal(
         preCompleteDeployerBalance.add((gasLimit - fakeGasConsumed) * gasPrice)
       );
     });
