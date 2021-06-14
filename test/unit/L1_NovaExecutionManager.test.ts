@@ -168,8 +168,7 @@ describe("L1_NovaExecutionManager", function () {
       });
 
       it("should allow setting the owner to null", async function () {
-        await L1_NovaExecutionManager.setOwner(ethers.constants.AddressZero)
-          .should.not.be.reverted;
+        await L1_NovaExecutionManager.setOwner(ethers.constants.AddressZero);
 
         await L1_NovaExecutionManager.owner().should.eventually.equal(
           ethers.constants.AddressZero
@@ -196,7 +195,7 @@ describe("L1_NovaExecutionManager", function () {
         MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
         user.address,
         9999999999999
-      ).should.not.be.reverted;
+      );
     });
 
     it("should revert if a hard revert is triggered", async function () {
@@ -222,7 +221,7 @@ describe("L1_NovaExecutionManager", function () {
           user.address,
           9999999999999
         )
-      ).should.not.be.reverted;
+      );
     });
 
     it("respects the deadline", async function () {
@@ -333,7 +332,7 @@ describe("L1_NovaExecutionManager", function () {
           user.address,
           9999999999999
         )
-      ).should.not.be.reverted;
+      );
     });
 
     it("should properly execute a stateful exec", async function () {
@@ -351,7 +350,7 @@ describe("L1_NovaExecutionManager", function () {
           user.address,
           9999999999999
         )
-      ).should.not.be.reverted;
+      );
 
       await MockStrategy.counter().should.eventually.equal(2);
     });
@@ -416,7 +415,7 @@ describe("L1_NovaExecutionManager", function () {
         ),
         user.address,
         9999999999999
-      ).should.not.be.reverted;
+      );
     });
 
     it("will hard revert if transferFrom returns a non-bool", async function () {

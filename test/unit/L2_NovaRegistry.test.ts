@@ -641,9 +641,6 @@ describe("L2_NovaRegistry", function () {
       // Unlock the request's tokens with the min delay.
       await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
 
-      // Forward time so the request is half way to expiring.
-      await increaseTimeAndMine(unlockDelay.div(2).toNumber());
-
       await L2_NovaRegistry.speedUpRequest(execHash, 11).should.be.revertedWith(
         "UNLOCK_BEFORE_SWITCH"
       );
