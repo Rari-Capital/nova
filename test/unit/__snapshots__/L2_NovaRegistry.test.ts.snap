@@ -1,5 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for a reverted request 1`] = `64315`;
+
+exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for an executed request 1`] = `64315`;
+
 exports[`L2_NovaRegistry execCompleted allows completing a request that overflows gas usage 1`] = `106073`;
 
 exports[`L2_NovaRegistry execCompleted allows completing a request with input tokens 1`] = `108883`;

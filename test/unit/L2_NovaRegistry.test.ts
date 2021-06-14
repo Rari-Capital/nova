@@ -764,7 +764,7 @@ describe("L2_NovaRegistry", function () {
 
       await MockETH.approve(L2_NovaRegistry.address, gasLimit * gasPrice + tip);
 
-      L2_NovaRegistry.requestExec(
+      await L2_NovaRegistry.requestExec(
         fakeStrategyAddress,
         "0x00",
         gasLimit,
@@ -816,6 +816,32 @@ describe("L2_NovaRegistry", function () {
       );
     });
 
+    it("does not allow completing an already completed request", async function () {
+      const [, rewardRecipient] = signers;
+
+      await forceExecCompleted(
+        fakeExecutionManagerAddress,
+        MockCrossDomainMessenger,
+        L2_NovaRegistry,
+
+        {
+          execHash: computeExecHash({
+            // We made and executed this request in `allows completing a simple request`
+            nonce: (await L2_NovaRegistry.systemNonce()).toNumber(),
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 69,
+          }),
+
+          rewardRecipient: rewardRecipient.address,
+
+          reverted: false,
+
+          gasUsed: 0,
+        }
+      ).should.be.revertedWith("TOKENS_REMOVED");
+    });
+
     it("allows completing a request that overflows gas usage", async function () {
       const [user, rewardRecipient] = signers;
 
@@ -825,7 +851,7 @@ describe("L2_NovaRegistry", function () {
 
       await MockETH.approve(L2_NovaRegistry.address, gasLimit * gasPrice + tip);
 
-      L2_NovaRegistry.requestExec(
+      await L2_NovaRegistry.requestExec(
         fakeStrategyAddress,
         "0x00",
         gasLimit,
@@ -1171,8 +1197,6 @@ describe("L2_NovaRegistry", function () {
           .add(tip)
       );
     });
-
-    it("does not allow completing an already completed request", async function () {});
   });
 
   describe("claimInputTokens", function () {
@@ -1182,12 +1206,93 @@ describe("L2_NovaRegistry", function () {
       ).should.be.revertedWith("NO_RECIPIENT");
     });
 
-    it("does not allow claiming a request not exected yet", async function () {});
+    it("does not allow claiming a request not executed yet", async function () {
+      const gasLimit = 1337;
+      const gasPrice = 69;
+      const tip = 5;
 
-    it("allows claiming input tokens for an executed request", async function () {});
+      await MockETH.approve(L2_NovaRegistry.address, gasLimit * gasPrice + tip);
 
-    it("allows claiming input tokens for a reverted request", async function () {});
+      await L2_NovaRegistry.requestExec(
+        fakeStrategyAddress,
+        "0x00",
+        gasLimit,
+        gasPrice,
+        tip,
+        []
+      );
 
-    it("does not allow claiming a request that is already claimed", async function () {});
+      await L2_NovaRegistry.claimInputTokens(
+        computeExecHash({
+          // Latest nonce.
+          nonce: (await L2_NovaRegistry.systemNonce()).toNumber(),
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice,
+        })
+      ).should.be.revertedWith("NO_RECIPIENT");
+    });
+
+    it("allows claiming input tokens for an executed request", async function () {
+      const [, rewardRecipient] = signers;
+
+      const preClaimRecipientBalance = await MockETH.balanceOf(
+        rewardRecipient.address
+      );
+
+      await snapshotGasCost(
+        L2_NovaRegistry.claimInputTokens(
+          computeExecHash({
+            // Valid request we created in `allows completing a request with input tokens`
+            nonce: 8,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 10,
+          })
+        )
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+        // 500 wei of WETH was used as an input token in the request.
+        preClaimRecipientBalance.add(500)
+      );
+    });
+
+    it("allows claiming input tokens for a reverted request", async function () {
+      const [user] = signers;
+
+      const preClaimUserBalance = await MockETH.balanceOf(user.address);
+
+      await snapshotGasCost(
+        L2_NovaRegistry.claimInputTokens(
+          computeExecHash({
+            // Valid request we created in `allows completing a reverted request with input tokens`
+            nonce: 9,
+            strategy: fakeStrategyAddress,
+            calldata: "0x00",
+            gasPrice: 10,
+          })
+        )
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await MockETH.balanceOf(user.address).should.eventually.equal(
+        // 510 wei of WETH was used as an input token in the request.
+        preClaimUserBalance.add(510)
+      );
+    });
+
+    it("does not allow claiming a request that is already claimed", async function () {
+      await L2_NovaRegistry.claimInputTokens(
+        computeExecHash({
+          // Valid request we created in `allows completing a reverted request with input tokens`
+          nonce: 9,
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 10,
+        })
+      ).should.be.revertedWith("ALREADY_CLAIMED");
+    });
   });
 });
