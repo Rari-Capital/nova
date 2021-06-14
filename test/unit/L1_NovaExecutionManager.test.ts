@@ -108,6 +108,9 @@ describe("L1_NovaExecutionManager", function () {
 
         // Should enforce authorization before permitted.
         await L1_NovaExecutionManager.connect(nonDeployer)
+          .transferFromRelayer(MockERC20.address, 0)
+          .should.be.revertedWith("ds-auth-unauthorized");
+        await L1_NovaExecutionManager.connect(nonDeployer)
           .exec(
             0,
             MockStrategy.address,

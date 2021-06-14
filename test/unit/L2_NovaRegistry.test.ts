@@ -18,6 +18,7 @@ import {
   SimpleDSGuard__factory,
   MockERC20__factory,
   L2NovaRegistry,
+  MockStrategy,
 } from "../../typechain";
 import { BigNumber } from "ethers";
 
@@ -97,6 +98,34 @@ describe("L2_NovaRegistry", function () {
       });
 
       it("should properly permit authorization for specific functions", async function () {
+        const [, nonDeployer] = signers;
+
+        // Should enforce authorization before permitted.
+        await L2_NovaRegistry.connect(nonDeployer)
+          .requestExec(fakeStrategyAddress, "0x00", 0, 0, 0, [])
+          .should.be.revertedWith("ds-auth-unauthorized");
+        await L2_NovaRegistry.connect(nonDeployer)
+          .requestExecWithTimeout(fakeStrategyAddress, "0x00", 0, 0, 0, [], 0)
+          .should.be.revertedWith("ds-auth-unauthorized");
+        await L2_NovaRegistry.connect(nonDeployer)
+          .speedUpRequest(ethers.utils.solidityKeccak256([], []), 0)
+          .should.be.revertedWith("ds-auth-unauthorized");
+        await L2_NovaRegistry.connect(nonDeployer)
+          .claimInputTokens(ethers.utils.solidityKeccak256([], []))
+          .should.be.revertedWith("ds-auth-unauthorized");
+        await L2_NovaRegistry.connect(nonDeployer)
+          .unlockTokens(ethers.utils.solidityKeccak256([], []), 0)
+          .should.be.revertedWith("ds-auth-unauthorized");
+        await L2_NovaRegistry.connect(nonDeployer)
+          .relockTokens(ethers.utils.solidityKeccak256([], []))
+          .should.be.revertedWith("ds-auth-unauthorized");
+        await L2_NovaRegistry.connect(nonDeployer)
+          .withdrawTokens(ethers.utils.solidityKeccak256([], []))
+          .should.be.revertedWith("ds-auth-unauthorized");
+        await L2_NovaRegistry.connect(nonDeployer)
+          .connectExecutionManager(ethers.constants.AddressZero)
+          .should.be.revertedWith("ds-auth-unauthorized");
+
         await SimpleDSGuard.permitAnySource(
           L2_NovaRegistry.interface.getSighash(
             "requestExec(address,bytes,uint256,uint256,uint256,(address,uint256)[])"
@@ -367,12 +396,7 @@ describe("L2_NovaRegistry", function () {
   describe("unlockTokens", function () {
     it("does not allow unlocking random requests", async function () {
       await L2_NovaRegistry.unlockTokens(
-        computeExecHash({
-          nonce: 0,
-          strategy: fakeStrategyAddress,
-          calldata: "0x00",
-          gasPrice: 0,
-        }),
+        ethers.utils.solidityKeccak256([], []),
         999999999999
       ).should.be.revertedWith("NOT_CREATOR");
     });
@@ -454,12 +478,7 @@ describe("L2_NovaRegistry", function () {
 
     it("does not allow relocking random requests", async function () {
       await L2_NovaRegistry.relockTokens(
-        computeExecHash({
-          nonce: 0,
-          strategy: fakeStrategyAddress,
-          calldata: "0x00",
-          gasPrice: 0,
-        })
+        ethers.utils.solidityKeccak256([], [])
       ).should.be.revertedWith("NOT_CREATOR");
     });
   });
@@ -467,12 +486,7 @@ describe("L2_NovaRegistry", function () {
   describe("withdrawTokens", function () {
     it("does not allow withdrawing from a random request", async function () {
       await L2_NovaRegistry.withdrawTokens(
-        computeExecHash({
-          nonce: 5555,
-          strategy: fakeStrategyAddress,
-          calldata: "0x20",
-          gasPrice: 12134,
-        })
+        ethers.utils.solidityKeccak256([], [])
       ).should.be.revertedWith("NOT_UNLOCKED");
     });
 
@@ -584,12 +598,7 @@ describe("L2_NovaRegistry", function () {
   describe("speedUpRequest", function () {
     it("does not allow speeding up random requests", async function () {
       await L2_NovaRegistry.speedUpRequest(
-        computeExecHash({
-          nonce: 8843720948702139,
-          strategy: fakeStrategyAddress,
-          calldata: "0x20",
-          gasPrice: 0,
-        }),
+        ethers.utils.solidityKeccak256([], []),
         999999999
       ).should.be.revertedWith("NOT_CREATOR");
     });
@@ -664,6 +673,16 @@ describe("L2_NovaRegistry", function () {
   });
 
   describe("execCompleted", function () {
+    it("does not allow calling execCompleted if not messenger", async function () {
+      console.log(ethers.utils.solidityKeccak256([], []));
+      await L2_NovaRegistry.execCompleted(
+        ethers.utils.solidityKeccak256([], []),
+        ethers.constants.AddressZero,
+        false,
+        0
+      ).should.revertedWith("OVM_XCHAIN: messenger contract unauthenticated");
+    });
+
     it("does not allow completing a random request", async function () {
       const [user] = signers;
 
@@ -673,12 +692,7 @@ describe("L2_NovaRegistry", function () {
         L2_NovaRegistry,
 
         {
-          execHash: computeExecHash({
-            nonce: 8843720948702139,
-            strategy: fakeStrategyAddress,
-            calldata: "0x20",
-            gasPrice: 0,
-          }),
+          execHash: ethers.utils.solidityKeccak256([], []),
 
           rewardRecipient: user.address,
 
@@ -1047,14 +1061,11 @@ describe("L2_NovaRegistry", function () {
         gasPrice: 11,
       });
 
-      console.log(await L2_NovaRegistry.getRequestUncle(execHash));
-
       await increaseTimeAndMine(
         // Forward time to be after the delay.
         (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).toNumber()
       );
 
-      console.log(rewardRecipient.address);
       await forceExecCompleted(
         fakeExecutionManagerAddress,
         MockCrossDomainMessenger,
@@ -1080,12 +1091,7 @@ describe("L2_NovaRegistry", function () {
   describe("claimInputTokens", function () {
     it("does not allow claiming a random request", async function () {
       await L2_NovaRegistry.claimInputTokens(
-        computeExecHash({
-          nonce: 8843720948702139,
-          strategy: fakeStrategyAddress,
-          calldata: "0x20",
-          gasPrice: 0,
-        })
+        ethers.utils.solidityKeccak256([], [])
       ).should.be.revertedWith("NO_RECIPIENT");
     });
 
