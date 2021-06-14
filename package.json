@@ -44,7 +44,7 @@
     "mocha-chai-jest-snapshot": "^1.1.1",
     "prettier": "^2.2.1",
     "prettier-plugin-solidity": "^1.0.0-beta.10",
-    "solidity-coverage": "^0.7.16",
+    "solidity-coverage": "^0.8.0-beta.0",
     "ts-generator": "^0.1.1",
     "ts-node": "^9.1.1",
     "typechain": "^4.0.3",

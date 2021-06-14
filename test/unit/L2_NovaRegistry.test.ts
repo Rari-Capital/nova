@@ -715,6 +715,34 @@ describe("L2_NovaRegistry", function () {
       ).should.be.revertedWith("TOKENS_REMOVED");
     });
 
+    it("does now allow completing a resubmitted request with an alive uncle", async function () {
+      const [, rewardRecipient] = signers;
+
+      const execHash = computeExecHash({
+        // This execHash is a resubmitted request that was uncled in `allows speeding up a simple request`
+        nonce: 5,
+        strategy: fakeStrategyAddress,
+        calldata: "0x00",
+        gasPrice: 11,
+      });
+
+      await forceExecCompleted(
+        fakeExecutionManagerAddress,
+        MockCrossDomainMessenger,
+        L2_NovaRegistry,
+
+        {
+          execHash: execHash,
+
+          rewardRecipient: rewardRecipient.address,
+
+          reverted: true,
+
+          gasUsed: 0,
+        }
+      ).should.be.revertedWith("TOKENS_REMOVED");
+    });
+
     it("allows completing a simple request", async function () {
       const [user, rewardRecipient] = signers;
 
@@ -976,9 +1004,73 @@ describe("L2_NovaRegistry", function () {
       );
     });
 
-    it("allows completing an uncled request before it dies", async function () {});
+    it("allows completing an uncled request before it dies", async function () {
+      const [, rewardRecipient] = signers;
 
-    it("does not allow completing a resubmitted request with an uncle that has no tokens", async function () {});
+      const fakeGasConsumed = 1;
+
+      const execHash = computeExecHash({
+        // This execHash is a request that was uncled in `allows speeding up a simple request`
+        nonce: 2,
+        strategy: fakeStrategyAddress,
+        calldata: "0x00",
+        gasPrice: 10,
+      });
+
+      await snapshotGasCost(
+        forceExecCompleted(
+          fakeExecutionManagerAddress,
+          MockCrossDomainMessenger,
+          L2_NovaRegistry,
+
+          {
+            execHash: execHash,
+
+            rewardRecipient: rewardRecipient.address,
+
+            reverted: true,
+
+            gasUsed: fakeGasConsumed,
+          }
+        )
+      );
+    });
+
+    it("does not allow completing a resubmitted request with an uncle that has no tokens", async function () {
+      const [, rewardRecipient] = signers;
+
+      const execHash = computeExecHash({
+        // This execHash is a resubmitted request that was uncled in `allows speeding up a simple request`
+        nonce: 5,
+        strategy: fakeStrategyAddress,
+        calldata: "0x00",
+        gasPrice: 11,
+      });
+
+      console.log(await L2_NovaRegistry.getRequestUncle(execHash));
+
+      await increaseTimeAndMine(
+        // Forward time to be after the delay.
+        (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).toNumber()
+      );
+
+      console.log(rewardRecipient.address);
+      await forceExecCompleted(
+        fakeExecutionManagerAddress,
+        MockCrossDomainMessenger,
+        L2_NovaRegistry,
+
+        {
+          execHash: execHash,
+
+          rewardRecipient: rewardRecipient.address,
+
+          reverted: true,
+
+          gasUsed: 0,
+        }
+      ).should.be.revertedWith("TOKENS_REMOVED");
+    });
 
     it("allows completing a resubmitted request", async function () {});
 
