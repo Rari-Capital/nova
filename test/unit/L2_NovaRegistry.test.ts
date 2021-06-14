@@ -674,7 +674,6 @@ describe("L2_NovaRegistry", function () {
 
   describe("execCompleted", function () {
     it("does not allow calling execCompleted if not messenger", async function () {
-      console.log(ethers.utils.solidityKeccak256([], []));
       await L2_NovaRegistry.execCompleted(
         ethers.utils.solidityKeccak256([], []),
         ethers.constants.AddressZero,

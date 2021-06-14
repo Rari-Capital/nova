@@ -44,6 +44,17 @@ contract MockStrategy {
         evilContract.tryToStealRelayerTokens(msg.sender, token, amount);
     }
 
+    function thisFunctionWillTryToReenterAndHardRevertIfFails() external {
+        L1_NovaExecutionManager em = L1_NovaExecutionManager(msg.sender);
+
+        try em.exec(0, address(0), "", address(0), 0) {} catch Error(string memory reason) {
+            if (keccak256(abi.encodePacked(reason)) == keccak256("ReentrancyGuard: reentrant call")) {
+                // If the call reverted due to reentrancy, signal this with a hard revert.
+                em.hardRevert();
+            }
+        }
+    }
+
     function thisFunctionWillRevert() external pure {
         revert("Not a hard revert!");
     }
