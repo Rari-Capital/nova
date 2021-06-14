@@ -452,29 +452,36 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @return changeTimestamp A timestamp indicating when the request might have one of its tokens removed or added. Will be 0 if there is no removal/addition expected. It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request).
     function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
         address inputTokenRecipient = getRequestInputTokenRecipient[execHash].recipient;
-
-        if (inputTokenRecipient == address(0)) {
-            // This request has not been executed and tokens have not been withdrawn,
-            // but it may be a resubmitted request so we need to check its uncle to make sure it has not been executed and it has already died.
-            bytes32 uncle = getRequestUncle[execHash];
-            if (uncle == "") {
-                // This is a normal request, so we know tokens have/will not be removed.
-                tokensRemoved = false;
-                changeTimestamp = 0;
-            } else {
-                // This is a resubmitted version of a uncled request, so we have to check if the uncle has "died" yet.
-                uint256 uncleDeathTimestamp = getRequestUncleDeathTimestamp[uncle];
-
-                tokensRemoved = uncleDeathTimestamp > block.timestamp; // Tokens are removed for a resubmitted request if the uncled request has not died yet.
-                changeTimestamp = tokensRemoved
-                    ? uncleDeathTimestamp // Return a timestamp if the request is still waiting to have tokens added.
-                    : 0;
-            }
-        } else {
-            // Request has been executed or tokens withdrawn.
-            tokensRemoved = true;
-            changeTimestamp = 0;
+        if (inputTokenRecipient != address(0)) {
+            // The request has been executed or had tokens withdrawn.
+            return (true, 0);
         }
+
+        bytes32 uncleExecHash = getRequestUncle[execHash];
+        if (uncleExecHash == "") {
+            // This request does not have an uncle and has not been executed
+            // or had it's tokens withdrawn, so we know it has tokens.
+            return (false, 0);
+        }
+
+        address uncleInputTokenRecipient = getRequestInputTokenRecipient[uncleExecHash].recipient;
+        if (uncleInputTokenRecipient != address(0)) {
+            // This request is a resubmitted version of its uncle which was
+            // executed before the uncle could "die" and switch its tokens
+            // to this resubmitted request, so we know it does not have tokens.
+            return (true, 0);
+        }
+
+        uint256 uncleDeathTimestamp = getRequestUncleDeathTimestamp[uncleExecHash];
+        if (uncleDeathTimestamp > block.timestamp) {
+            // This request is a resubmitted version of its uncle which has
+            // not "died" yet, so we know it does not have its tokens yet.
+            return (true, uncleDeathTimestamp);
+        }
+
+        // This request is a resubmitted version of its uncle, which properly
+        // died before being executed, so we know it has had its tokens added.
+        return (false, 0);
     }
 
     /// @notice Checks if the request is scheduled to have its tokens unlocked.
