@@ -4,6 +4,8 @@ exports[`L2_NovaRegistry execCompleted allows completing a request that overflow
 
 exports[`L2_NovaRegistry execCompleted allows completing a request with input tokens 1`] = `108883`;
 
+exports[`L2_NovaRegistry execCompleted allows completing a resubmitted request 1`] = `113266`;
+
 exports[`L2_NovaRegistry execCompleted allows completing a reverted request with input tokens 1`] = `108871`;
 
 exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = `125983`;
@@ -20,7 +22,7 @@ exports[`L2_NovaRegistry requestExec allows a simple request with one input toke
 
 exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183690`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `226172`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `250495`;
 
 exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `62647`;
 

@@ -381,6 +381,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         getRequestCalldata[newExecHash] = previousCalldata;
         getRequestGasLimit[newExecHash] = previousGasLimit;
         getRequestGasPrice[newExecHash] = gasPrice;
+        getRequestTip[newExecHash] = getRequestTip[execHash];
         // Storing the nonce is just for convenience; it does not need to be on-chain.
         getRequestNonce[execHash] = systemNonce;
 

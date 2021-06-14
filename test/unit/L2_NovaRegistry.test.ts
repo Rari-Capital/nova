@@ -18,7 +18,6 @@ import {
   SimpleDSGuard__factory,
   MockERC20__factory,
   L2NovaRegistry,
-  MockStrategy,
 } from "../../typechain";
 import { BigNumber } from "ethers";
 
@@ -1082,7 +1081,96 @@ describe("L2_NovaRegistry", function () {
       ).should.be.revertedWith("TOKENS_REMOVED");
     });
 
-    it("allows completing a resubmitted request", async function () {});
+    it("allows completing a resubmitted request", async function () {
+      const [user, rewardRecipient] = signers;
+
+      const gasLimit = 1337;
+      const gasPrice = 69;
+      const tip = 5;
+
+      await MockETH.approve(L2_NovaRegistry.address, gasLimit * gasPrice + tip);
+
+      await L2_NovaRegistry.requestExec(
+        fakeStrategyAddress,
+        "0x00",
+        gasLimit,
+        gasPrice,
+        tip,
+        []
+      );
+
+      const uncleExecHash = computeExecHash({
+        nonce: (await L2_NovaRegistry.systemNonce()).toNumber(),
+        strategy: fakeStrategyAddress,
+        calldata: "0x00",
+        gasPrice,
+      });
+
+      const resubmittedGasPrice = gasPrice + 1;
+
+      // Approve tokens for the speed up
+      await MockETH.approve(
+        L2_NovaRegistry.address,
+        // Approve the diff ETH missing
+        // to pay the higher gas price
+        (resubmittedGasPrice - gasPrice) * gasLimit
+      );
+
+      // Speed up the request by 1 gas
+      await L2_NovaRegistry.speedUpRequest(uncleExecHash, resubmittedGasPrice);
+
+      const resubmittedExecHash = computeExecHash({
+        nonce: (await L2_NovaRegistry.systemNonce()).toNumber(),
+        strategy: fakeStrategyAddress,
+        calldata: "0x00",
+        gasPrice: resubmittedGasPrice,
+      });
+
+      // Forward time to after the delay.
+      await increaseTimeAndMine(
+        (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).toNumber()
+      );
+
+      // Get the balances of the reward recipient and user before we call execCompleted.
+      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
+      const preCompleteRecipientBalance = await MockETH.balanceOf(
+        rewardRecipient.address
+      );
+
+      const fakeGasConsumed = 1000;
+      await snapshotGasCost(
+        forceExecCompleted(
+          fakeExecutionManagerAddress,
+          MockCrossDomainMessenger,
+          L2_NovaRegistry,
+
+          {
+            execHash: resubmittedExecHash,
+
+            rewardRecipient: rewardRecipient.address,
+
+            reverted: false,
+
+            gasUsed: fakeGasConsumed,
+          }
+        )
+      );
+
+      // Ensure the balance of the user increased properly.
+      await MockETH.balanceOf(user.address).should.eventually.equal(
+        preCompleteUserBalance.add(
+          (gasLimit - fakeGasConsumed) * resubmittedGasPrice
+        )
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+        // Input tokens are claimed using `claimInputTokens`, not sent right after.
+        preCompleteRecipientBalance
+          .add(fakeGasConsumed * resubmittedGasPrice)
+          .add(tip)
+      );
+    });
 
     it("does not allow completing an already completed request", async function () {});
   });
