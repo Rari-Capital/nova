@@ -1,11 +1,3 @@
-import {
-  computeExecHash,
-  forceExecCompleted,
-  getFactory,
-  increaseTimeAndMine,
-  snapshotGasCost,
-} from "../../utils/testUtils";
-
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -20,6 +12,16 @@ import {
   L2NovaRegistry,
 } from "../../typechain";
 import { BigNumber } from "ethers";
+import {
+  getFactory,
+  snapshotGasCost,
+  computeExecHash,
+  increaseTimeAndMine,
+  forceExecCompleted,
+  fakeExecutionManagerAddress,
+  fakeStrategyAddress,
+  checkpointBalance,
+} from "../../utils/testUtils";
 
 describe("L2_NovaRegistry", function () {
   let signers: SignerWithAddress[];
@@ -33,10 +35,6 @@ describe("L2_NovaRegistry", function () {
   /// Mocks
   let MockETH: MockERC20;
   let MockCrossDomainMessenger: MockCrossDomainMessenger;
-
-  const fakeStrategyAddress = "0x4200000000000000000000000000000000000069";
-  const fakeExecutionManagerAddress =
-    "0xDeADBEEF1337caFEBAbE1337CacAfACe1337C0dE";
 
   describe("constructor/setup", function () {
     it("should properly deploy mocks", async function () {
@@ -509,7 +507,7 @@ describe("L2_NovaRegistry", function () {
         (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).toNumber()
       );
 
-      const balanceBefore = await MockETH.balanceOf(user.address);
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
 
       await snapshotGasCost(
         L2_NovaRegistry.withdrawTokens(
@@ -523,19 +521,17 @@ describe("L2_NovaRegistry", function () {
         )
       );
 
-      const balanceAfter = await MockETH.balanceOf(user.address);
-
       // Balance should properly increase.
-      balanceAfter.should.equal(
+      await calcUserIncrease().should.eventually.equal(
         // This is the gas limit, gas price and tip we used in `allows a simple request`
-        balanceBefore.add(420 * 69 + 1)
+        420 * 69 + 1
       );
     });
 
     it("allows withdrawing from a request with input tokens", async function () {
       const [user] = signers;
 
-      const balanceBefore = await MockETH.balanceOf(user.address);
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
 
       await snapshotGasCost(
         L2_NovaRegistry.withdrawTokens(
@@ -549,12 +545,10 @@ describe("L2_NovaRegistry", function () {
         )
       );
 
-      const balanceAfter = await MockETH.balanceOf(user.address);
-
       // Balance should properly increase.
-      balanceAfter.should.equal(
+      await calcUserIncrease().should.eventually.equal(
         // This is the gas limit, gas price, tip and input token amounts we used in `allows a simple request with 2 input tokens`
-        balanceBefore.add(100_000 * 10 + 1337 + 1000 + 5000)
+        100_000 * 10 + 1337 + 1000 + 5000
       );
     });
 
@@ -646,6 +640,8 @@ describe("L2_NovaRegistry", function () {
       );
     });
 
+    it("allows speeding up a request scheduled to unlock after switch", async function () {});
+
     it("allows speeding up a simple request", async function () {
       const execHash = computeExecHash({
         // This execHash is a real request we made in `allows a simple request with one input token`
@@ -682,7 +678,6 @@ describe("L2_NovaRegistry", function () {
       const [user] = signers;
 
       await forceExecCompleted(
-        fakeExecutionManagerAddress,
         MockCrossDomainMessenger,
         L2_NovaRegistry,
 
@@ -702,7 +697,6 @@ describe("L2_NovaRegistry", function () {
       const [user] = signers;
 
       await forceExecCompleted(
-        fakeExecutionManagerAddress,
         MockCrossDomainMessenger,
         L2_NovaRegistry,
 
@@ -736,7 +730,6 @@ describe("L2_NovaRegistry", function () {
       });
 
       await forceExecCompleted(
-        fakeExecutionManagerAddress,
         MockCrossDomainMessenger,
         L2_NovaRegistry,
 
@@ -770,16 +763,15 @@ describe("L2_NovaRegistry", function () {
         []
       );
 
-      // Get the balances of the reward recipient and user before we call execCompleted.
-      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
-      const preCompleteRecipientBalance = await MockETH.balanceOf(
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
+      const [calcRecipientIncrease] = await checkpointBalance(
+        MockETH,
         rewardRecipient.address
       );
 
       const fakeGasConsumed = 1000;
       await snapshotGasCost(
         forceExecCompleted(
-          fakeExecutionManagerAddress,
           MockCrossDomainMessenger,
           L2_NovaRegistry,
 
@@ -802,14 +794,13 @@ describe("L2_NovaRegistry", function () {
       );
 
       // Ensure the balance of the user increased properly.
-      await MockETH.balanceOf(user.address).should.eventually.equal(
-        preCompleteUserBalance.add((gasLimit - fakeGasConsumed) * gasPrice)
+      await calcUserIncrease().should.eventually.equal(
+        (gasLimit - fakeGasConsumed) * gasPrice
       );
 
       // Ensure the balance of the reward recipient increased properly.
-      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
-        // Input tokens are claimed using `claimInputTokens`, not sent right after.
-        preCompleteRecipientBalance.add(fakeGasConsumed * gasPrice).add(tip)
+      await calcRecipientIncrease().should.eventually.equal(
+        fakeGasConsumed * gasPrice + tip
       );
     });
 
@@ -817,7 +808,6 @@ describe("L2_NovaRegistry", function () {
       const [, rewardRecipient] = signers;
 
       await forceExecCompleted(
-        fakeExecutionManagerAddress,
         MockCrossDomainMessenger,
         L2_NovaRegistry,
 
@@ -857,16 +847,15 @@ describe("L2_NovaRegistry", function () {
         []
       );
 
-      // Get the balances of the reward recipient and user before we call execCompleted.
-      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
-      const preCompleteRecipientBalance = await MockETH.balanceOf(
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
+      const [calcRecipientIncrease] = await checkpointBalance(
+        MockETH,
         rewardRecipient.address
       );
 
       const fakeGasConsumed = gasLimit + 500;
       await snapshotGasCost(
         forceExecCompleted(
-          fakeExecutionManagerAddress,
           MockCrossDomainMessenger,
           L2_NovaRegistry,
 
@@ -889,14 +878,12 @@ describe("L2_NovaRegistry", function () {
       );
 
       // Ensure the balance of the user remained the same.
-      await MockETH.balanceOf(user.address).should.eventually.equal(
-        preCompleteUserBalance
-      );
+      await calcUserIncrease().should.eventually.equal(0);
 
       // Ensure the balance of the reward recipient increased properly.
-      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+      await calcRecipientIncrease().should.eventually.equal(
         // We use gasLimit instead of fakeGasConsumed here because fakeGasConsumed is over the limit.
-        preCompleteRecipientBalance.add(gasLimit * gasPrice).add(tip)
+        gasLimit * gasPrice + tip
       );
     });
 
@@ -923,16 +910,15 @@ describe("L2_NovaRegistry", function () {
         [{ l2Token: MockETH.address, amount: inputTokenAmount }]
       );
 
-      // Get the balances of the reward recipient and user before we call execCompleted.
-      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
-      const preCompleteRecipientBalance = await MockETH.balanceOf(
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
+      const [calcRecipientIncrease] = await checkpointBalance(
+        MockETH,
         rewardRecipient.address
       );
 
       const fakeGasConsumed = 42069;
       await snapshotGasCost(
         forceExecCompleted(
-          fakeExecutionManagerAddress,
           MockCrossDomainMessenger,
           L2_NovaRegistry,
 
@@ -955,14 +941,14 @@ describe("L2_NovaRegistry", function () {
       );
 
       // Ensure the balance of the user increased properly.
-      await MockETH.balanceOf(user.address).should.eventually.equal(
-        preCompleteUserBalance.add((gasLimit - fakeGasConsumed) * gasPrice)
+      await calcUserIncrease().should.eventually.equal(
+        (gasLimit - fakeGasConsumed) * gasPrice
       );
 
       // Ensure the balance of the reward recipient increased properly.
-      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+      await calcRecipientIncrease().should.eventually.equal(
         // Input tokens are claimed using `claimInputTokens`, not sent right after.
-        preCompleteRecipientBalance.add(fakeGasConsumed * gasPrice).add(tip)
+        fakeGasConsumed * gasPrice + tip
       );
     });
 
@@ -989,16 +975,15 @@ describe("L2_NovaRegistry", function () {
         [{ l2Token: MockETH.address, amount: inputTokenAmount }]
       );
 
-      // Get the balances of the reward recipient and user before we call execCompleted.
-      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
-      const preCompleteRecipientBalance = await MockETH.balanceOf(
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
+      const [calcRecipientIncrease] = await checkpointBalance(
+        MockETH,
         rewardRecipient.address
       );
 
       const fakeGasConsumed = 42069;
       await snapshotGasCost(
         forceExecCompleted(
-          fakeExecutionManagerAddress,
           MockCrossDomainMessenger,
           L2_NovaRegistry,
 
@@ -1024,18 +1009,15 @@ describe("L2_NovaRegistry", function () {
       const BNtip = BigNumber.from(tip);
 
       // Ensure the balance of the reward recipient increased properly.
-      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
-        preCompleteRecipientBalance
-          .add(fakeGasConsumed * gasPrice)
-          .add(BNtip.div(2))
+      await calcRecipientIncrease().should.eventually.equal(
+        fakeGasConsumed * gasPrice + BNtip.div(2).toNumber()
       );
 
       // Ensure the balance of the user increased properly.
-      await MockETH.balanceOf(user.address).should.eventually.equal(
-        preCompleteUserBalance
-          .add((gasLimit - fakeGasConsumed) * gasPrice)
+      await calcUserIncrease().should.eventually.equal(
+        (gasLimit - fakeGasConsumed) * gasPrice +
           // Solidity rounds down so user may get slightly more as it uses the difference from the total.
-          .add(BNtip.sub(BNtip.div(2)))
+          BNtip.sub(BNtip.div(2)).toNumber()
       );
     });
 
@@ -1054,7 +1036,6 @@ describe("L2_NovaRegistry", function () {
 
       await snapshotGasCost(
         forceExecCompleted(
-          fakeExecutionManagerAddress,
           MockCrossDomainMessenger,
           L2_NovaRegistry,
 
@@ -1088,7 +1069,6 @@ describe("L2_NovaRegistry", function () {
       );
 
       await forceExecCompleted(
-        fakeExecutionManagerAddress,
         MockCrossDomainMessenger,
         L2_NovaRegistry,
 
@@ -1154,16 +1134,15 @@ describe("L2_NovaRegistry", function () {
         (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).toNumber()
       );
 
-      // Get the balances of the reward recipient and user before we call execCompleted.
-      const preCompleteUserBalance = await MockETH.balanceOf(user.address);
-      const preCompleteRecipientBalance = await MockETH.balanceOf(
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
+      const [calcRecipientIncrease] = await checkpointBalance(
+        MockETH,
         rewardRecipient.address
       );
 
       const fakeGasConsumed = 1000;
       await snapshotGasCost(
         forceExecCompleted(
-          fakeExecutionManagerAddress,
           MockCrossDomainMessenger,
           L2_NovaRegistry,
 
@@ -1180,18 +1159,14 @@ describe("L2_NovaRegistry", function () {
       );
 
       // Ensure the balance of the user increased properly.
-      await MockETH.balanceOf(user.address).should.eventually.equal(
-        preCompleteUserBalance.add(
-          (gasLimit - fakeGasConsumed) * resubmittedGasPrice
-        )
+      await calcUserIncrease().should.eventually.equal(
+        (gasLimit - fakeGasConsumed) * resubmittedGasPrice
       );
 
       // Ensure the balance of the reward recipient increased properly.
-      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+      await calcRecipientIncrease().should.eventually.equal(
         // Input tokens are claimed using `claimInputTokens`, not sent right after.
-        preCompleteRecipientBalance
-          .add(fakeGasConsumed * resubmittedGasPrice)
-          .add(tip)
+        fakeGasConsumed * resubmittedGasPrice + tip
       );
     });
   });
@@ -1233,7 +1208,8 @@ describe("L2_NovaRegistry", function () {
     it("allows claiming input tokens for an executed request", async function () {
       const [, rewardRecipient] = signers;
 
-      const preClaimRecipientBalance = await MockETH.balanceOf(
+      const [calcRecipientIncrease] = await checkpointBalance(
+        MockETH,
         rewardRecipient.address
       );
 
@@ -1250,16 +1226,16 @@ describe("L2_NovaRegistry", function () {
       );
 
       // Ensure the balance of the reward recipient increased properly.
-      await MockETH.balanceOf(rewardRecipient.address).should.eventually.equal(
+      await calcRecipientIncrease().should.eventually.equal(
         // 500 wei of WETH was used as an input token in the request.
-        preClaimRecipientBalance.add(500)
+        500
       );
     });
 
     it("allows claiming input tokens for a reverted request", async function () {
       const [user] = signers;
 
-      const preClaimUserBalance = await MockETH.balanceOf(user.address);
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
 
       await snapshotGasCost(
         L2_NovaRegistry.claimInputTokens(
@@ -1274,9 +1250,9 @@ describe("L2_NovaRegistry", function () {
       );
 
       // Ensure the balance of the reward recipient increased properly.
-      await MockETH.balanceOf(user.address).should.eventually.equal(
+      await calcUserIncrease().should.eventually.equal(
         // 510 wei of WETH was used as an input token in the request.
-        preClaimUserBalance.add(510)
+        510
       );
     });
 
