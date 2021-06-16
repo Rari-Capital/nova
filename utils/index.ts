@@ -18,11 +18,7 @@ function importantLog(msg: any) {
 }
 
 /** Calls `operation`, if it throws an error it will retry `retires` times waiting `delaySeconds` between each retry. */
-export function retryOperation(
-  operation: () => any,
-  delaySeconds: number,
-  retries: number
-) {
+export function retryOperation(operation: () => any, delaySeconds: number, retries: number) {
   return new Promise((resolve, reject) => {
     return operation()
       .then(resolve)
@@ -31,15 +27,11 @@ export function retryOperation(
           importantLog(
             `Failed to run task. Trying again after ${
               delaySeconds / 1000
-            } seconds. Trying a max of ${
-              retries - 1
-            } more times after this next run.`
+            } seconds. Trying a max of ${retries - 1} more times after this next run.`
           );
 
           return sleep(delaySeconds)
-            .then(
-              retryOperation.bind(null, operation, delaySeconds, retries - 1)
-            )
+            .then(retryOperation.bind(null, operation, delaySeconds, retries - 1))
             .then(resolve)
             .catch(reject);
         }

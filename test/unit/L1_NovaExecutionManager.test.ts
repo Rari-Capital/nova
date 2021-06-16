@@ -1,8 +1,4 @@
-import {
-  getAllStatefulSigHashes,
-  getFactory,
-  snapshotGasCost,
-} from "../../utils/testUtils";
+import { getAllStatefulSigHashes, getFactory, snapshotGasCost } from "../../utils/testUtils";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -40,26 +36,18 @@ describe("L1_NovaExecutionManager", function () {
 
   describe("constructor/setup", function () {
     it("should properly deploy mocks", async function () {
-      MockERC20 = await (
-        await getFactory<MockERC20__factory>("MockERC20")
-      ).deploy();
+      MockERC20 = await (await getFactory<MockERC20__factory>("MockERC20")).deploy();
 
-      MockStrategy = await (
-        await getFactory<MockStrategy__factory>("MockStrategy")
-      ).deploy();
+      MockStrategy = await (await getFactory<MockStrategy__factory>("MockStrategy")).deploy();
 
       MockCrossDomainMessenger = await (
-        await getFactory<MockCrossDomainMessenger__factory>(
-          "MockCrossDomainMessenger"
-        )
+        await getFactory<MockCrossDomainMessenger__factory>("MockCrossDomainMessenger")
       ).deploy();
     });
 
     it("should properly deploy the execution manager", async function () {
       L1_NovaExecutionManager = await (
-        await getFactory<L1NovaExecutionManager__factory>(
-          "L1_NovaExecutionManager"
-        )
+        await getFactory<L1NovaExecutionManager__factory>("L1_NovaExecutionManager")
       ).deploy(ethers.constants.AddressZero, MockCrossDomainMessenger.address);
     });
 
@@ -96,9 +84,7 @@ describe("L1_NovaExecutionManager", function () {
 
     describe("simpleDSGuard", function () {
       it("should properly deploy a SimpleDSGuard", async function () {
-        SimpleDSGuard = await (
-          await getFactory<SimpleDSGuard__factory>("SimpleDSGuard")
-        ).deploy();
+        SimpleDSGuard = await (await getFactory<SimpleDSGuard__factory>("SimpleDSGuard")).deploy();
       });
 
       it("should properly init the owner", async function () {
@@ -111,30 +97,24 @@ describe("L1_NovaExecutionManager", function () {
         const [, nonDeployer] = signers;
 
         // Check that it enforces authorization before anyone is permitted.
-        const unauthedExecutionManager =
-          L1_NovaExecutionManager.connect(nonDeployer);
+        const unauthedExecutionManager = L1_NovaExecutionManager.connect(nonDeployer);
         await unauthedExecutionManager
           .transferFromRelayer(MockERC20.address, 0)
           .should.be.revertedWith("ds-auth-unauthorized");
         await unauthedExecutionManager
-          .exec(0, MockStrategy.address, "0x00", nonDeployer.address, 0)
+          .exec(0, MockStrategy.address, "0x00", nonDeployer.address, 99999999999999)
           .should.be.revertedWith("ds-auth-unauthorized");
 
         // Permit anyone to call all public stateful functions.
-        for (const sigHash of getAllStatefulSigHashes(
-          L1_NovaExecutionManager.interface
-        )) {
+        for (const sigHash of getAllStatefulSigHashes(L1_NovaExecutionManager.interface)) {
           await SimpleDSGuard.permitAnySource(sigHash);
         }
       });
 
       it("should allow setting the owner to null", async function () {
-        await SimpleDSGuard.setOwner(ethers.constants.AddressZero).should.not.be
-          .reverted;
+        await SimpleDSGuard.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
 
-        await SimpleDSGuard.owner().should.eventually.equal(
-          ethers.constants.AddressZero
-        );
+        await SimpleDSGuard.owner().should.eventually.equal(ethers.constants.AddressZero);
       });
     });
 
@@ -142,9 +122,7 @@ describe("L1_NovaExecutionManager", function () {
       it("should properly init the owner", async function () {
         const [deployer] = signers;
 
-        await L1_NovaExecutionManager.owner().should.eventually.equal(
-          deployer.address
-        );
+        await L1_NovaExecutionManager.owner().should.eventually.equal(deployer.address);
       });
 
       it("should allow connecting to the SimpleDSGuard", async function () {
@@ -152,20 +130,15 @@ describe("L1_NovaExecutionManager", function () {
           ethers.constants.AddressZero
         );
 
-        await L1_NovaExecutionManager.setAuthority(SimpleDSGuard.address).should
-          .not.be.reverted;
+        await L1_NovaExecutionManager.setAuthority(SimpleDSGuard.address).should.not.be.reverted;
 
-        await L1_NovaExecutionManager.authority().should.eventually.equal(
-          SimpleDSGuard.address
-        );
+        await L1_NovaExecutionManager.authority().should.eventually.equal(SimpleDSGuard.address);
       });
 
       it("should allow setting the owner to null", async function () {
         await L1_NovaExecutionManager.setOwner(ethers.constants.AddressZero);
 
-        await L1_NovaExecutionManager.owner().should.eventually.equal(
-          ethers.constants.AddressZero
-        );
+        await L1_NovaExecutionManager.owner().should.eventually.equal(ethers.constants.AddressZero);
       });
     });
   });
@@ -319,9 +292,7 @@ describe("L1_NovaExecutionManager", function () {
         L1_NovaExecutionManager.exec(
           4,
           MockStrategy.address,
-          MockStrategy.interface.encodeFunctionData(
-            "thisFunctionWillNotRevert"
-          ),
+          MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
           user.address,
           9999999999999
         )
@@ -337,9 +308,7 @@ describe("L1_NovaExecutionManager", function () {
         L1_NovaExecutionManager.exec(
           5,
           MockStrategy.address,
-          MockStrategy.interface.encodeFunctionData(
-            "thisFunctionWillModifyState"
-          ),
+          MockStrategy.interface.encodeFunctionData("thisFunctionWillModifyState"),
           user.address,
           9999999999999
         )
@@ -361,10 +330,10 @@ describe("L1_NovaExecutionManager", function () {
         L1_NovaExecutionManager.exec(
           6,
           MockStrategy.address,
-          MockStrategy.interface.encodeFunctionData(
-            "thisFunctionWillTransferFromRelayer",
-            [MockERC20.address, weiAmount]
-          ),
+          MockStrategy.interface.encodeFunctionData("thisFunctionWillTransferFromRelayer", [
+            MockERC20.address,
+            weiAmount,
+          ]),
           user.address,
           9999999999999
         )
@@ -372,9 +341,7 @@ describe("L1_NovaExecutionManager", function () {
         .should.emit(MockERC20, "Transfer")
         .withArgs(user.address, MockStrategy.address, weiAmount);
 
-      await MockERC20.balanceOf(MockStrategy.address).should.eventually.equal(
-        weiAmount
-      );
+      await MockERC20.balanceOf(MockStrategy.address).should.eventually.equal(weiAmount);
     });
 
     it("will hard revert if tokens were not approved", async function () {
@@ -383,10 +350,10 @@ describe("L1_NovaExecutionManager", function () {
       await L1_NovaExecutionManager.exec(
         7,
         MockStrategy.address,
-        MockStrategy.interface.encodeFunctionData(
-          "thisFunctionWillTransferFromRelayer",
-          [MockERC20.address, ethers.utils.parseEther("9999999")]
-        ),
+        MockStrategy.interface.encodeFunctionData("thisFunctionWillTransferFromRelayer", [
+          MockERC20.address,
+          ethers.utils.parseEther("9999999"),
+        ]),
         user.address,
         9999999999999
       ).should.be.revertedWith("HARD_REVERT");
@@ -402,10 +369,10 @@ describe("L1_NovaExecutionManager", function () {
       await L1_NovaExecutionManager.exec(
         8,
         MockStrategy.address,
-        MockStrategy.interface.encodeFunctionData(
-          "thisFunctionWillTransferFromRelayer",
-          [NoReturnValueERC20.address, 0]
-        ),
+        MockStrategy.interface.encodeFunctionData("thisFunctionWillTransferFromRelayer", [
+          NoReturnValueERC20.address,
+          0,
+        ]),
         user.address,
         9999999999999
       );
@@ -421,10 +388,10 @@ describe("L1_NovaExecutionManager", function () {
       await L1_NovaExecutionManager.exec(
         9,
         MockStrategy.address,
-        MockStrategy.interface.encodeFunctionData(
-          "thisFunctionWillTransferFromRelayer",
-          [BadReturnValueERC20.address, 0]
-        ),
+        MockStrategy.interface.encodeFunctionData("thisFunctionWillTransferFromRelayer", [
+          BadReturnValueERC20.address,
+          0,
+        ]),
         user.address,
         9999999999999
       ).should.be.revertedWith("HARD_REVERT");
@@ -440,10 +407,10 @@ describe("L1_NovaExecutionManager", function () {
       await L1_NovaExecutionManager.exec(
         10,
         MockStrategy.address,
-        MockStrategy.interface.encodeFunctionData(
-          "thisFunctionWillTransferFromRelayer",
-          [ReturnFalseERC20.address, 0]
-        ),
+        MockStrategy.interface.encodeFunctionData("thisFunctionWillTransferFromRelayer", [
+          ReturnFalseERC20.address,
+          0,
+        ]),
         user.address,
         9999999999999
       ).should.be.revertedWith("HARD_REVERT");
@@ -485,9 +452,7 @@ describe("L1_NovaExecutionManager", function () {
       ).should.not.emit(MockERC20, "Transfer");
 
       // Balance should not change.
-      await MockERC20.balanceOf(user.address).should.eventually.equal(
-        preBalance
-      );
+      await MockERC20.balanceOf(user.address).should.eventually.equal(preBalance);
     });
   });
 });

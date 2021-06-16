@@ -67,8 +67,7 @@ const config: HardhatUserConfig = {
 
   preprocess: {
     eachLine: removeConsoleLog(
-      (hre) =>
-        hre.network.name !== "hardhat" && hre.network.name !== "localhost"
+      (hre) => hre.network.name !== "hardhat" && hre.network.name !== "localhost"
     ),
   },
 

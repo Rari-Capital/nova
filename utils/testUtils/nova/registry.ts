@@ -11,8 +11,7 @@ import {
 } from "../../../typechain";
 
 export const fakeStrategyAddress = "0x4200000000000000000000000000000000000069";
-export const fakeExecutionManagerAddress =
-  "0xDeADBEEF1337caFEBAbE1337CacAfACe1337C0dE";
+export const fakeExecutionManagerAddress = "0xDeADBEEF1337caFEBAbE1337CacAfACe1337C0dE";
 
 /** Checks that locally generated input tokens array matches one returned from ethers
  * Difficult to compare BNs in an array like this to numbers which is why you need this function.
@@ -33,9 +32,7 @@ export function assertInputTokensMatch(
     const inputToken = inputTokens[i];
     const requestInputToken = requestInputTokens[i];
 
-    inputToken.amount
-      .toString()
-      .should.equal(requestInputToken.amount.toString());
+    inputToken.amount.toString().should.equal(requestInputToken.amount.toString());
 
     inputToken.l2Token.should.equal(requestInputToken.l2Token);
   }
@@ -88,10 +85,7 @@ export async function createRequest(
         inputTokenERC20.approve(L2_NovaRegistry.address, weiOwed);
       } else {
         // Approve the input token to the registry.
-        await inputTokenERC20.approve(
-          L2_NovaRegistry.address,
-          inputToken.amount
-        );
+        await inputTokenERC20.approve(L2_NovaRegistry.address, inputToken.amount);
       }
 
       inputTokenERC20s.push(inputTokenERC20);
@@ -99,14 +93,7 @@ export async function createRequest(
   }
 
   // Make the request.
-  const tx = L2_NovaRegistry.requestExec(
-    strategy,
-    calldata,
-    gasLimit,
-    gasPrice,
-    tip,
-    inputTokens
-  );
+  const tx = L2_NovaRegistry.requestExec(strategy, calldata, gasLimit, gasPrice, tip, inputTokens);
 
   // Wait for the request to terminate.
   await tx;

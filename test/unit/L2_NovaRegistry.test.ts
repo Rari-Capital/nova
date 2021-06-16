@@ -38,14 +38,10 @@ describe("L2_NovaRegistry", function () {
 
   describe("constructor/setup", function () {
     it("should properly deploy mocks", async function () {
-      MockETH = await (
-        await getFactory<MockERC20__factory>("MockERC20")
-      ).deploy();
+      MockETH = await (await getFactory<MockERC20__factory>("MockERC20")).deploy();
 
       MockCrossDomainMessenger = await (
-        await getFactory<MockCrossDomainMessenger__factory>(
-          "MockCrossDomainMessenger"
-        )
+        await getFactory<MockCrossDomainMessenger__factory>("MockCrossDomainMessenger")
       ).deploy();
     });
 
@@ -57,17 +53,13 @@ describe("L2_NovaRegistry", function () {
 
     it("should properly use constructor arguments", async function () {
       // Make sure the constructor params were properly entered.
-      await L2_NovaRegistry.messenger().should.eventually.equal(
-        MockCrossDomainMessenger.address
-      );
+      await L2_NovaRegistry.messenger().should.eventually.equal(MockCrossDomainMessenger.address);
 
       await L2_NovaRegistry.ETH().should.eventually.equal(MockETH.address);
     });
 
     it("should allow connecting to an execution manager", async function () {
-      await L2_NovaRegistry.connectExecutionManager(
-        fakeExecutionManagerAddress
-      );
+      await L2_NovaRegistry.connectExecutionManager(fakeExecutionManagerAddress);
 
       await L2_NovaRegistry.L1_NovaExecutionManagerAddress().should.eventually.equal(
         fakeExecutionManagerAddress
@@ -76,9 +68,7 @@ describe("L2_NovaRegistry", function () {
 
     describe("simpleDSGuard", function () {
       it("should properly deploy a SimpleDSGuard", async function () {
-        SimpleDSGuard = await (
-          await getFactory<SimpleDSGuard__factory>("SimpleDSGuard")
-        ).deploy();
+        SimpleDSGuard = await (await getFactory<SimpleDSGuard__factory>("SimpleDSGuard")).deploy();
       });
 
       it("should properly init the owner", async function () {
@@ -118,20 +108,15 @@ describe("L2_NovaRegistry", function () {
           .should.be.revertedWith("ds-auth-unauthorized");
 
         // Permit anyone to call all public functions.
-        for (const sigHash of getAllStatefulSigHashes(
-          L2_NovaRegistry.interface
-        )) {
+        for (const sigHash of getAllStatefulSigHashes(L2_NovaRegistry.interface)) {
           await SimpleDSGuard.permitAnySource(sigHash);
         }
       });
 
       it("should allow setting the owner to null", async function () {
-        await SimpleDSGuard.setOwner(ethers.constants.AddressZero).should.not.be
-          .reverted;
+        await SimpleDSGuard.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
 
-        await SimpleDSGuard.owner().should.eventually.equal(
-          ethers.constants.AddressZero
-        );
+        await SimpleDSGuard.owner().should.eventually.equal(ethers.constants.AddressZero);
       });
     });
 
@@ -143,25 +128,17 @@ describe("L2_NovaRegistry", function () {
       });
 
       it("should allow connecting to the SimpleDSGuard", async function () {
-        await L2_NovaRegistry.authority().should.eventually.equal(
-          ethers.constants.AddressZero
-        );
+        await L2_NovaRegistry.authority().should.eventually.equal(ethers.constants.AddressZero);
 
-        await L2_NovaRegistry.setAuthority(SimpleDSGuard.address).should.not.be
-          .reverted;
+        await L2_NovaRegistry.setAuthority(SimpleDSGuard.address).should.not.be.reverted;
 
-        await L2_NovaRegistry.authority().should.eventually.equal(
-          SimpleDSGuard.address
-        );
+        await L2_NovaRegistry.authority().should.eventually.equal(SimpleDSGuard.address);
       });
 
       it("should allow setting the owner to null", async function () {
-        await L2_NovaRegistry.setOwner(ethers.constants.AddressZero).should.not
-          .be.reverted;
+        await L2_NovaRegistry.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
 
-        await L2_NovaRegistry.owner().should.eventually.equal(
-          ethers.constants.AddressZero
-        );
+        await L2_NovaRegistry.owner().should.eventually.equal(ethers.constants.AddressZero);
       });
     });
   });
@@ -170,16 +147,9 @@ describe("L2_NovaRegistry", function () {
     it("allows making a simple request", async function () {
       const [user] = signers;
 
-      const [, calcBalanceDecrease] = await checkpointBalance(
-        MockETH,
-        user.address
-      );
+      const [, calcBalanceDecrease] = await checkpointBalance(MockETH, user.address);
 
-      const { tx, execHash, weiOwed } = await createRequest(
-        MockETH,
-        L2_NovaRegistry,
-        {}
-      );
+      const { tx, execHash, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       await snapshotGasCost(tx);
 
@@ -187,26 +157,17 @@ describe("L2_NovaRegistry", function () {
       await calcBalanceDecrease().should.eventually.equal(weiOwed);
 
       // Assert that there are no input tokens attached.
-      await L2_NovaRegistry.getRequestInputTokens(
-        execHash
-      ).should.eventually.have.lengthOf(0);
+      await L2_NovaRegistry.getRequestInputTokens(execHash).should.eventually.have.lengthOf(0);
     });
 
     it("allows making a simple request with one input token", async function () {
       const [user] = signers;
 
-      const [, calcBalanceDecrease] = await checkpointBalance(
-        MockETH,
-        user.address
-      );
+      const [, calcBalanceDecrease] = await checkpointBalance(MockETH, user.address);
 
-      const { tx, execHash, inputTokens, weiOwed } = await createRequest(
-        MockETH,
-        L2_NovaRegistry,
-        {
-          inputTokens: [{ l2Token: MockETH.address, amount: 5 }],
-        }
-      );
+      const { tx, execHash, inputTokens, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {
+        inputTokens: [{ l2Token: MockETH.address, amount: 5 }],
+      });
 
       await snapshotGasCost(tx);
 
@@ -214,30 +175,20 @@ describe("L2_NovaRegistry", function () {
       await calcBalanceDecrease().should.eventually.equal(weiOwed);
 
       // Assert that it properly ingested input tokens.
-      assertInputTokensMatch(
-        inputTokens,
-        await L2_NovaRegistry.getRequestInputTokens(execHash)
-      );
+      assertInputTokensMatch(inputTokens, await L2_NovaRegistry.getRequestInputTokens(execHash));
     });
 
     it("allows a simple request with 2 input tokens", async function () {
       const [user] = signers;
 
-      const [, calcBalanceDecrease] = await checkpointBalance(
-        MockETH,
-        user.address
-      );
+      const [, calcBalanceDecrease] = await checkpointBalance(MockETH, user.address);
 
-      const { tx, execHash, inputTokens, weiOwed } = await createRequest(
-        MockETH,
-        L2_NovaRegistry,
-        {
-          inputTokens: [
-            { l2Token: MockETH.address, amount: 1337 },
-            { l2Token: MockETH.address, amount: 6969 },
-          ],
-        }
-      );
+      const { tx, execHash, inputTokens, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {
+        inputTokens: [
+          { l2Token: MockETH.address, amount: 1337 },
+          { l2Token: MockETH.address, amount: 6969 },
+        ],
+      });
 
       await snapshotGasCost(tx);
 
@@ -245,10 +196,7 @@ describe("L2_NovaRegistry", function () {
       await calcBalanceDecrease().should.eventually.equal(weiOwed);
 
       // Assert that it properly ingested input tokens.
-      assertInputTokensMatch(
-        inputTokens,
-        await L2_NovaRegistry.getRequestInputTokens(execHash)
-      );
+      assertInputTokensMatch(inputTokens, await L2_NovaRegistry.getRequestInputTokens(execHash));
     });
 
     it("does not allow making a request with >5 input tokens", async function () {

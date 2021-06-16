@@ -12,6 +12,15 @@ import chalk from "chalk";
 import { IERC20 } from "../../typechain";
 import { Interface } from "ethers/lib/utils";
 
+/** Takes a contract interface and returns an array of all function sigHashes that are not pure/view.  */
+export function getAllStatefulSigHashes(contractInterface: Interface) {
+  return Object.entries(contractInterface.functions)
+    .filter(([, fragment]) => {
+      return !fragment.constant;
+    })
+    .map(([sig]) => contractInterface.getSighash(sig));
+}
+
 /** Gets an ethers factory for a contract. T should be the typechain factory type of the contract (ie: MockERC20__factory). */
 export function getFactory<T>(name: string): Promise<T> {
   return ethers.getContractFactory(name) as any;
@@ -21,15 +30,6 @@ export function getFactory<T>(name: string): Promise<T> {
 export async function increaseTimeAndMine(seconds: number) {
   await ethers.provider.send("evm_increaseTime", [seconds]);
   await ethers.provider.send("evm_mine", []);
-}
-
-/** Takes a contract interface and returns an array of all function sigHashes that are not pure/view.  */
-export function getAllStatefulSigHashes(contractInterface: Interface) {
-  return Object.entries(contractInterface.functions)
-    .filter(([, fragment]) => {
-      return !fragment.constant;
-    })
-    .map(([sig]) => contractInterface.getSighash(sig));
 }
 
 /** Records the gas usage of a transaction, and checks against the most recent saved Jest snapshot.
@@ -45,9 +45,7 @@ export async function snapshotGasCost(x: Promise<ContractTransaction>) {
     console.log(
       chalk.red(
         "(CHANGE) " +
-          e.message
-            .replace("expected", "used")
-            .replace("to equal", "gas, but the snapshot expected it to use") +
+          e.message.replace("expected", "used").replace("to equal", "gas, but the snapshot expected it to use") +
           " gas"
       )
     );
