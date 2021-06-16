@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 
+/** Computes the execHash for a request like NovaExecHashLib. */
 export function computeExecHash({
   nonce,
   strategy,

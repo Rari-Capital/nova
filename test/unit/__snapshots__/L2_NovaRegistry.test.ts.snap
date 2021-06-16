@@ -1,37 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for a reverted request 1`] = `64315`;
+exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `330466`;
 
-exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for an executed request 1`] = `64315`;
+exports[`L2_NovaRegistry requestExec allows making a simple request 1`] = `240841`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a request that overflows gas usage 1`] = `106073`;
-
-exports[`L2_NovaRegistry execCompleted allows completing a request with input tokens 1`] = `108883`;
-
-exports[`L2_NovaRegistry execCompleted allows completing a resubmitted request 1`] = `113266`;
-
-exports[`L2_NovaRegistry execCompleted allows completing a reverted request with input tokens 1`] = `108871`;
-
-exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = `125983`;
-
-exports[`L2_NovaRegistry execCompleted allows completing an uncled request before it dies 1`] = `108871`;
-
-exports[`L2_NovaRegistry relockTokens allows relocking tokens 1`] = `29876`;
-
-exports[`L2_NovaRegistry requestExec allows a simple request 1`] = `240733`;
-
-exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `330382`;
-
-exports[`L2_NovaRegistry requestExec allows a simple request with one input token 1`] = `279424`;
-
-exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183690`;
-
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `250495`;
-
-exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `62647`;
-
-exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request with input tokens 1`] = `62647`;
-
-exports[`L2_NovaRegistry withdrawTokens allows withdrawing from a request with input tokens 1`] = `108215`;
-
-exports[`L2_NovaRegistry withdrawTokens allows withdrawing tokens from a simple request 1`] = `90216`;
+exports[`L2_NovaRegistry requestExec allows making a simple request with one input token 1`] = `279496`;

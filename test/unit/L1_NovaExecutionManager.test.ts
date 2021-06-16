@@ -106,7 +106,7 @@ describe("L1_NovaExecutionManager", function () {
       it("should properly permit authorization for specific functions", async function () {
         const [, nonDeployer] = signers;
 
-        // Should enforce authorization before permitted.
+        // Check that it enforces authorization before anyone is permitted.
         await L1_NovaExecutionManager.connect(nonDeployer)
           .transferFromRelayer(MockERC20.address, 0)
           .should.be.revertedWith("ds-auth-unauthorized");
@@ -122,12 +122,12 @@ describe("L1_NovaExecutionManager", function () {
           )
           .should.be.revertedWith("ds-auth-unauthorized");
 
+        // Permit anyone to call all public functions.
         await SimpleDSGuard.permitAnySource(
           L1_NovaExecutionManager.interface.getSighash(
             "exec(uint256,address,bytes,address,uint256)"
           )
         );
-
         await SimpleDSGuard.permitAnySource(
           L1_NovaExecutionManager.interface.getSighash(
             "transferFromRelayer(address,uint256)"
