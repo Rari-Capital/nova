@@ -1,4 +1,8 @@
-import { getFactory, snapshotGasCost } from "../../utils/testUtils";
+import {
+  getAllStatefulSigHashes,
+  getFactory,
+  snapshotGasCost,
+} from "../../utils/testUtils";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -107,32 +111,21 @@ describe("L1_NovaExecutionManager", function () {
         const [, nonDeployer] = signers;
 
         // Check that it enforces authorization before anyone is permitted.
-        await L1_NovaExecutionManager.connect(nonDeployer)
+        const unauthedExecutionManager =
+          L1_NovaExecutionManager.connect(nonDeployer);
+        await unauthedExecutionManager
           .transferFromRelayer(MockERC20.address, 0)
           .should.be.revertedWith("ds-auth-unauthorized");
-        await L1_NovaExecutionManager.connect(nonDeployer)
-          .exec(
-            0,
-            MockStrategy.address,
-            MockStrategy.interface.encodeFunctionData(
-              "thisFunctionWillNotRevert"
-            ),
-            nonDeployer.address,
-            9999999999999
-          )
+        await unauthedExecutionManager
+          .exec(0, MockStrategy.address, "0x00", nonDeployer.address, 0)
           .should.be.revertedWith("ds-auth-unauthorized");
 
-        // Permit anyone to call all public functions.
-        await SimpleDSGuard.permitAnySource(
-          L1_NovaExecutionManager.interface.getSighash(
-            "exec(uint256,address,bytes,address,uint256)"
-          )
-        );
-        await SimpleDSGuard.permitAnySource(
-          L1_NovaExecutionManager.interface.getSighash(
-            "transferFromRelayer(address,uint256)"
-          )
-        );
+        // Permit anyone to call all public stateful functions.
+        for (const sigHash of getAllStatefulSigHashes(
+          L1_NovaExecutionManager.interface
+        )) {
+          await SimpleDSGuard.permitAnySource(sigHash);
+        }
       });
 
       it("should allow setting the owner to null", async function () {

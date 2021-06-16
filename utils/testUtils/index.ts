@@ -10,6 +10,7 @@ import { ContractReceipt, ContractTransaction } from "ethers";
 
 import chalk from "chalk";
 import { IERC20 } from "../../typechain";
+import { Interface } from "ethers/lib/utils";
 
 /** Gets an ethers factory for a contract. T should be the typechain factory type of the contract (ie: MockERC20__factory). */
 export function getFactory<T>(name: string): Promise<T> {
@@ -20,6 +21,15 @@ export function getFactory<T>(name: string): Promise<T> {
 export async function increaseTimeAndMine(seconds: number) {
   await ethers.provider.send("evm_increaseTime", [seconds]);
   await ethers.provider.send("evm_mine", []);
+}
+
+/** Takes a contract interface and returns an array of all function sigHashes that are not pure/view.  */
+export function getAllStatefulSigHashes(contractInterface: Interface) {
+  return Object.entries(contractInterface.functions)
+    .filter(([, fragment]) => {
+      return !fragment.constant;
+    })
+    .map(([sig]) => contractInterface.getSighash(sig));
 }
 
 /** Records the gas usage of a transaction, and checks against the most recent saved Jest snapshot.

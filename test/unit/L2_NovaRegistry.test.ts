@@ -20,6 +20,7 @@ import {
   checkpointBalance,
   createRequest,
   assertInputTokensMatch,
+  getAllStatefulSigHashes,
 } from "../../utils/testUtils";
 
 describe("L2_NovaRegistry", function () {
@@ -90,59 +91,38 @@ describe("L2_NovaRegistry", function () {
         const [, nonDeployer] = signers;
 
         // Check that it enforces authorization before anyone is permitted.
-        await L2_NovaRegistry.connect(nonDeployer)
+        const unauthedRegistry = L2_NovaRegistry.connect(nonDeployer);
+        await unauthedRegistry
           .requestExec(fakeStrategyAddress, "0x00", 0, 0, 0, [])
           .should.be.revertedWith("ds-auth-unauthorized");
-        await L2_NovaRegistry.connect(nonDeployer)
+        await unauthedRegistry
           .requestExecWithTimeout(fakeStrategyAddress, "0x00", 0, 0, 0, [], 0)
           .should.be.revertedWith("ds-auth-unauthorized");
-        await L2_NovaRegistry.connect(nonDeployer)
+        await unauthedRegistry
           .speedUpRequest(ethers.utils.solidityKeccak256([], []), 0)
           .should.be.revertedWith("ds-auth-unauthorized");
-        await L2_NovaRegistry.connect(nonDeployer)
+        await unauthedRegistry
           .claimInputTokens(ethers.utils.solidityKeccak256([], []))
           .should.be.revertedWith("ds-auth-unauthorized");
-        await L2_NovaRegistry.connect(nonDeployer)
+        await unauthedRegistry
           .unlockTokens(ethers.utils.solidityKeccak256([], []), 0)
           .should.be.revertedWith("ds-auth-unauthorized");
-        await L2_NovaRegistry.connect(nonDeployer)
+        await unauthedRegistry
           .relockTokens(ethers.utils.solidityKeccak256([], []))
           .should.be.revertedWith("ds-auth-unauthorized");
-        await L2_NovaRegistry.connect(nonDeployer)
+        await unauthedRegistry
           .withdrawTokens(ethers.utils.solidityKeccak256([], []))
           .should.be.revertedWith("ds-auth-unauthorized");
-        await L2_NovaRegistry.connect(nonDeployer)
+        await unauthedRegistry
           .connectExecutionManager(ethers.constants.AddressZero)
           .should.be.revertedWith("ds-auth-unauthorized");
 
         // Permit anyone to call all public functions.
-        await SimpleDSGuard.permitAnySource(
-          L2_NovaRegistry.interface.getSighash(
-            "requestExec(address,bytes,uint256,uint256,uint256,(address,uint256)[])"
-          )
-        );
-        await SimpleDSGuard.permitAnySource(
-          L2_NovaRegistry.interface.getSighash(
-            "requestExecWithTimeout(address,bytes,uint256,uint256,uint256,(address,uint256)[],uint256)"
-          )
-        );
-        await SimpleDSGuard.permitAnySource(
-          L2_NovaRegistry.interface.getSighash(
-            "speedUpRequest(bytes32,uint256)"
-          )
-        );
-        await SimpleDSGuard.permitAnySource(
-          L2_NovaRegistry.interface.getSighash("claimInputTokens(bytes32)")
-        );
-        await SimpleDSGuard.permitAnySource(
-          L2_NovaRegistry.interface.getSighash("unlockTokens(bytes32,uint256)")
-        );
-        await SimpleDSGuard.permitAnySource(
-          L2_NovaRegistry.interface.getSighash("relockTokens(bytes32)")
-        );
-        await SimpleDSGuard.permitAnySource(
-          L2_NovaRegistry.interface.getSighash("withdrawTokens(bytes32)")
-        );
+        for (const sigHash of getAllStatefulSigHashes(
+          L2_NovaRegistry.interface
+        )) {
+          await SimpleDSGuard.permitAnySource(sigHash);
+        }
       });
 
       it("should allow setting the owner to null", async function () {
