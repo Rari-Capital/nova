@@ -1,4 +1,9 @@
-import { getAllStatefulSigHashes, getFactory, snapshotGasCost } from "../../utils/testUtils";
+import {
+  authorizeEveryFunction,
+  checkAllFunctionsForAuth,
+  getFactory,
+  snapshotGasCost,
+} from "../../utils/testUtils";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -93,22 +98,14 @@ describe("L1_NovaExecutionManager", function () {
         await SimpleDSGuard.owner().should.eventually.equal(deployer.address);
       });
 
-      it("should properly permit authorization for specific functions", async function () {
+      it("should not allow calling stateful functions before permitted", async function () {
         const [, nonDeployer] = signers;
 
-        // Check that it enforces authorization before anyone is permitted.
-        const unauthedExecutionManager = L1_NovaExecutionManager.connect(nonDeployer);
-        await unauthedExecutionManager
-          .transferFromRelayer(MockERC20.address, 0)
-          .should.be.revertedWith("ds-auth-unauthorized");
-        await unauthedExecutionManager
-          .exec(0, MockStrategy.address, "0x00", nonDeployer.address, 99999999999999)
-          .should.be.revertedWith("ds-auth-unauthorized");
+        await checkAllFunctionsForAuth(L1_NovaExecutionManager, nonDeployer);
+      });
 
-        // Permit anyone to call all public stateful functions.
-        for (const sigHash of getAllStatefulSigHashes(L1_NovaExecutionManager.interface)) {
-          await SimpleDSGuard.permitAnySource(sigHash);
-        }
+      it("should properly permit authorization all stateful functions", async function () {
+        await authorizeEveryFunction(SimpleDSGuard, L1_NovaExecutionManager);
       });
 
       it("should allow setting the owner to null", async function () {

@@ -16,11 +16,11 @@ import {
   getFactory,
   snapshotGasCost,
   fakeExecutionManagerAddress,
-  fakeStrategyAddress,
   checkpointBalance,
   createRequest,
   assertInputTokensMatch,
-  getAllStatefulSigHashes,
+  authorizeEveryFunction,
+  checkAllFunctionsForAuth,
 } from "../../utils/testUtils";
 
 describe("L2_NovaRegistry", function () {
@@ -77,40 +77,14 @@ describe("L2_NovaRegistry", function () {
         await SimpleDSGuard.owner().should.eventually.equal(deployer.address);
       });
 
-      it("should properly permit authorization for specific functions", async function () {
+      it("should not allow calling stateful functions before permitted", async function () {
         const [, nonDeployer] = signers;
 
-        // Check that it enforces authorization before anyone is permitted.
-        const unauthedRegistry = L2_NovaRegistry.connect(nonDeployer);
-        await unauthedRegistry
-          .requestExec(fakeStrategyAddress, "0x00", 0, 0, 0, [])
-          .should.be.revertedWith("ds-auth-unauthorized");
-        await unauthedRegistry
-          .requestExecWithTimeout(fakeStrategyAddress, "0x00", 0, 0, 0, [], 0)
-          .should.be.revertedWith("ds-auth-unauthorized");
-        await unauthedRegistry
-          .speedUpRequest(ethers.utils.solidityKeccak256([], []), 0)
-          .should.be.revertedWith("ds-auth-unauthorized");
-        await unauthedRegistry
-          .claimInputTokens(ethers.utils.solidityKeccak256([], []))
-          .should.be.revertedWith("ds-auth-unauthorized");
-        await unauthedRegistry
-          .unlockTokens(ethers.utils.solidityKeccak256([], []), 0)
-          .should.be.revertedWith("ds-auth-unauthorized");
-        await unauthedRegistry
-          .relockTokens(ethers.utils.solidityKeccak256([], []))
-          .should.be.revertedWith("ds-auth-unauthorized");
-        await unauthedRegistry
-          .withdrawTokens(ethers.utils.solidityKeccak256([], []))
-          .should.be.revertedWith("ds-auth-unauthorized");
-        await unauthedRegistry
-          .connectExecutionManager(ethers.constants.AddressZero)
-          .should.be.revertedWith("ds-auth-unauthorized");
+        await checkAllFunctionsForAuth(L2_NovaRegistry, nonDeployer);
+      });
 
-        // Permit anyone to call all public functions.
-        for (const sigHash of getAllStatefulSigHashes(L2_NovaRegistry.interface)) {
-          await SimpleDSGuard.permitAnySource(sigHash);
-        }
+      it("should properly permit authorization for specific functions", async function () {
+        await authorizeEveryFunction(SimpleDSGuard, L2_NovaRegistry);
       });
 
       it("should allow setting the owner to null", async function () {
