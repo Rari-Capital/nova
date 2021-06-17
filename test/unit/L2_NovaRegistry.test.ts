@@ -83,7 +83,7 @@ describe("L2_NovaRegistry", function () {
         await checkAllFunctionsForAuth(L2_NovaRegistry, nonDeployer);
       });
 
-      it("should properly permit authorization for specific functions", async function () {
+      it("should properly permit authorization all stateful functions", async function () {
         await authorizeEveryFunction(SimpleDSGuard, L2_NovaRegistry);
       });
 
