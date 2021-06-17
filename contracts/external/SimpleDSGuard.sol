@@ -19,12 +19,16 @@ contract SimpleDSGuard is DSAuth, DSAuthority {
         address, // We don't care about the destination
         bytes4 sig
     ) external view override returns (bool) {
-        bytes32 src = bytes32(bytes20(src_));
+        bytes32 src = addressToBytes32(src_);
 
         return acl[ANY][sig] || acl[src][sig] || acl[src][ANY] || acl[ANY][ANY];
     }
 
     // Internal Utils //
+
+    function addressToBytes32(address src) internal pure returns (bytes32) {
+        return bytes32(bytes20(src));
+    }
 
     function permitBytes(bytes32 src, bytes4 sig) internal auth {
         acl[src][sig] = true;
@@ -34,10 +38,6 @@ contract SimpleDSGuard is DSAuth, DSAuthority {
     function forbidBytes(bytes32 src, bytes4 sig) internal auth {
         acl[src][sig] = false;
         emit LogForbid(src, sig);
-    }
-
-    function addressToBytes32(address src) internal pure returns (bytes32) {
-        return bytes32(bytes20(src));
     }
 
     // Permit Public API //
