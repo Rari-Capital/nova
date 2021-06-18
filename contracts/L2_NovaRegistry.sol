@@ -2,8 +2,8 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "ovm-safeerc20/OVM_SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
@@ -14,7 +14,7 @@ import "./external/LowGasSafeMath.sol";
 import "./libraries/NovaExecHashLib.sol";
 
 contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
-    using OVM_SafeERC20 for IERC20;
+    using SafeERC20 for IERC20;
     using LowGasSafeMath for uint256;
 
     /*///////////////////////////////////////////////////////////////

@@ -45,6 +45,11 @@ const config: HardhatUserConfig = {
     },
   },
 
+  ovm: {
+    // This version supports ETH opcodes
+    solcVersion: "0.7.6+commit.3b061308",
+  },
+
   solidity: {
     version: "0.7.6",
     settings: {

@@ -11,5 +11,5 @@ timeout: 1200 # Fuzz for 20 minutes.
 cryticArgs: # If we add more dependencies they will need to be added as symlinks here!
   [
     "--solc-remaps",
-    "@openzeppelin/=node_modules/@openzeppelin/ @eth-optimism/=node_modules/@eth-optimism/ ovm-safeerc20/=node_modules/ovm-safeerc20/",
+    "@openzeppelin/=node_modules/@openzeppelin/ @eth-optimism/=node_modules/@eth-optimism/",
   ]

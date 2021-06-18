@@ -52,7 +52,6 @@
   },
   "dependencies": {
     "@eth-optimism/contracts": "^0.2.11",
-    "@openzeppelin/contracts": "^3.4.0",
-    "ovm-safeerc20": "^1.0.0"
+    "@openzeppelin/contracts": "^3.4.0"
   }
 }
