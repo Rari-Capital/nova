@@ -6,7 +6,7 @@ chai.use(chaiAsPromised);
 chai.should();
 
 import { ethers } from "hardhat";
-import { Contract, ContractReceipt, ContractTransaction } from "ethers";
+import { BigNumberish, Contract, ContractReceipt, ContractTransaction } from "ethers";
 
 import chalk from "chalk";
 import { IERC20, DSRoles } from "../../typechain";
@@ -80,8 +80,8 @@ export function getFactory<T>(name: string): Promise<T> {
 }
 
 /** Increases EVM time by `seconds` and mines a new block. */
-export async function increaseTimeAndMine(seconds: number) {
-  await ethers.provider.send("evm_increaseTime", [seconds]);
+export async function increaseTimeAndMine(seconds: BigNumberish) {
+  await ethers.provider.send("evm_increaseTime", [parseInt(seconds.toString())]);
   await ethers.provider.send("evm_mine", []);
 }
 

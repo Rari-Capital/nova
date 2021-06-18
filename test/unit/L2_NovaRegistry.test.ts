@@ -23,6 +23,7 @@ import {
   checkAllFunctionsForAuth,
   fakeStrategyAddress,
   computeExecHash,
+  increaseTimeAndMine,
 } from "../../utils/testUtils";
 
 describe("L2_NovaRegistry", function () {
@@ -269,6 +270,24 @@ describe("L2_NovaRegistry", function () {
       ).should.be.revertedWith("UNLOCK_ALREADY_SCHEDULED");
     });
 
+    it("does not allow unlocking requests with tokens removed", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(unlockDelay);
+
+      await L2_NovaRegistry.withdrawTokens(execHash);
+
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay).should.be.revertedWith(
+        "TOKENS_REMOVED"
+      );
+    });
+
     it("allows unlocking a valid request", async function () {
       const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
 
@@ -285,6 +304,217 @@ describe("L2_NovaRegistry", function () {
       await snapshotGasCost(
         L2_NovaRegistry.unlockTokens(execHash, await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS())
       );
+    });
+  });
+
+  describe("withdrawTokens", function () {
+    it("does not allow withdrawing from a random request", async function () {
+      await L2_NovaRegistry.withdrawTokens(
+        ethers.utils.solidityKeccak256([], [])
+      ).should.be.revertedWith("NOT_UNLOCKED");
+    });
+
+    it("does not allow withdrawing from a request before the unlock delay", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(
+        execHash,
+        await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
+      );
+
+      await L2_NovaRegistry.withdrawTokens(execHash).should.be.revertedWith("NOT_UNLOCKED");
+    });
+
+    it("allows withdrawing tokens from a simple request", async function () {
+      const [user] = signers;
+
+      const { execHash, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(unlockDelay);
+
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
+
+      await snapshotGasCost(L2_NovaRegistry.withdrawTokens(execHash));
+
+      // Balance should properly increase.
+      await calcUserIncrease().should.eventually.equal(weiOwed);
+    });
+
+    it("allows withdrawing from a request with input tokens", async function () {
+      const [user] = signers;
+
+      const { execHash, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {
+        inputTokens: [
+          { l2Token: MockETH.address, amount: 1337 },
+          { l2Token: MockETH.address, amount: 6969 },
+        ],
+      });
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(unlockDelay);
+
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
+
+      await snapshotGasCost(L2_NovaRegistry.withdrawTokens(execHash));
+
+      // Balance should properly increase.
+      await calcUserIncrease().should.eventually.equal(weiOwed);
+    });
+
+    it("does not allow withdrawing after tokens removed", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(unlockDelay);
+
+      await L2_NovaRegistry.withdrawTokens(execHash);
+
+      await L2_NovaRegistry.withdrawTokens(execHash).should.be.revertedWith("TOKENS_REMOVED");
+    });
+  });
+
+  describe("relockTokens", function () {
+    it("does not allow relocking random requests", async function () {
+      await L2_NovaRegistry.relockTokens(
+        ethers.utils.solidityKeccak256([], [])
+      ).should.be.revertedWith("NOT_CREATOR");
+    });
+
+    it("does not allow relocking a request that is not scheduled to unlock", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("NO_UNLOCK_SCHEDULED");
+    });
+
+    it("does not allow relocking tokens on a requst with tokens removed", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(unlockDelay);
+
+      // Withdraw tokens so the request has no tokens.
+      await L2_NovaRegistry.withdrawTokens(execHash);
+
+      await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("TOKENS_REMOVED");
+    });
+
+    it("allows relocking tokens", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      await snapshotGasCost(L2_NovaRegistry.relockTokens(execHash));
+
+      // Should be able to schedule an unlock again.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay).should.not.be.reverted;
+    });
+  });
+
+  describe("speedUpRequest", function () {
+    it("does not allow speeding up random requests", async function () {
+      await L2_NovaRegistry.speedUpRequest(
+        ethers.utils.solidityKeccak256([], []),
+        999999999
+      ).should.be.revertedWith("NOT_CREATOR");
+    });
+
+    it("does not allow speeding up rquests with tokens removed", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(unlockDelay);
+
+      await L2_NovaRegistry.withdrawTokens(execHash);
+
+      await L2_NovaRegistry.speedUpRequest(execHash, unlockDelay).should.be.revertedWith(
+        "TOKENS_REMOVED"
+      );
+    });
+
+    it("does not allow slowing down a request", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      await L2_NovaRegistry.speedUpRequest(
+        execHash,
+        // 1 second less than the min delay
+        (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).sub(1)
+      ).should.be.revertedWith("LESS_THAN_PREVIOUS_GAS_PRICE");
+    });
+
+    it("does now allow speeding up a request scheduled to unlock soon", async function () {
+      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(
+        execHash,
+        await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
+      );
+
+      await L2_NovaRegistry.speedUpRequest(execHash, gasPrice + 1).should.be.revertedWith(
+        "UNLOCK_BEFORE_SWITCH"
+      );
+    });
+
+    it("allows speeding up a request scheduled to unlock after switch", async function () {
+      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      // This unlock is scheduled far after the min delay
+      // meaning the speedUpRequest switch will happen after
+      // and the speedUpRequest call will NOT revert.
+      await L2_NovaRegistry.unlockTokens(
+        execHash,
+        (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).mul(2)
+      );
+
+      await MockETH.approve(
+        L2_NovaRegistry.address,
+        // We're increasing gas price by 1x
+        gasLimit
+      );
+
+      await snapshotGasCost(L2_NovaRegistry.speedUpRequest(execHash, gasPrice + 1));
+    });
+
+    it("allows speeding up a simple request", async function () {
+      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      await MockETH.approve(
+        L2_NovaRegistry.address,
+        // We're increasing gas price by 1x
+        gasLimit
+      );
+
+      await snapshotGasCost(L2_NovaRegistry.speedUpRequest(execHash, gasPrice + 1));
     });
   });
 });

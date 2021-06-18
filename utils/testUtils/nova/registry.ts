@@ -57,14 +57,16 @@ export async function createRequest(
     }[];
   }
 ) {
-  const {
-    calldata = "0x00",
-    strategy = fakeStrategyAddress,
-    gasLimit = 500_000,
-    gasPrice = gweiToWei(15),
-    tip = 1e15, // 0.0001 ETH default tip
-    inputTokens = [],
-  } = requestConfig;
+  // Init default values if not provided.
+  requestConfig.calldata = requestConfig.calldata ?? "0x00";
+  requestConfig.strategy = requestConfig.strategy ?? fakeStrategyAddress;
+  requestConfig.gasLimit = requestConfig.gasLimit ?? 500_000;
+  requestConfig.gasPrice = requestConfig.gasLimit ?? gweiToWei(15);
+  requestConfig.gasPrice = requestConfig.gasLimit ?? gweiToWei(15);
+  requestConfig.tip = requestConfig.tip ?? 1e15; // 0.0001 ETH default tip
+  requestConfig.inputTokens = requestConfig.inputTokens ?? [];
+
+  const { gasLimit, calldata, strategy, gasPrice, tip, inputTokens } = requestConfig;
 
   // Approve ETH to pay for the gas and tip.
   let weiOwed = gasLimit * gasPrice + tip;
