@@ -5,7 +5,6 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 
 import "./external/DSAuth.sol";
@@ -28,7 +27,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     IERC20 public immutable ETH;
 
     /// @param _ETH An ERC20 ETH you would like users to pay for gas with.
-    /// @param _messenger The L2 xDomainMessenger contract you want to use to recieve messages.
+    /// @param _messenger The L2 xDomainMessenger contract you want to use to receive messages.
     constructor(address _ETH, address _messenger) OVM_CrossDomainEnabled(_messenger) {
         ETH = IERC20(_ETH);
     }
@@ -79,7 +78,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @notice Emitted when `speedUpRequest` is called.
     /// @param newExecHash The execHash of the resubmitted request (copy of its uncle with an updated gasPrice).
     /// @param newNonce The nonce of the resubmitted request.
-    /// @param changeTimestamp When the uncled request (`execHash`) will have its tokens transfered to the resubmitted request (`newExecHash`).
+    /// @param changeTimestamp When the uncled request (`execHash`) will have its tokens transferred to the resubmitted request (`newExecHash`).
     event SpeedUpRequest(
         bytes32 indexed execHash,
         bytes32 indexed newExecHash,
@@ -140,7 +139,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         bool isClaimed;
     }
 
-    /// @notice Maps execHashes to the address of the user who recieved the input tokens for executing or withdrawing the request.
+    /// @notice Maps execHashes to the address of the user who received the input tokens for executing or withdrawing the request.
     /// @notice Will be address(0) if no one has executed or withdrawn the request yet.
     mapping(bytes32 => InputTokenRecipientData) public getRequestInputTokenRecipient;
 

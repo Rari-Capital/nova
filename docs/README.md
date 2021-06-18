@@ -242,7 +242,7 @@ Once the registry verifies that the `execHash` was previously registered (meanin
 
 - It will first pay for the gas cost of L1 execution by calculating the ETH to send to the `relayer` using `(gasLimit > gasUsed ? gasUsed : gasLimit) * gasPrice`. Any remaining ETH will be sent back to the user who requested execution (just like how gas is refunded on L1 if the gas limit exceeds gas used).
 
-- It will then send the `rewardRecipient` the tip. If the request reverted, the recipient will only recieve 50% of the tip and the creator will be refunded the remaining portion. **This is to incentivize relayers to act honestly.**
+- It will then send the `rewardRecipient` the tip. If the request reverted, the recipient will only receive 50% of the tip and the creator will be refunded the remaining portion. **This is to incentivize relayers to act honestly.**
 
 - If the request did not revert, the `rewardRecipient` will be marked as the input token recipient for this request so they can claim the input tokens via [`claimInputTokens`](#claim-input-tokens). If the request reverted the creator of the request will be marked as the input token recipient.
 

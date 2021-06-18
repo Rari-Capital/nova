@@ -12,7 +12,7 @@ contract DSRoles is DSAuth, DSAuthority {
     mapping(address => mapping(bytes4 => bool)) internal _public_capabilities;
 
     /*///////////////////////////////////////////////////////////////
-                         USER ROLE VIEW FUNCTIONS
+                        USER ROLE GETTER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     function isUserRoot(address who) public view returns (bool) {

@@ -66,7 +66,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @dev The address who called `exec`.
     /// @dev This will not be reset to address(0) after each execution completes.
     address public currentRelayer;
-    /// @dev The address of the strategy that is currenlty being called.
+    /// @dev The address of the strategy that is currently being called.
     /// @dev This will not be reset to address(0) after each execution completes.
     address internal currentlyExecutingStrategy;
 
@@ -78,7 +78,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @param nonce The nonce of the request.
     /// @param strategy The strategy requested in the request.
     /// @param l1calldata The calldata associated with the request.
-    /// @param l2Recipient The address of the account on L2 to recieve the tip/inputs.
+    /// @param l2Recipient The address of the account on L2 to receive the tip/inputs.
     /// @param deadline Timestamp after which the transaction will revert.
     function exec(
         uint256 nonce,
@@ -172,7 +172,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     function transferFromRelayer(address token, uint256 amount) external auth {
         // Only the currently executing strategy is allowed to call this function.
         // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
-        require(msg.sender == currentlyExecutingStrategy && currentExecHash != "", "NOT_EXECUTING");
+        require(msg.sender == currentlyExecutingStrategy && currentExecHash != bytes32(0), "NOT_EXECUTING");
 
         // Transfer the token from the relayer the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
         (bool success, bytes memory returndata) =
@@ -184,10 +184,10 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // Hard revert if the transferFrom call reverted.
         require(success, HARD_REVERT_TEXT);
 
-        // If it returned something, hard revert if it is not a postiive bool.
+        // If it returned something, hard revert if it is not a positive bool.
         if (returndata.length > 0) {
             if (returndata.length == 32) {
-                // It returned a bool, hard revert if it is not a postiive bool.
+                // It returned a bool, hard revert if it is not a positive bool.
                 require(abi.decode(returndata, (bool)), HARD_REVERT_TEXT);
             } else {
                 // It returned some data that was not a bool, let's hard revert.
