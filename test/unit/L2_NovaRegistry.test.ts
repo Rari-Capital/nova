@@ -6,8 +6,8 @@ import {
   MockCrossDomainMessenger,
   MockCrossDomainMessenger__factory,
   MockERC20,
-  SimpleDSGuard,
-  SimpleDSGuard__factory,
+  DSRoles,
+  DSRoles__factory,
   MockERC20__factory,
   L2NovaRegistry,
 } from "../../typechain";
@@ -21,6 +21,8 @@ import {
   assertInputTokensMatch,
   authorizeEveryFunction,
   checkAllFunctionsForAuth,
+  fakeStrategyAddress,
+  computeExecHash,
 } from "../../utils/testUtils";
 
 describe("L2_NovaRegistry", function () {
@@ -30,7 +32,7 @@ describe("L2_NovaRegistry", function () {
   });
 
   let L2_NovaRegistry: L2NovaRegistry;
-  let SimpleDSGuard: SimpleDSGuard;
+  let DSRoles: DSRoles;
 
   /// Mocks
   let MockETH: MockERC20;
@@ -66,31 +68,37 @@ describe("L2_NovaRegistry", function () {
       );
     });
 
-    describe("simpleDSGuard", function () {
-      it("should properly deploy a SimpleDSGuard", async function () {
-        SimpleDSGuard = await (await getFactory<SimpleDSGuard__factory>("SimpleDSGuard")).deploy();
+    it("should not allow calling stateful functions before permitted", async function () {
+      const [, nonDeployer] = signers;
+
+      await checkAllFunctionsForAuth(
+        L2_NovaRegistry,
+        nonDeployer,
+
+        // Ignore the following:
+        ["execCompleted"]
+      );
+    });
+
+    describe("dsRoles", function () {
+      it("should properly deploy a DSRoles", async function () {
+        DSRoles = await (await getFactory<DSRoles__factory>("DSRoles")).deploy();
       });
 
       it("should properly init the owner", async function () {
         const [deployer] = signers;
 
-        await SimpleDSGuard.owner().should.eventually.equal(deployer.address);
-      });
-
-      it("should not allow calling stateful functions before permitted", async function () {
-        const [, nonDeployer] = signers;
-
-        await checkAllFunctionsForAuth(L2_NovaRegistry, nonDeployer);
+        await DSRoles.owner().should.eventually.equal(deployer.address);
       });
 
       it("should properly permit authorization all stateful functions", async function () {
-        await authorizeEveryFunction(SimpleDSGuard, L2_NovaRegistry);
+        await authorizeEveryFunction(DSRoles, L2_NovaRegistry);
       });
 
       it("should allow setting the owner to null", async function () {
-        await SimpleDSGuard.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
+        await DSRoles.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
 
-        await SimpleDSGuard.owner().should.eventually.equal(ethers.constants.AddressZero);
+        await DSRoles.owner().should.eventually.equal(ethers.constants.AddressZero);
       });
     });
 
@@ -101,12 +109,12 @@ describe("L2_NovaRegistry", function () {
         await L2_NovaRegistry.owner().should.eventually.equal(deployer.address);
       });
 
-      it("should allow connecting to the SimpleDSGuard", async function () {
+      it("should allow connecting to the DSRoles", async function () {
         await L2_NovaRegistry.authority().should.eventually.equal(ethers.constants.AddressZero);
 
-        await L2_NovaRegistry.setAuthority(SimpleDSGuard.address).should.not.be.reverted;
+        await L2_NovaRegistry.setAuthority(DSRoles.address).should.not.be.reverted;
 
-        await L2_NovaRegistry.authority().should.eventually.equal(SimpleDSGuard.address);
+        await L2_NovaRegistry.authority().should.eventually.equal(DSRoles.address);
       });
 
       it("should allow setting the owner to null", async function () {
@@ -184,6 +192,99 @@ describe("L2_NovaRegistry", function () {
           { l2Token: MockETH.address, amount: 6 },
         ],
       }).should.be.revertedWith("TOO_MANY_INPUTS");
+    });
+  });
+
+  describe("requestExecWithTimeout", function () {
+    it("should allow a simple request with minimum timeout", async function () {
+      const unlockDelaySeconds = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      await snapshotGasCost(
+        L2_NovaRegistry.requestExecWithTimeout(
+          fakeStrategyAddress,
+          "0x00",
+          0,
+          0,
+          0,
+          [],
+          unlockDelaySeconds
+        )
+      );
+
+      await L2_NovaRegistry.getRequestUnlockTimestamp(
+        computeExecHash({
+          nonce: await (await L2_NovaRegistry.systemNonce()).toNumber(),
+          strategy: fakeStrategyAddress,
+          calldata: "0x00",
+          gasPrice: 0,
+        })
+      ).should.eventually.equal(
+        (await ethers.provider.getBlock("latest")).timestamp + unlockDelaySeconds.toNumber()
+      );
+    });
+
+    it("should revert if delay is too small", async function () {
+      L2_NovaRegistry.requestExecWithTimeout(
+        fakeStrategyAddress,
+        "0x00",
+        0,
+        0,
+        0,
+        [],
+        // 1 second less than the min delay
+        (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).sub(1)
+      ).should.be.revertedWith("DELAY_TOO_SMALL");
+    });
+  });
+
+  describe("unlockTokens", function () {
+    it("does not allow unlocking random requests", async function () {
+      await L2_NovaRegistry.unlockTokens(
+        ethers.utils.solidityKeccak256([], []),
+        999999999999
+      ).should.be.revertedWith("NOT_CREATOR");
+    });
+
+    it("does not allow unlocking requests with a small delay", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      await L2_NovaRegistry.unlockTokens(
+        execHash,
+        // 1 second less than the min delay
+        (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).sub(1)
+      ).should.be.revertedWith("DELAY_TOO_SMALL");
+    });
+
+    it("does not allow unlocking requests already scheduled to unlock", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      await L2_NovaRegistry.unlockTokens(
+        execHash,
+        await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
+      );
+
+      await L2_NovaRegistry.unlockTokens(
+        execHash,
+        await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()
+      ).should.be.revertedWith("UNLOCK_ALREADY_SCHEDULED");
+    });
+
+    it("allows unlocking a valid request", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      await snapshotGasCost(
+        L2_NovaRegistry.unlockTokens(execHash, await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS())
+      );
+    });
+
+    it("allows unlocking a valid request with input tokens", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {
+        inputTokens: [{ l2Token: MockETH.address, amount: 1337 }],
+      });
+
+      await snapshotGasCost(
+        L2_NovaRegistry.unlockTokens(execHash, await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS())
+      );
     });
   });
 });

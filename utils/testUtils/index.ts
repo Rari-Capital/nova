@@ -9,26 +9,33 @@ import { ethers } from "hardhat";
 import { Contract, ContractReceipt, ContractTransaction } from "ethers";
 
 import chalk from "chalk";
-import { IERC20, SimpleDSGuard } from "../../typechain";
+import { IERC20, DSRoles } from "../../typechain";
 import { Interface } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
-/** Authorizes anyone to call any function on a contract via a SimpleDSGuard. */
-export async function authorizeEveryFunction(SimpleDSGuard: SimpleDSGuard, contract: Contract) {
+/** Authorizes anyone to call any function on a contract via a DSRoles. */
+export async function authorizeEveryFunction(DSRoles: DSRoles, contract: Contract) {
   const statefulFragments = getAllStatefulFragments(contract.interface);
 
   for (const fragment of statefulFragments) {
-    await SimpleDSGuard.permitAnySource(contract.interface.getSighash(fragment));
+    await DSRoles.setPublicCapability(
+      contract.address,
+      contract.interface.getSighash(fragment),
+      true
+    );
   }
 }
 
 /** Calls all stateful functions in a contract to check if they revert with unauthorized.  */
-export async function checkAllFunctionsForAuth(contract: Contract, account: SignerWithAddress) {
+export async function checkAllFunctionsForAuth(
+  contract: Contract,
+  account: SignerWithAddress,
+  ignoreNames?: string[]
+) {
   const statefulFragments = getAllStatefulFragments(contract.interface);
 
   for (const fragment of statefulFragments) {
-    // Only stateful function in this project without auth.
-    if (fragment.name === "execCompleted") {
+    if (ignoreNames && ignoreNames.includes(fragment.name)) {
       continue;
     }
 

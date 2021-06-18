@@ -17,12 +17,12 @@ import {
   MockStrategy__factory,
   MockCrossDomainMessenger__factory,
   MockERC20,
-  SimpleDSGuard,
-  SimpleDSGuard__factory,
   MockERC20__factory,
   NoReturnValueERC20__factory,
   BadReturnValueERC20__factory,
   ReturnFalseERC20__factory,
+  DSRoles,
+  DSRoles__factory,
 } from "../../typechain";
 
 describe("L1_NovaExecutionManager", function () {
@@ -32,7 +32,7 @@ describe("L1_NovaExecutionManager", function () {
   });
 
   let L1_NovaExecutionManager: L1NovaExecutionManager;
-  let SimpleDSGuard: SimpleDSGuard;
+  let DSRoles: DSRoles;
 
   /// Mocks
   let MockERC20: MockERC20;
@@ -87,31 +87,25 @@ describe("L1_NovaExecutionManager", function () {
       );
     });
 
-    describe("simpleDSGuard", function () {
-      it("should properly deploy a SimpleDSGuard", async function () {
-        SimpleDSGuard = await (await getFactory<SimpleDSGuard__factory>("SimpleDSGuard")).deploy();
-      });
+    it("should not allow calling stateful functions before permitted", async function () {
+      const [, nonDeployer] = signers;
 
-      it("should properly init the owner", async function () {
-        const [deployer] = signers;
+      await checkAllFunctionsForAuth(L1_NovaExecutionManager, nonDeployer);
+    });
 
-        await SimpleDSGuard.owner().should.eventually.equal(deployer.address);
-      });
-
-      it("should not allow calling stateful functions before permitted", async function () {
-        const [, nonDeployer] = signers;
-
-        await checkAllFunctionsForAuth(L1_NovaExecutionManager, nonDeployer);
+    describe("dsRoles", function () {
+      it("should properly deploy a DSRoles", async function () {
+        DSRoles = await (await getFactory<DSRoles__factory>("DSRoles")).deploy();
       });
 
       it("should properly permit authorization all stateful functions", async function () {
-        await authorizeEveryFunction(SimpleDSGuard, L1_NovaExecutionManager);
+        await authorizeEveryFunction(DSRoles, L1_NovaExecutionManager);
       });
 
       it("should allow setting the owner to null", async function () {
-        await SimpleDSGuard.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
+        await DSRoles.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
 
-        await SimpleDSGuard.owner().should.eventually.equal(ethers.constants.AddressZero);
+        await DSRoles.owner().should.eventually.equal(ethers.constants.AddressZero);
       });
     });
 
@@ -122,14 +116,14 @@ describe("L1_NovaExecutionManager", function () {
         await L1_NovaExecutionManager.owner().should.eventually.equal(deployer.address);
       });
 
-      it("should allow connecting to the SimpleDSGuard", async function () {
+      it("should allow connecting to the DSRoles", async function () {
         await L1_NovaExecutionManager.authority().should.eventually.equal(
           ethers.constants.AddressZero
         );
 
-        await L1_NovaExecutionManager.setAuthority(SimpleDSGuard.address).should.not.be.reverted;
+        await L1_NovaExecutionManager.setAuthority(DSRoles.address).should.not.be.reverted;
 
-        await L1_NovaExecutionManager.authority().should.eventually.equal(SimpleDSGuard.address);
+        await L1_NovaExecutionManager.authority().should.eventually.equal(DSRoles.address);
       });
 
       it("should allow setting the owner to null", async function () {
