@@ -294,6 +294,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         require(!tokensRemoved, "TOKENS_REMOVED");
         // Make sure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
+        // Ensure the request is scheduled to unlock.
+        require(getRequestUnlockTimestamp[execHash] != 0, "NO_UNLOCK_SCHEDULED");
 
         // Reset the unlock timestamp to 0.
         delete getRequestUnlockTimestamp[execHash];
