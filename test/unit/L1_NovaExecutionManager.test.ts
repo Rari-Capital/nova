@@ -263,17 +263,15 @@ describe("L1_NovaExecutionManager", function () {
     it("should not allow reentrancy", async function () {
       const [user] = signers;
 
-      await snapshotGasCost(
-        L1_NovaExecutionManager.exec(
-          0,
-          MockStrategy.address,
-          MockStrategy.interface.encodeFunctionData(
-            "thisFunctionWillTryToReenterAndHardRevertIfFails"
-          ),
-          user.address,
-          9999999999999
-        )
-      ).should.revertedWith("HARD_REVERT");
+      await L1_NovaExecutionManager.exec(
+        0,
+        MockStrategy.address,
+        MockStrategy.interface.encodeFunctionData(
+          "thisFunctionWillTryToReenterAndHardRevertIfFails"
+        ),
+        user.address,
+        9999999999999
+      ).should.be.revertedWith("HARD_REVERT");
     });
 
     it("should properly execute a minimal exec", async function () {
