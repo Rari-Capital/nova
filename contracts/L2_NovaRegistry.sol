@@ -23,6 +23,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @notice The minimum delay between when `unlockTokens` and `withdrawTokens` can be called.
     uint256 public constant MIN_UNLOCK_DELAY_SECONDS = 300;
 
+    /// @notice The maximum amount of input tokens that may be added to a request.
+    uint256 public constant MAX_INPUT_TOKENS = 5;
+
     /// @notice The ERC20 users must use to pay for the L1 gas usage of request.
     IERC20 public immutable ETH;
 
@@ -175,7 +178,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @param gasLimit The gas limit a relayer should use on L1.
     /// @param gasPrice The gas price (in wei) a relayer should use on L1.
     /// @param tip The additional wei to pay as a tip for any relayer that executes this request.
-    /// @param inputTokens An array of 5 or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2). `inputTokens` will not be awarded if the `strategy` reverts on L1.
+    /// @param inputTokens An array of MAX_INPUT_TOKENS or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2). `inputTokens` will not be awarded if the `strategy` reverts on L1.
     /// @return execHash The "execHash" (unique identifier) for this request.
     function requestExec(
         address strategy,
@@ -185,8 +188,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         uint256 tip,
         InputToken[] calldata inputTokens
     ) public nonReentrant auth returns (bytes32 execHash) {
-        // Do not allow more than 5 input tokens.
-        require(inputTokens.length <= 5, "TOO_MANY_INPUTS");
+        // Do not allow more than MAX_INPUT_TOKENS input tokens.
+        require(inputTokens.length <= MAX_INPUT_TOKENS, "TOO_MANY_INPUTS");
 
         // Increment global nonce.
         systemNonce += 1;
