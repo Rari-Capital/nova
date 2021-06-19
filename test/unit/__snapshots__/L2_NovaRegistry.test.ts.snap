@@ -10,9 +10,9 @@ exports[`L2_NovaRegistry requestExec allows making a simple request with one inp
 
 exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183968`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `250713`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `250799`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `250702`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `250788`;
 
 exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `62754`;
 

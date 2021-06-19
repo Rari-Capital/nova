@@ -350,6 +350,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         // Ensure tokens have not already been removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
+        // Ensure the request has not already been sped up.
+        require(getRequestUncleDeathTimestamp[execHash] == 0, "ALREADY_SPED_UP");
 
         // Get the previous gas price.
         uint256 previousGasPrice = getRequestGasPrice[execHash];
