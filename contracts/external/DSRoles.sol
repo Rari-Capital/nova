@@ -6,6 +6,20 @@ import "./DSAuth.sol";
 /// @notice A DSAuthority for up to 256 roles.
 /// @author DappHub (https://github.com/dapphub/ds-roles)
 contract DSRoles is DSAuth, DSAuthority {
+    /*///////////////////////////////////////////////////////////////
+                                  EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event UserRootUpdated(address indexed who, bool enabled);
+    event UserRoleUpdated(address indexed who, uint8 indexed role, bool enabled);
+
+    event PublicCapabilityUpdated(address indexed code, bytes4 indexed sig, bool enabled);
+    event RoleCapabilityUpdated(uint8 indexed role, address indexed code, bytes4 indexed sig, bool enabled);
+
+    /*///////////////////////////////////////////////////////////////
+                                  ROLES
+    //////////////////////////////////////////////////////////////*/
+
     mapping(address => bool) internal _root_users;
     mapping(address => bytes32) internal _user_roles;
     mapping(address => mapping(bytes4 => bytes32)) internal _capability_roles;
@@ -52,11 +66,13 @@ contract DSRoles is DSAuth, DSAuthority {
     }
 
     /*///////////////////////////////////////////////////////////////
-                         ROLE MODIFIER FUNCTIONS
+                      USER/ROLE MODIFIER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     function setRootUser(address who, bool enabled) external auth {
         _root_users[who] = enabled;
+
+        emit UserRootUpdated(who, enabled);
     }
 
     function setUserRole(
@@ -71,6 +87,8 @@ contract DSRoles is DSAuth, DSAuthority {
         } else {
             _user_roles[who] = last_roles & BITNOT(shifted);
         }
+
+        emit UserRoleUpdated(who, role, enabled);
     }
 
     function setPublicCapability(
@@ -79,6 +97,8 @@ contract DSRoles is DSAuth, DSAuthority {
         bool enabled
     ) public auth {
         _public_capabilities[code][sig] = enabled;
+
+        emit PublicCapabilityUpdated(code, sig, enabled);
     }
 
     function setRoleCapability(
@@ -94,6 +114,8 @@ contract DSRoles is DSAuth, DSAuthority {
         } else {
             _capability_roles[code][sig] = last_roles & BITNOT(shifted);
         }
+
+        emit RoleCapabilityUpdated(role, code, sig, enabled);
     }
 
     /*///////////////////////////////////////////////////////////////
