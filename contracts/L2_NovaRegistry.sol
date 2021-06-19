@@ -4,19 +4,19 @@ pragma abicoder v2;
 
 import "ovm-safeerc20/OVM_SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 
 import "./external/Multicall.sol";
 import "./external/DSAuth.sol";
-import "./external/LowGasSafeMath.sol";
 
 import "./libraries/NovaExecHashLib.sol";
 
 contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Multicall {
     using OVM_SafeERC20 for IERC20;
-    using LowGasSafeMath for uint256;
+    using SafeMath for uint256;
 
     /*///////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -421,7 +421,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard, Mul
         // The amount of ETH to pay as the tip to the rewardRecepient.
         // If the transaction reverted the recipient will get 70% of the tip
         // and the creator will be refunded the remaining 30%.
-        uint256 recipientTip = reverted ? (tip.mul(7) / 10) : tip;
+        uint256 recipientTip = reverted ? (tip.mul(7).div(10)) : tip;
 
         // Refund the creator any unused gas + refund some of the tip if reverted
         ETH.safeTransfer(creator, gasLimit.mul(gasPrice).sub(gasPayment).add(tip.sub(recipientTip)));

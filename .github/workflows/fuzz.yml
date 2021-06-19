@@ -13,7 +13,6 @@ jobs:
           - L1_NovaExecutionManager
           - L2_NovaRegistry
           - SimpleDSGuard
-          - LowGasSafeMath
 
     steps:
       - uses: actions/checkout@v2
