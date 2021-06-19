@@ -4,17 +4,17 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 
 import "./external/DSAuth.sol";
-import "./external/LowGasSafeMath.sol";
 
 import "./libraries/NovaExecHashLib.sol";
 
 contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    using LowGasSafeMath for uint256;
+    using SafeMath for uint256;
 
     /*///////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -439,7 +439,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         // The amount of ETH to pay as the tip to the rewardRecepient.
         // If the transaction reverted the recipient will get 50% of the tip
         // and the creator will be refunded the remaining portion.
-        uint256 recipientTip = reverted ? (tip / 2) : tip;
+        uint256 recipientTip = reverted ? (tip.div(2)) : tip;
 
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
 

@@ -2,22 +2,22 @@
 
 exports[`L2_NovaRegistry relockTokens allows relocking tokens 1`] = `30054`;
 
-exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `330835`;
+exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `330820`;
 
-exports[`L2_NovaRegistry requestExec allows making a simple request 1`] = `241034`;
+exports[`L2_NovaRegistry requestExec allows making a simple request 1`] = `241027`;
 
-exports[`L2_NovaRegistry requestExec allows making a simple request with one input token 1`] = `279777`;
+exports[`L2_NovaRegistry requestExec allows making a simple request with one input token 1`] = `279766`;
 
-exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183968`;
+exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `183970`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `250799`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `250787`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `250788`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `250776`;
 
-exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `62754`;
+exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `62759`;
 
-exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request with input tokens 1`] = `62754`;
+exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request with input tokens 1`] = `62759`;
 
-exports[`L2_NovaRegistry withdrawTokens allows withdrawing from a request with input tokens 1`] = `108631`;
+exports[`L2_NovaRegistry withdrawTokens allows withdrawing from a request with input tokens 1`] = `108616`;
 
-exports[`L2_NovaRegistry withdrawTokens allows withdrawing tokens from a simple request 1`] = `90456`;
+exports[`L2_NovaRegistry withdrawTokens allows withdrawing tokens from a simple request 1`] = `90449`;
