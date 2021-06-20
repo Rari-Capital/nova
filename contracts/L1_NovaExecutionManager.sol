@@ -46,17 +46,25 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     }
 
     /*///////////////////////////////////////////////////////////////
+                        EXECUTION CONTEXT CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The 'default' value for `currentExecHash`.
+    /// @notice Outside of an active `exec` call `currentExecHash` will always equal DEFAULT_EXECHASH.
+    bytes32 public constant DEFAULT_EXECHASH = 0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEF;
+
+    /*///////////////////////////////////////////////////////////////
                         EXECUTION CONTEXT STORAGE
     //////////////////////////////////////////////////////////////*/
 
     /// @dev The execHash computed from the currently executing call to `exec`.
-    /// @dev This will be reset after every execution.
-    bytes32 public currentExecHash;
+    /// @dev This will be reset to DEFAULT_EXECHASH after each execution completes.
+    bytes32 public currentExecHash = DEFAULT_EXECHASH;
     /// @dev The address who called `exec`.
-    /// @dev This will not be reset to address(0) after each execution completes.
+    /// @dev This will not be reset after each execution completes.
     address public currentRelayer;
-    /// @dev The address of the strategy that is currenlty being called.
-    /// @dev This will not be reset to address(0) after each execution completes.
+    /// @dev The address of the strategy that is currently being called.
+    /// @dev This will not be reset after each execution completes.
     address internal currentlyExecutingStrategy;
 
     /*///////////////////////////////////////////////////////////////
@@ -97,9 +105,8 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // Revert if the strategy hard reverted.
         require(keccak256(returnData) != HARD_REVERT_HASH, HARD_REVERT_TEXT);
 
-        // Reset execution context.
-        // We reset only one of the execution context variables because it will cost us less gas to use a previously set storage slot on all future runs.
-        delete currentExecHash;
+        // Reset currentExecHash to default so `transferFromRelayer` becomes uncallable again.
+        currentExecHash = DEFAULT_EXECHASH;
 
         // Estimate how much gas the relayer will have paid (not accounting for refunds):
         uint256 gasUsedEstimate =
@@ -134,9 +141,12 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @param token The ER20-compliant token to transfer to the currently executing strategy.
     /// @param amount The amount of `token` (scaled by its decimals)  to transfer to the currently executing strategy.
     function transferFromRelayer(address token, uint256 amount) external auth {
-        // Only the currently executing strategy is allowed to call this method.
-        // Must check that the execHash is not empty first to make sure that there is an execution in-progress.
-        require(msg.sender == currentlyExecutingStrategy && currentExecHash != "", "NOT_EXECUTING");
+        // Only the currently executing strategy is allowed to call this function.
+        require(msg.sender == currentlyExecutingStrategy, "NOT_CURRENT_STRATEGY");
+
+        // Ensure currentExecHash is not set to DEFAULT_EXECHASH as otherwise
+        // a strategy could call this function outside of an active execution.
+        require(currentExecHash != DEFAULT_EXECHASH, "NO_ACTIVE_EXECUTION");
 
         // Transfer the token from the relayer the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
         (bool success, bytes memory returndata) =
