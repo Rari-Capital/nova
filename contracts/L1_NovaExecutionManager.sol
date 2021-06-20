@@ -6,8 +6,8 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
-import "./L2_NovaRegistry.sol";
 
+import "./L2_NovaRegistry.sol";
 import "./external/DSAuth.sol";
 import "./libraries/NovaExecHashLib.sol";
 import "./libraries/SigLib.sol";
