@@ -13,7 +13,7 @@
 
   - Almost all of the current L2-L1 composability protocols are modeled after systems that were designed for cross-chain swaps and transactions. They don't take advantage of the extra flexibliity and security we inherit from rollups.
 
-    - Many of these solutions rely on [HTLCs](https://www.youtube.com/watch?v=qUAyW4pdooA) which are not unusable directly via contracts as they rely on the active involvement of two parties and critically: **the sender's signature (contract's do NOT have signatures!)**
+    - Many of these solutions rely on [HTLCs](https://www.youtube.com/watch?v=qUAyW4pdooA) which are not usable directly via contracts as they rely on the active involvement of two parties and critically: **the sender's signature (contract's do NOT have signatures!)**
 
     - Other solutions rely on modified trust assumptions via bonds, etc. These solutions simply do not meet the **ironclad security needs of DeFi developers.**
 
@@ -128,13 +128,3 @@ _In summary, these two contracts enable what could be described as "cross-layer 
 ## External Assumptions
 
 - [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html) does not contain any flaws that would allow third parties to tamper with or forge the origin of a message.
-
-- Relayers simulate the end to end proccess of executing a request and receiving the rewards before executing them so they do not lose funds attempting to execute malicious requests.
-
-- Relayers specify deadlines of less than 5 minutes when relaying via the execution manager so they do not lose funds attempting to execute a request after its tokens have been withdrawn.
-
-- Relayers are coordinating off-chain to ensure that multiple relayers don't lose funds trying to execute the same request.
-
-  - Relayers executing the same request **does not affect users**— only relayers who may end up double-executing a request which results in **only one relayer being paid.** This is considered a core assumption as without it, relaying could become risky and unappealing.
-
-  - Our initial implementation of the Nova protocol will use a team-controlled whitelist to ensure a group of trusted relayers are coordinated, but future iterations could use cryptoeconomic incentivies or leader election auctions to prevent coordination issues from occuring.
