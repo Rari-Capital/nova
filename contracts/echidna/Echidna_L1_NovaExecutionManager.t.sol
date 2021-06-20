@@ -22,8 +22,11 @@ contract Echidna_L1_NovaExecutionManager {
             // If the call succeeded, something is wrong:
             assert(false);
         } catch Error(string memory reason) {
-            // If the called errored, it should be a NOT_EXECUTING error. If not, something is wrong:
-            assert(keccak256(abi.encodePacked(reason)) == keccak256("NOT_EXECUTING"));
+            // If the called errored, it should be a NO_ACTIVE_EXECUTION/NOT_CURRENT_STRATEGY error. If not, something is wrong:
+            bytes32 hashedReason = keccak256(abi.encodePacked(reason));
+            assert(
+                hashedReason == keccak256("NO_ACTIVE_EXECUTION") || hashedReason == keccak256("NOT_CURRENT_STRATEGY")
+            );
         }
     }
 
@@ -36,7 +39,7 @@ contract Echidna_L1_NovaExecutionManager {
     ) external {
         try executionManager.exec(nonce, strategy, l1calldata, recipient, deadline) {
             // ExecHash should always be reset:
-            assert(executionManager.currentExecHash() == "");
+            assert(executionManager.currentExecHash() == executionManager.DEFAULT_EXECHASH());
 
             // Relayer should be us and not reset:
             assert(executionManager.currentRelayer() == address(this));

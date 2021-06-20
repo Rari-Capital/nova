@@ -409,7 +409,7 @@ describe("L1_NovaExecutionManager", function () {
       await L1_NovaExecutionManager.transferFromRelayer(
         MockERC20.address,
         0
-      ).should.be.revertedWith("NOT_EXECUTING");
+      ).should.be.revertedWith("NOT_CURRENT_STRATEGY");
     });
 
     it("will not allow the prevous strategy to call if not executing", async function () {
@@ -417,7 +417,7 @@ describe("L1_NovaExecutionManager", function () {
         L1_NovaExecutionManager.address,
         MockERC20.address,
         1
-      ).should.be.revertedWith("NOT_EXECUTING");
+      ).should.be.revertedWith("NO_ACTIVE_EXECUTION");
     });
 
     it("will not allow a random contract to call during execution", async function () {
