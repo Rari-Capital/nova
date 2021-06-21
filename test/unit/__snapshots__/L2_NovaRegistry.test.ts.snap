@@ -1,5 +1,17 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`L2_NovaRegistry execCompleted allows completing a request that overflows gas usage 1`] = `106225`;
+
+exports[`L2_NovaRegistry execCompleted allows completing a request with input tokens 1`] = `109035`;
+
+exports[`L2_NovaRegistry execCompleted allows completing a resubmitted request 1`] = `113418`;
+
+exports[`L2_NovaRegistry execCompleted allows completing a reverted request with input tokens 1`] = `109107`;
+
+exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = `126135`;
+
+exports[`L2_NovaRegistry execCompleted allows completing an uncled request before it dies 1`] = `109035`;
+
 exports[`L2_NovaRegistry relockTokens allows relocking tokens 1`] = `30054`;
 
 exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `330820`;
@@ -12,7 +24,7 @@ exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request wi
 
 exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `250787`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `250776`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `250800`;
 
 exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `62759`;
 

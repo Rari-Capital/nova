@@ -13,7 +13,8 @@ import {
 export const fakeStrategyAddress = "0x4200000000000000000000000000000000000069";
 export const fakeExecutionManagerAddress = "0xDeADBEEF1337caFEBAbE1337CacAfACe1337C0dE";
 
-/** Checks that locally generated input tokens array matches one returned from ethers
+/**
+ * Checks that locally generated input tokens array matches one returned from ethers
  * Difficult to compare BNs in an array like this to numbers which is why you need this function.
  */
 export function assertInputTokensMatch(
@@ -38,14 +39,15 @@ export function assertInputTokensMatch(
   }
 }
 
-/** Small helper function to create a request and return its execHash.
+/**
+ * Small helper function to create a request and return its execHash.
  * Will revert if creating the request reverts.
  */
 export async function createRequest(
   MockETH: MockERC20,
   L2_NovaRegistry: L2NovaRegistry,
 
-  requestConfig: {
+  config: {
     calldata?: string;
     strategy?: string;
     gasLimit?: number;
@@ -58,20 +60,20 @@ export async function createRequest(
   }
 ) {
   // Init default values if not provided.
-  requestConfig.calldata = requestConfig.calldata ?? "0x00";
-  requestConfig.strategy = requestConfig.strategy ?? fakeStrategyAddress;
-  requestConfig.gasLimit = requestConfig.gasLimit ?? 500_000;
-  requestConfig.gasPrice = requestConfig.gasLimit ?? gweiToWei(15);
-  requestConfig.gasPrice = requestConfig.gasLimit ?? gweiToWei(15);
-  requestConfig.tip = requestConfig.tip ?? 1e15; // 0.0001 ETH default tip
-  requestConfig.inputTokens = requestConfig.inputTokens ?? [];
+  config.calldata = config.calldata ?? "0x00";
+  config.strategy = config.strategy ?? fakeStrategyAddress;
+  config.gasLimit = config.gasLimit ?? 500_000;
+  config.gasPrice = config.gasLimit ?? gweiToWei(15);
+  config.gasPrice = config.gasLimit ?? gweiToWei(15);
+  config.tip = config.tip ?? 1e15; // 0.0001 ETH default tip
+  config.inputTokens = config.inputTokens ?? [];
 
-  const { gasLimit, calldata, strategy, gasPrice, tip, inputTokens } = requestConfig;
+  const { gasLimit, calldata, strategy, gasPrice, tip, inputTokens } = config;
 
   // Approve ETH to pay for the gas and tip.
   let weiOwed = gasLimit * gasPrice + tip;
   await MockETH.approve(L2_NovaRegistry.address, weiOwed);
-
+  config;
   // Approve and store input tokens if necessary.
   let inputTokenERC20s: MockERC20[] = [];
   if (inputTokens.length > 0) {
@@ -94,10 +96,7 @@ export async function createRequest(
     }
   }
 
-  // Make the request.
   const tx = L2_NovaRegistry.requestExec(strategy, calldata, gasLimit, gasPrice, tip, inputTokens);
-
-  // Wait for the request to terminate.
   await tx;
 
   // Get the nonce associated with the request.
@@ -117,29 +116,75 @@ export async function createRequest(
     nonce,
     inputTokenERC20s,
     weiOwed,
-    ...requestConfig,
+    ...config,
   };
 }
 
-/** Small harness function to simplify calling execCompleted
+/**
+ * Small helper function to speed up a request
+ * and return the sped up request's execHash.
+ * Will revert if speedUpRequest reverts.
+ */
+export async function speedUpRequest(
+  MockETH: MockERC20,
+  L2_NovaRegistry: L2NovaRegistry,
+
+  config: {
+    execHash: string;
+    gasPrice: number;
+    gasLimit: number;
+    gasDelta?: number;
+  }
+) {
+  // Init default values if not provided.
+  config.gasDelta = config.gasDelta ?? gweiToWei(10);
+
+  const { execHash, gasPrice, gasLimit, gasDelta } = config;
+
+  const newGasPrice = gasPrice + gasDelta;
+
+  // Approve extra ETH for gas.
+  await MockETH.approve(L2_NovaRegistry.address, gasDelta * gasLimit);
+
+  const tx = L2_NovaRegistry.speedUpRequest(execHash, gasPrice + gasDelta);
+  await tx;
+
+  // Get data associated with the uncled request.
+  const uncleStrategy = await L2_NovaRegistry.getRequestStrategy(execHash);
+  const uncleCalldata = await L2_NovaRegistry.getRequestCalldata(execHash);
+
+  // Get the nonce associated with the resubmitted request.
+  const resubmittedNonce = await (await L2_NovaRegistry.systemNonce()).toNumber();
+
+  // Get the execHash associated with the request
+  const resubmittedExecHash = computeExecHash({
+    nonce: resubmittedNonce,
+    strategy: uncleStrategy,
+    calldata: uncleCalldata,
+    gasPrice: gasPrice + gasDelta,
+  });
+
+  return { tx, resubmittedExecHash, uncleExecHash: execHash, newGasPrice, ...config };
+}
+
+/**
+ * Small helper function to simplify calling execCompleted
  * as though you were the execution manager.
+ * Will revert if execCompleted reverts.
  */
 export async function completeRequest(
   MockCrossDomainMessenger: MockCrossDomainMessenger,
   L2_NovaRegistry: L2NovaRegistry,
 
-  {
-    execHash,
-    rewardRecipient,
-    reverted,
-    gasUsed,
-  }: {
+  config: {
     execHash: string;
     rewardRecipient: string;
     reverted: boolean;
     gasUsed: number;
   }
-): Promise<ContractTransaction> {
+) {
+  const { execHash, rewardRecipient, reverted, gasUsed } = config;
+
   await MockCrossDomainMessenger.sendMessageWithSender(
     L2_NovaRegistry.address,
     L2_NovaRegistry.interface.encodeFunctionData("execCompleted", [
@@ -152,5 +197,8 @@ export async function completeRequest(
     fakeExecutionManagerAddress
   );
 
-  return MockCrossDomainMessenger.relayCurrentMessage();
+  const tx = MockCrossDomainMessenger.relayCurrentMessage();
+  await tx;
+
+  return { tx, ...config };
 }
