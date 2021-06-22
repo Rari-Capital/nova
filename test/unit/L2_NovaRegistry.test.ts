@@ -843,11 +843,7 @@ describe("L2_NovaRegistry", function () {
     it("does not allow completing a resubmitted request with an uncle that has no tokens", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, gasPrice, gasLimit, tip } = await createRequest(
-        MockETH,
-        L2_NovaRegistry,
-        {}
-      );
+      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       const { resubmittedExecHash, uncleExecHash } = await speedUpRequest(
         MockETH,
@@ -941,5 +937,117 @@ describe("L2_NovaRegistry", function () {
     });
   });
 
+  describe("claimInputTokens", function () {
+    it("does not allow claiming a random request", async function () {
+      await L2_NovaRegistry.claimInputTokens(
+        ethers.utils.solidityKeccak256([], [])
+      ).should.be.revertedWith("NO_RECIPIENT");
+    });
+
+    it("does not allow claiming a request not executed yet", async function () {
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      await L2_NovaRegistry.claimInputTokens(execHash).should.be.revertedWith("NO_RECIPIENT");
+    });
+
+    it("allows claiming input tokens for an executed request", async function () {
+      const [, rewardRecipient] = signers;
+
+      const { execHash, inputTokens } = await createRequest(MockETH, L2_NovaRegistry, {
+        inputTokens: [
+          { l2Token: MockETH.address, amount: 1337 },
+          { l2Token: MockETH.address, amount: 6969 },
+        ],
+      });
+
+      await completeRequest(
+        MockCrossDomainMessenger,
+        L2_NovaRegistry,
+
+        {
+          execHash,
+
+          rewardRecipient: rewardRecipient.address,
+
+          reverted: false,
+
+          gasUsed: 50000,
+        }
+      );
+
+      const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
+
+      await snapshotGasCost(L2_NovaRegistry.claimInputTokens(execHash));
+
+      // Ensure the balance of the reward recipient increased properly.
+      await calcRecipientIncrease().should.eventually.equal(
+        inputTokens.reduce((a, inputToken) => a + inputToken.amount, 0)
+      );
+    });
+
+    it("allows claiming input tokens for a reverted request", async function () {
+      const [user, rewardRecipient] = signers;
+
+      const { execHash, inputTokens } = await createRequest(MockETH, L2_NovaRegistry, {
+        inputTokens: [
+          { l2Token: MockETH.address, amount: 1337 },
+          { l2Token: MockETH.address, amount: 6969 },
+        ],
+      });
+
+      await completeRequest(
+        MockCrossDomainMessenger,
+        L2_NovaRegistry,
+
+        {
+          execHash,
+
+          rewardRecipient: rewardRecipient.address,
+
+          reverted: true,
+
+          gasUsed: 50000,
+        }
+      );
+
+      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
+
+      await snapshotGasCost(L2_NovaRegistry.claimInputTokens(execHash));
+
+      // Ensure the balance of the user increased properly.
+      await calcUserIncrease().should.eventually.equal(
+        inputTokens.reduce((a, inputToken) => a + inputToken.amount, 0)
+      );
+    });
+
+    it("does not allow claiming a request that is already claimed", async function () {
+      const [, rewardRecipient] = signers;
+
+      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {
+        inputTokens: [{ l2Token: MockETH.address, amount: 420 }],
+      });
+
+      await completeRequest(
+        MockCrossDomainMessenger,
+        L2_NovaRegistry,
+
+        {
+          execHash,
+
+          rewardRecipient: rewardRecipient.address,
+
+          reverted: false,
+
+          gasUsed: 50000,
+        }
+      );
+
+      // Claim once.
+      await L2_NovaRegistry.claimInputTokens(execHash);
+
+      // Try claiming again.
+      await L2_NovaRegistry.claimInputTokens(execHash).should.be.revertedWith("ALREADY_CLAIMED");
+    });
+  });
   });
 });

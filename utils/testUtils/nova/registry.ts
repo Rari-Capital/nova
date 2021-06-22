@@ -55,7 +55,7 @@ export async function createRequest(
     tip?: number;
     inputTokens?: {
       l2Token: string;
-      amount: BigNumberish;
+      amount: number;
     }[];
   }
 ) {
@@ -85,7 +85,7 @@ export async function createRequest(
 
       if (inputTokenERC20.address === MockETH.address) {
         // Add the amount to the existing approval.
-        weiOwed += parseInt(inputToken.amount.toString());
+        weiOwed += inputToken.amount;
         inputTokenERC20.approve(L2_NovaRegistry.address, weiOwed);
       } else {
         // Approve the input token to the registry.
