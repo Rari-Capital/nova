@@ -1049,5 +1049,8 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.claimInputTokens(execHash).should.be.revertedWith("ALREADY_CLAIMED");
     });
   });
+
+  describe("areTokensRemoved", function () {
+    // TODO
   });
 });
