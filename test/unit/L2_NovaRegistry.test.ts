@@ -552,20 +552,12 @@ describe("L2_NovaRegistry", function () {
     it("does not allow completing a random request", async function () {
       const [, rewardRecipient] = signers;
 
-      await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: ethers.utils.solidityKeccak256([], []),
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      ).should.be.revertedWith("NOT_CREATED");
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: ethers.utils.solidityKeccak256([], []),
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      }).should.be.revertedWith("NOT_CREATED");
     });
 
     it("does not allow completing a request with tokens removed", async function () {
@@ -583,20 +575,12 @@ describe("L2_NovaRegistry", function () {
 
       await L2_NovaRegistry.withdrawTokens(execHash);
 
-      await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      ).should.be.revertedWith("TOKENS_REMOVED");
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      }).should.be.revertedWith("TOKENS_REMOVED");
     });
 
     it("does not allow completing a resubmitted request with an alive uncle", async function () {
@@ -610,20 +594,12 @@ describe("L2_NovaRegistry", function () {
         gasLimit,
       });
 
-      await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: resubmittedExecHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      ).should.be.revertedWith("TOKENS_REMOVED");
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: resubmittedExecHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      }).should.be.revertedWith("TOKENS_REMOVED");
     });
 
     it("allows completing a simple request", async function () {
@@ -638,20 +614,12 @@ describe("L2_NovaRegistry", function () {
       const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
       const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
-      const { tx, gasUsed } = await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: execHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      );
+      const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      });
 
       await snapshotGasCost(tx);
 
@@ -668,20 +636,12 @@ describe("L2_NovaRegistry", function () {
       const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       const executeRequest = () =>
-        completeRequest(
-          MockCrossDomainMessenger,
-          L2_NovaRegistry,
-
-          {
-            execHash,
-
-            rewardRecipient: rewardRecipient.address,
-
-            reverted: false,
-
-            gasUsed: 50000,
-          }
-        );
+        completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+          execHash,
+          rewardRecipient: rewardRecipient.address,
+          reverted: false,
+          gasUsed: 50000,
+        });
 
       // Execute the request once.
       await executeRequest();
@@ -702,20 +662,12 @@ describe("L2_NovaRegistry", function () {
       const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
       const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
-      const { tx } = await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: execHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: gasLimit * 10000,
-        }
-      );
+      const { tx } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: gasLimit * 10000,
+      });
 
       await snapshotGasCost(tx);
 
@@ -742,20 +694,12 @@ describe("L2_NovaRegistry", function () {
       const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
       const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
-      const { tx, gasUsed } = await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: execHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      );
+      const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      });
 
       await snapshotGasCost(tx);
 
@@ -782,20 +726,12 @@ describe("L2_NovaRegistry", function () {
       const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
       const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
-      const { tx, gasUsed } = await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: execHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: true,
-
-          gasUsed: 50000,
-        }
-      );
+      const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: true,
+        gasUsed: 50000,
+      });
 
       await snapshotGasCost(tx);
 
@@ -833,20 +769,12 @@ describe("L2_NovaRegistry", function () {
       const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
       const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
-      const { tx, gasUsed } = await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: uncleExecHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      );
+      const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: uncleExecHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      });
 
       await snapshotGasCost(tx);
 
@@ -874,39 +802,23 @@ describe("L2_NovaRegistry", function () {
       );
 
       // Execute the uncle
-      await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: uncleExecHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      );
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: uncleExecHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      });
 
       // Forward time to be after the delay.
       await increaseTimeAndMine(await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS());
 
       // Completing the resubmitted request should fail.
-      await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: resubmittedExecHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      ).should.be.revertedWith("TOKENS_REMOVED");
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: resubmittedExecHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      }).should.be.revertedWith("TOKENS_REMOVED");
     });
 
     it("allows completing a resubmitted request", async function () {
@@ -930,20 +842,12 @@ describe("L2_NovaRegistry", function () {
       const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
       const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
-      const { tx, gasUsed } = await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash: resubmittedExecHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      );
+      const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: resubmittedExecHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      });
 
       await snapshotGasCost(tx);
 
@@ -978,20 +882,12 @@ describe("L2_NovaRegistry", function () {
         ],
       });
 
-      await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      );
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      });
 
       const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
@@ -1013,20 +909,12 @@ describe("L2_NovaRegistry", function () {
         ],
       });
 
-      await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: true,
-
-          gasUsed: 50000,
-        }
-      );
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: true,
+        gasUsed: 50000,
+      });
 
       const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
 
@@ -1045,20 +933,12 @@ describe("L2_NovaRegistry", function () {
         inputTokens: [{ l2Token: MockETH.address, amount: 420 }],
       });
 
-      await completeRequest(
-        MockCrossDomainMessenger,
-        L2_NovaRegistry,
-
-        {
-          execHash,
-
-          rewardRecipient: rewardRecipient.address,
-
-          reverted: false,
-
-          gasUsed: 50000,
-        }
-      );
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      });
 
       // Claim once.
       await L2_NovaRegistry.claimInputTokens(execHash);
