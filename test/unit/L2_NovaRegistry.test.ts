@@ -519,6 +519,24 @@ describe("L2_NovaRegistry", function () {
 
       await snapshotGasCost(tx);
     });
+
+    it("should not allow speeding up a request multiple times", async function () {
+      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+
+      // Speed up the request once.
+      await speedUpRequest(MockETH, L2_NovaRegistry, {
+        execHash,
+        gasPrice,
+        gasLimit,
+      });
+
+      // Speeding up the request a second time should revert.
+      await speedUpRequest(MockETH, L2_NovaRegistry, {
+        execHash,
+        gasPrice,
+        gasLimit,
+      }).should.be.revertedWith("ALREADY_SPED_UP");
+    });
   });
 
   describe("execCompleted", function () {
