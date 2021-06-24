@@ -185,16 +185,15 @@ describe("L2_NovaRegistry", function () {
       assertInputTokensMatch(inputTokens, await L2_NovaRegistry.getRequestInputTokens(execHash));
     });
 
-    it("does not allow making a request with >5 input tokens", async function () {
+    it("does not allow making a request with more than the max input tokens", async function () {
       await createRequest(MockETH, L2_NovaRegistry, {
-        inputTokens: [
-          { l2Token: MockETH.address, amount: 1 },
-          { l2Token: MockETH.address, amount: 2 },
-          { l2Token: MockETH.address, amount: 3 },
-          { l2Token: MockETH.address, amount: 4 },
-          { l2Token: MockETH.address, amount: 5 },
-          { l2Token: MockETH.address, amount: 6 },
-        ],
+        inputTokens: Array(
+          // length == MAX_INPUT_TOKENS + 1
+          (await L2_NovaRegistry.MAX_INPUT_TOKENS()).add(1).toNumber()
+        ).fill({
+          l2Token: MockETH.address,
+          amount: 1,
+        }),
       }).should.be.revertedWith("TOO_MANY_INPUTS");
     });
   });
