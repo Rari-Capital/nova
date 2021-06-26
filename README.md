@@ -10,36 +10,36 @@ Nova is a **set of contracts** & **network of relayers** that empowers users/con
 
 - [Technical specification/whitepaper](/docs/spec.md)
 
----
+## Developing
 
-<img align="right" src="https://user-images.githubusercontent.com/26209401/116805216-c5e9ef80-aad9-11eb-81c8-06dcb2468c9c.png" alt="drawing" width="500"/>
+![Overview](https://lucid.app/publicSegments/view/bcca1b62-7344-4c82-aa5c-3954daf46840/image.png)
 
-## Unit Tests
+### Unit Tests
 
 ```bash
 npm run unit-tests
 ```
 
-## Unit Tests With Coverage
+### Unit Tests With Coverage
 
 ```bash
 npm run coverage
 ```
 
-## Update Gas Snapshots
+### Update Gas Snapshots
 
 ```bash
 npm run gas-changed
 ```
 
-## Integration Tests
+### Integration Tests
 [You must start up an instance of Optimism's "ops" repo before running integration tests.](https://github.com/ethereum-optimism/optimism/tree/develop/ops)
 
 ```bash
 npm run integration-tests
 ```
 
-## Fuzz With Echidna
+### Fuzz With Echidna
 [You must install Echidna before fuzzing.](https://github.com/crytic/echidna#installation)
 
 ```bash
