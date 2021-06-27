@@ -14,7 +14,7 @@ Nova is a **set of contracts** & **network of relayers** that enable seamless **
 
 [![Overview](https://lucid.app/publicSegments/view/bcca1b62-7344-4c82-aa5c-3954daf46840/image.png)](https://lucid.app/lucidchart/dca3b0ad-26ed-42f8-a871-1b03b40a2395/view)
 
-### Unit Tests
+## Unit Tests
 
 ```bash
 npm run unit-tests
