@@ -20,19 +20,19 @@ Nova is a **set of contracts** & **network of relayers** that enable seamless **
 npm run unit-tests
 ```
 
-### Unit Tests With Coverage
+## Unit Tests With Coverage
 
 ```bash
 npm run coverage
 ```
 
-### Update Gas Snapshots
+## Update Gas Snapshots
 
 ```bash
 npm run gas-changed
 ```
 
-### Integration Tests
+## Integration Tests
 
 [You must start up an instance of Optimism's "ops" repo before running integration tests.](https://github.com/ethereum-optimism/optimism/tree/develop/ops)
 
@@ -40,7 +40,7 @@ npm run gas-changed
 npm run integration-tests
 ```
 
-### Fuzz With Echidna
+## Fuzz With Echidna
 
 [You must install Echidna before fuzzing.](https://github.com/crytic/echidna#installation)
 
