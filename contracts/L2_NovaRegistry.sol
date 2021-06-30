@@ -147,6 +147,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
                        INPUT TOKEN RECIPIENT STORAGE
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Struct containing data about the status of the request's input tokens.
     /// @param recipient The user who is entitled to take the request's input tokens.
     /// If recipient is not address(0), this means the request is no longer executable.
     /// @param isClaimed Will be true if the input tokens have been removed, false if not.
@@ -155,7 +156,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         bool isClaimed;
     }
 
-    /// @notice Maps execHashes to a struct which contains information about the status of the request's input tokens.
+    /// @notice Maps execHashes to a struct which contains data about the status of the request's input tokens.
     mapping(bytes32 => InputTokenRecipientData) public getRequestInputTokenRecipientData;
 
     /*///////////////////////////////////////////////////////////////
