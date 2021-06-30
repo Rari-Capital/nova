@@ -178,7 +178,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
 
     /// @notice Maps execHashes to a timestamp representing when the request will be disabled and replaced by a re-submitted request with a higher gas price (via `speedUpRequest`).
     /// @notice Will be 0 if `speedUpRequest` has not been called with the `execHash`.
-    mapping(bytes32 => uint256) public getRequestUncleDeathTimestamp;
+    mapping(bytes32 => uint256) public getRequestDeathTimestamp;
 
     /*///////////////////////////////////////////////////////////////
                            STATEFUL FUNCTIONS
@@ -191,7 +191,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @param gasLimit The gas limit a relayer should use on L1.
     /// @param gasPrice The gas price (in wei) a relayer should use on L1.
     /// @param tip The additional wei to pay as a tip for any relayer that executes this request.
-    /// @param inputTokens An array of MAX_INPUT_TOKENS or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2). `inputTokens` will not be awarded if the `strategy` reverts on L1.
+    /// @param inputTokens An array of MAX_INPUT_TOKENS or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2).
     /// @return execHash The "execHash" (unique identifier) for this request.
     function requestExec(
         address strategy,
@@ -367,7 +367,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
         // Ensure the request has not already been sped up.
-        require(getRequestUncleDeathTimestamp[execHash] == 0, "ALREADY_SPED_UP");
+        require(getRequestDeathTimestamp[execHash] == 0, "ALREADY_SPED_UP");
 
         // Get the previous gas price.
         uint256 previousGasPrice = getRequestGasPrice[execHash];
@@ -410,8 +410,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         // Map the resubmitted request to its uncle.
         getRequestUncle[newExecHash] = execHash;
 
-        // Set the uncled request to expire in MIN_UNLOCK_DELAY_SECONDS.
-        getRequestUncleDeathTimestamp[execHash] = switchTimestamp;
+        // Set the uncled request to die in MIN_UNLOCK_DELAY_SECONDS.
+        getRequestDeathTimestamp[execHash] = switchTimestamp;
 
         emit SpeedUpRequest(execHash, newExecHash, systemNonce, switchTimestamp);
 
@@ -500,7 +500,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
             return (true, 0);
         }
 
-        uint256 uncleDeathTimestamp = getRequestUncleDeathTimestamp[uncleExecHash];
+        uint256 uncleDeathTimestamp = getRequestDeathTimestamp[uncleExecHash];
         if (uncleDeathTimestamp > block.timestamp) {
             // This request is a resubmitted version of its uncle which has
             // not "died" yet, so we know it does not have its tokens yet.
