@@ -17,7 +17,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
                             HARD REVERT CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev The revert message text used to cause a hard revert.
+    /// @notice The revert message text used to cause a hard revert.
     string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
     /// @dev The hash of the hard revert message.
     bytes32 internal constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
@@ -26,22 +26,24 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
                           GAS ESTIMATION CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev The amount of gas to assume for each byte of calldata.
+    /// @notice The amount of gas to assume for each byte of calldata.
     uint32 public constant AVERAGE_GAS_PER_CALLDATA_BYTE = 13;
 
-    /// @dev The bytes length of an abi encoded execCompleted call.
+    /// @notice The bytes length of an abi encoded execCompleted call.
     uint256 public constant EXEC_COMPLETED_MESSAGE_BYTES_LENGTH = 132;
 
-    /// @dev The xDomainGasLimit to use for the call to execCompleted.
+    /// @notice The xDomainGasLimit to use for the call to execCompleted.
     uint32 public constant EXEC_COMPLETED_MESSAGE_GAS_LIMIT = 1_000_000;
 
     /*///////////////////////////////////////////////////////////////
                              REGISTRY ADDRESS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev The address of the L2_NovaRegistry to send cross domain messages to.
+    /// @notice The address of the L2_NovaRegistry to send cross domain messages to.
     address public immutable L2_NovaRegistryAddress;
 
+    /// @param _L2_NovaRegistryAddress The address of the L2_NovaRegistry to send cross domain messages to.
+    /// @param _messenger The L1 xDomainMessenger contract to use for sending cross domain messages.
     constructor(address _L2_NovaRegistryAddress, address _messenger) OVM_CrossDomainEnabled(_messenger) {
         L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
     }
@@ -68,11 +70,11 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
                         EXECUTION CONTEXT STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev The execHash computed from the currently executing call to `exec`.
-    /// @dev This will be reset to DEFAULT_EXECHASH after each execution completes.
+    /// @notice The execHash computed from the currently executing call to `exec`.
+    /// @notice This will be reset to DEFAULT_EXECHASH after each execution completes.
     bytes32 public currentExecHash = DEFAULT_EXECHASH;
-    /// @dev The address who called `exec`.
-    /// @dev This will not be reset after each execution completes.
+    /// @notice The address who called `exec`.
+    /// @notice This will not be reset after each execution completes.
     address public currentRelayer;
     /// @dev The address of the strategy that is currently being called.
     /// @dev This will not be reset after each execution completes.
@@ -95,6 +97,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         address l2Recipient,
         uint256 deadline
     ) external nonReentrant {
+        // Measure gas left at the start of execution.
         uint256 startGas = gasleft();
 
         // Check that the deadline has not already passed.

@@ -26,11 +26,11 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @notice The maximum amount of input tokens that may be added to a request.
     uint256 public constant MAX_INPUT_TOKENS = 5;
 
-    /// @notice The ERC20 users must use to pay for the L1 gas usage of request.
+    /// @notice The ERC20 ETH users must use to pay for the L1 gas usage of request.
     IERC20 public immutable ETH;
 
-    /// @param _ETH An ERC20 ETH you would like users to pay for gas with.
-    /// @param _messenger The L2 xDomainMessenger contract you want to use to receive messages.
+    /// @param _ETH The ERC20 ETH users must use to pay for the L1 gas usage of request.
+    /// @param _messenger The L2 xDomainMessenger contract to trust for receiving messages.
     constructor(address _ETH, address _messenger) OVM_CrossDomainEnabled(_messenger) {
         ETH = IERC20(_ETH);
     }
@@ -59,34 +59,44 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     event ConnectExecutionManager(address _L1_NovaExecutionManagerAddress);
 
     /// @notice Emitted when `requestExec` is called.
-    /// @param nonce The nonce assigned to this request.
-    event RequestExec(bytes32 indexed execHash, address indexed strategy, uint256 nonce);
+    /// @param execHash The unique identifier generated for this request.
+    /// @param strategy The address of the "strategy" contract on L1 a relayer should call with `calldata`.
+    event RequestExec(bytes32 indexed execHash, address indexed strategy);
 
     /// @notice Emitted when `execCompleted` is called.
+    /// @param execHash The unique identifier associated with the request executed.
+    /// @param rewardRecipient The address the relayer specified to be the recipient of the tokens on L2.
+    /// @param reverted If the strategy reverted on L1 during execution.
+    /// @param gasUsed The amount of gas used by the execution tx on L1.
     event ExecCompleted(bytes32 indexed execHash, address indexed rewardRecipient, bool reverted, uint256 gasUsed);
 
-    /// @notice Emitted when `claim` is called.
+    /// @notice Emitted when `claimInputTokens` is called.
+    /// @param execHash The unique identifier associated with the request that had its input tokens claimed.
     event ClaimInputTokens(bytes32 indexed execHash);
 
     /// @notice Emitted when `withdrawTokens` is called.
+    /// @param execHash The unique identifier associated with the request that had its tokens withdrawn.
     event WithdrawTokens(bytes32 indexed execHash);
 
     /// @notice Emitted when `unlockTokens` is called.
+    /// @param execHash The unique identifier associated with the request that had a token unlock scheduled.
     /// @param unlockTimestamp When the unlock will set into effect and the creator will be able to call `withdrawTokens`.
     event UnlockTokens(bytes32 indexed execHash, uint256 unlockTimestamp);
 
     /// @notice Emitted when `relockTokens` is called.
+    /// @param execHash The unique identifier associated with the request that had its tokens relocked.
     event RelockTokens(bytes32 indexed execHash);
 
     /// @notice Emitted when `speedUpRequest` is called.
+    /// @param execHash The unique identifier associated with the request that was uncled and replaced by the newExecHash.
     /// @param newExecHash The execHash of the resubmitted request (copy of its uncle with an updated gasPrice).
     /// @param newNonce The nonce of the resubmitted request.
-    /// @param changeTimestamp When the uncled request (`execHash`) will have its tokens transferred to the resubmitted request (`newExecHash`).
+    /// @param switchTimestamp When the uncled request (`execHash`) will have its tokens transferred to the resubmitted request (`newExecHash`).
     event SpeedUpRequest(
         bytes32 indexed execHash,
         bytes32 indexed newExecHash,
         uint256 newNonce,
-        uint256 changeTimestamp
+        uint256 switchTimestamp
     );
 
     /*///////////////////////////////////////////////////////////////
@@ -137,14 +147,16 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
                        INPUT TOKEN RECIPIENT STORAGE
     //////////////////////////////////////////////////////////////*/
 
+    /// @param recipient The user who is entitled to take the request's input tokens.
+    /// If recipient is not address(0), this means the request is no longer executable.
+    /// @param isClaimed Will be true if the input tokens have been removed, false if not.
     struct InputTokenRecipientData {
         address recipient;
         bool isClaimed;
     }
 
-    /// @notice Maps execHashes to the address of the user who received the input tokens for executing or withdrawing the request.
-    /// @notice Will be address(0) if no one has executed or withdrawn the request yet.
-    mapping(bytes32 => InputTokenRecipientData) public getRequestInputTokenRecipient;
+    /// @notice Maps execHashes to a struct which contains information about the status of the request's input tokens.
+    mapping(bytes32 => InputTokenRecipientData) public getRequestInputTokenRecipientData;
 
     /*///////////////////////////////////////////////////////////////
                               UNLOCK STORAGE
@@ -211,7 +223,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         // Storing the nonce is just for convenience; it does not need to be on-chain.
         getRequestNonce[execHash] = systemNonce;
 
-        emit RequestExec(execHash, strategy, systemNonce);
+        emit RequestExec(execHash, strategy);
 
         // Transfer in ETH to pay for max gas usage + tip.
         ETH.safeTransferFrom(msg.sender, address(this), gasLimit.mul(gasPrice).add(tip));
@@ -234,20 +246,23 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         uint256 gasPrice,
         uint256 tip,
         InputToken[] calldata inputTokens,
-        uint256 autoUnlockDelay
+        uint256 autoUnlockDelaySeconds
     ) external returns (bytes32 execHash) {
+        // Create a request and get its execHash.
         execHash = requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, inputTokens);
 
-        unlockTokens(execHash, autoUnlockDelay);
+        // Schedule an unlock set to complete autoUnlockDelay seconds from now.
+        unlockTokens(execHash, autoUnlockDelaySeconds);
     }
 
     /// @notice Claims input tokens earned from executing a request.
     /// @notice Request creators must also call this function if their request reverted (as input tokens are not sent to relayers if the request reverts).
-    /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recpient given in `execCompleted` or the request creator if the request reverted).
+    /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient
+    /// (either the l2Recpient given in `execCompleted` or the request creator if the request reverted).
     /// @param execHash The hash of the executed request.
     function claimInputTokens(bytes32 execHash) external nonReentrant auth {
         // Get a pointer to the input token recipient data.
-        InputTokenRecipientData storage inputTokenRecipientData = getRequestInputTokenRecipient[execHash];
+        InputTokenRecipientData storage inputTokenRecipientData = getRequestInputTokenRecipientData[execHash];
 
         // Ensure input tokens for this request are ready to be sent to a recipient.
         require(inputTokenRecipientData.recipient != address(0), "NO_RECIPIENT");
@@ -282,10 +297,10 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         require(unlockDelaySeconds >= MIN_UNLOCK_DELAY_SECONDS, "DELAY_TOO_SMALL");
 
         // Set the delay timestamp to (current timestamp + the delay)
-        uint256 timestamp = block.timestamp.add(unlockDelaySeconds);
-        getRequestUnlockTimestamp[execHash] = timestamp;
+        uint256 unlockTimestamp = block.timestamp.add(unlockDelaySeconds);
+        getRequestUnlockTimestamp[execHash] = unlockTimestamp;
 
-        emit UnlockTokens(execHash, timestamp);
+        emit UnlockTokens(execHash, unlockTimestamp);
     }
 
     /// @notice Cancels a scheduled unlock.
@@ -321,7 +336,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         address creator = getRequestCreator[execHash];
 
         // Store that the request has had its input tokens removed.
-        getRequestInputTokenRecipient[execHash] = InputTokenRecipientData(creator, true);
+        getRequestInputTokenRecipientData[execHash] = InputTokenRecipientData(creator, true);
 
         emit WithdrawTokens(execHash);
 
@@ -407,7 +422,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
                   CROSS DOMAIN MESSENGER ONLY FUNCTION
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Distributes inputs/tips to the relayer as a result of a successful execution. Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
+    /// @dev Distributes inputs/tips to the relayer as a result of a successful execution.
+    /// @dev Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
     /// @param execHash The computed execHash of the execution.
     /// @param rewardRecipient The address the relayer specified to be the recipient of the tokens on L2.
     /// @param reverted If the strategy reverted on L1 during execution.
@@ -431,7 +447,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         address creator = getRequestCreator[execHash];
 
         // Give the proper input token recipient the ability to claim the tokens.
-        getRequestInputTokenRecipient[execHash].recipient = reverted ? creator : rewardRecipient;
+        getRequestInputTokenRecipientData[execHash].recipient = reverted ? creator : rewardRecipient;
 
         // The amount of ETH to pay for the gas used (capped at the gas limit).
         uint256 gasPayment = gasPrice.mul(gasUsed > gasLimit ? gasLimit : gasUsed);
@@ -456,9 +472,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @notice Checks if the request has had any of its tokens removed.
     /// @param execHash The request to check.
     /// @return tokensRemoved A boolean indicating if the request has had any of its tokens removed.
-    /// @return changeTimestamp A timestamp indicating when the request might have one of its tokens removed or added. Will be 0 if there is no removal/addition expected. It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request).
+    /// @return changeTimestamp A timestamp indicating when the request might have one of its tokens removed or added.
+    /// Will be 0 if there is no removal/addition expected.
+    /// Will also be 0 if the request has had its tokens withdrawn or it has been executed.
+    /// It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request)
+    /// or if the request will have its tokens removed soon (its an uncle scheduled to die soon).
     function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
-        address inputTokenRecipient = getRequestInputTokenRecipient[execHash].recipient;
+        address inputTokenRecipient = getRequestInputTokenRecipientData[execHash].recipient;
         if (inputTokenRecipient != address(0)) {
             // The request has been executed or had tokens withdrawn.
             return (true, 0);
@@ -471,7 +491,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
             return (false, 0);
         }
 
-        address uncleInputTokenRecipient = getRequestInputTokenRecipient[uncleExecHash].recipient;
+        address uncleInputTokenRecipient = getRequestInputTokenRecipientData[uncleExecHash].recipient;
         if (uncleInputTokenRecipient != address(0)) {
             // This request is a resubmitted version of its uncle which was
             // executed before the uncle could "die" and switch its tokens
@@ -494,7 +514,9 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @notice Checks if the request is scheduled to have its tokens unlocked.
     /// @param execHash The request to check.
     /// @return unlocked A boolean indicating if the request has had its tokens unlocked.
-    /// @return changeTimestamp A timestamp indicating when the request might have its tokens unlocked. Will be 0 if there is no unlock is scheduled. It will be a timestamp if an unlock has been scheduled.
+    /// @return changeTimestamp A timestamp indicating when the request might have its tokens unlocked.
+    /// Will be 0 if there is no unlock is scheduled or it has already unlocked.
+    /// It will be a timestamp if an unlock has been scheduled but not completed.
     function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked, uint256 changeTimestamp) {
         uint256 tokenUnlockTimestamp = getRequestUnlockTimestamp[execHash];
 
