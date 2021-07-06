@@ -481,14 +481,28 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
         address inputTokenRecipient = getRequestInputTokenRecipientData[execHash].recipient;
         if (inputTokenRecipient != address(0)) {
-            // The request has been executed or had tokens withdrawn.
+            // The request has been executed or had its tokens withdrawn,
+            // so we know it's tokens are removed and won't be added back.
             return (true, 0);
+        }
+
+        uint256 deathTimestamp = getRequestDeathTimestamp[execHash];
+        if (deathTimestamp != 0) {
+            if (block.timestamp >= deathTimestamp) {
+                // This request is an uncle which has died, meaning it's tokens
+                // have been removed and sent to a resubmitted request.
+                return (true, 0);
+            } else {
+                // This request is an uncle which has not died yet, so we know
+                // it has tokens that will be removed on it's deathTimestamp.
+                return (false, deathTimestamp);
+            }
         }
 
         bytes32 uncleExecHash = getRequestUncle[execHash];
         if (uncleExecHash == "") {
-            // This request does not have an uncle and has not been executed
-            // or had it's tokens withdrawn, so we know it has tokens.
+            // This request does not have an uncle and has passed all
+            // the previous removal checks, so we know it has tokens.
             return (false, 0);
         }
 
@@ -503,12 +517,13 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         uint256 uncleDeathTimestamp = getRequestDeathTimestamp[uncleExecHash];
         if (uncleDeathTimestamp > block.timestamp) {
             // This request is a resubmitted version of its uncle which has
-            // not "died" yet, so we know it does not have its tokens yet.
+            // not "died" yet, so we know it does not have its tokens yet,
+            // but will recieve them after the uncleDeathTimestamp.
             return (true, uncleDeathTimestamp);
         }
 
-        // This request is a resubmitted version of its uncle, which properly
-        // died before being executed, so we know it has had its tokens added.
+        // This is a resubmitted request with an uncle that died properly without
+        // being executed early, so we know it has it's tokens.
         return (false, 0);
     }
 

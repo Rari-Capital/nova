@@ -784,27 +784,26 @@ describe("L2_NovaRegistry", function () {
       await calcRecipientIncrease().should.eventually.equal(gasUsed * gasPrice + tip);
     });
 
-    // @audit
-    // it("does not allow completing an uncled request after it dies", async function () {
-    //   const [, rewardRecipient] = signers;
+    it("does not allow completing an uncled request after it dies", async function () {
+      const [, rewardRecipient] = signers;
 
-    //   const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
 
-    //   const { uncleExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
-    //     execHash,
-    //     gasPrice,
-    //     gasLimit,
-    //   });
+      const { uncleExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
+        execHash,
+        gasPrice,
+        gasLimit,
+      });
 
-    //   // Forward time to be after the delay.
-    //   await increaseTimeAndMine(await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS());
-    // await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
-    //   execHash: uncleExecHash,
-    //   rewardRecipient: rewardRecipient.address,
-    //   reverted: false,
-    //   gasUsed: 0,
-    // }).should.be.revertedWith("TOKENS_REMOVED");
-    // });
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS());
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: uncleExecHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 0,
+      }).should.be.revertedWith("TOKENS_REMOVED");
+    });
 
     it("does not allow completing a resubmitted request with an uncle that has no tokens", async function () {
       const [, rewardRecipient] = signers;
