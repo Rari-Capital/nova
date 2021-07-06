@@ -476,7 +476,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @return changeTimestamp A timestamp indicating when the request might have one of its tokens removed or added.
     /// Will be 0 if there is no removal/addition expected.
     /// Will also be 0 if the request has had its tokens withdrawn or it has been executed.
-    /// It will be a timestamp if the request will have its tokens added soon (it's a resubmitted version of an uncled request)
+    /// It will be a timestamp if the request will have its tokens added soon (it's a resubmitted copy of an uncled request)
     /// or if the request will have its tokens removed soon (its an uncle scheduled to die soon).
     function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
         address inputTokenRecipient = getRequestInputTokenRecipientData[execHash].recipient;
