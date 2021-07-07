@@ -30,7 +30,7 @@ contract Echidna_L2_NovaRegistry is HevmUser {
 
     function requestExec_and_unlock_and_withdraw_tokens_should_work(
         address strategy,
-        bytes calldata l1calldata,
+        bytes calldata l1Calldata,
         uint256 gasLimit,
         uint256 gasPrice,
         uint256 tip,
@@ -52,7 +52,7 @@ contract Echidna_L2_NovaRegistry is HevmUser {
 
         // Make the request:
         bytes32 execHash =
-            registry.requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0));
+            registry.requestExec(strategy, l1Calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0));
 
         // Ensure that our balance properly decreased.
         assert(mockETH.balanceOf(address(this)) == (preRequestBalance - weiOwed));
@@ -77,4 +77,8 @@ contract Echidna_L2_NovaRegistry is HevmUser {
             );
         }
     }
+
+    // TODO: uncle timestamp should always be before unlock timestamp
+    // TODO: uncle should never be executable after it dies, etc
+    // TODO: should never allow speeindg up a request multiples times
 }

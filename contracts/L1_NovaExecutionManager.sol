@@ -87,13 +87,13 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     /// @notice Executes a request and sends tip/inputs to a specific address.
     /// @param nonce The nonce of the request.
     /// @param strategy The strategy requested in the request.
-    /// @param l1calldata The calldata associated with the request.
+    /// @param l1Calldata The calldata associated with the request.
     /// @param l2Recipient The address of the account on L2 to receive the tip/inputs.
     /// @param deadline Timestamp after which the transaction will revert.
     function exec(
         uint256 nonce,
         address strategy,
-        bytes calldata l1calldata,
+        bytes calldata l1Calldata,
         address l2Recipient,
         uint256 deadline
     ) external nonReentrant {
@@ -115,8 +115,8 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // to change owners, blacklist relayers, and send cross domain messages at will.
         require(strategy != address(this), "UNSAFE_STRATEGY");
 
-        // Extract the 4 byte function signature from l1calldata.
-        bytes4 calldataSig = SigLib.fromCalldata(l1calldata);
+        // Extract the 4 byte function signature from l1Calldata.
+        bytes4 calldataSig = SigLib.fromCalldata(l1Calldata);
 
         // We canot allow calling IERC20.transferFrom directly, as a malicious
         // relayer could steal tokens approved to the registry by other relayers.
@@ -129,7 +129,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
 
         // Compute the execHash.
         bytes32 execHash =
-            NovaExecHashLib.compute({nonce: nonce, strategy: strategy, l1calldata: l1calldata, gasPrice: tx.gasprice});
+            NovaExecHashLib.compute({nonce: nonce, strategy: strategy, l1Calldata: l1Calldata, gasPrice: tx.gasprice});
 
         // Initialize execution context.
         currentExecHash = execHash;
@@ -137,7 +137,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         currentlyExecutingStrategy = strategy;
 
         // Call the strategy.
-        (bool success, bytes memory returnData) = strategy.call(l1calldata);
+        (bool success, bytes memory returnData) = strategy.call(l1Calldata);
 
         // Revert if the strategy hard reverted.
         require(success || keccak256(returnData) != HARD_REVERT_HASH, "HARD_REVERT");

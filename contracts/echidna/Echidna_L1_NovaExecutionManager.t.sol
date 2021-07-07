@@ -33,11 +33,11 @@ contract Echidna_L1_NovaExecutionManager {
     function exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
         uint256 nonce,
         address strategy,
-        bytes memory l1calldata,
+        bytes memory l1Calldata,
         address recipient,
         uint256 deadline
     ) external {
-        try executionManager.exec(nonce, strategy, l1calldata, recipient, deadline) {
+        try executionManager.exec(nonce, strategy, l1Calldata, recipient, deadline) {
             // ExecHash should always be reset:
             assert(executionManager.currentExecHash() == executionManager.DEFAULT_EXECHASH());
 
@@ -56,7 +56,7 @@ contract Echidna_L1_NovaExecutionManager {
             // - the calldata had transferFrom as the sig
             // - the calldata had sendMessage as the sig
             // If not, something is wrong:
-            bytes4 calldataSig = SigLib.fromCalldata(l1calldata);
+            bytes4 calldataSig = SigLib.fromCalldata(l1Calldata);
             assert(
                 deadline < block.timestamp ||
                     recipient == address(0) ||

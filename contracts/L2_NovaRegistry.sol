@@ -184,10 +184,10 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
                            STATEFUL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Request `strategy` to be executed with `l1calldata`.
+    /// @notice Request `strategy` to be executed with `l1Calldata`.
     /// @notice The caller must approve `(gasPrice * gasLimit) + tip` of `ETH` before calling.
     /// @param strategy The address of the "strategy" contract on L1 a relayer should call with `calldata`.
-    /// @param l1calldata The abi encoded calldata a relayer should call the `strategy` with on L1.
+    /// @param l1Calldata The abi encoded calldata a relayer should call the `strategy` with on L1.
     /// @param gasLimit The gas limit a relayer should use on L1.
     /// @param gasPrice The gas price (in wei) a relayer should use on L1.
     /// @param tip The additional wei to pay as a tip for any relayer that executes this request.
@@ -195,7 +195,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @return execHash The "execHash" (unique identifier) for this request.
     function requestExec(
         address strategy,
-        bytes calldata l1calldata,
+        bytes calldata l1Calldata,
         uint256 gasLimit,
         uint256 gasPrice,
         uint256 tip,
@@ -210,14 +210,14 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         execHash = NovaExecHashLib.compute({
             nonce: systemNonce,
             strategy: strategy,
-            l1calldata: l1calldata,
+            l1Calldata: l1Calldata,
             gasPrice: gasPrice
         });
 
         // Store all critical request data.
         getRequestCreator[execHash] = msg.sender;
         getRequestStrategy[execHash] = strategy;
-        getRequestCalldata[execHash] = l1calldata;
+        getRequestCalldata[execHash] = l1Calldata;
         getRequestGasLimit[execHash] = gasLimit;
         getRequestGasPrice[execHash] = gasPrice;
         getRequestTip[execHash] = tip;
@@ -242,7 +242,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     /// @dev See `requestExec` and `unlockTokens` for more information.
     function requestExecWithTimeout(
         address strategy,
-        bytes calldata l1calldata,
+        bytes calldata l1Calldata,
         uint256 gasLimit,
         uint256 gasPrice,
         uint256 tip,
@@ -250,7 +250,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         uint256 autoUnlockDelaySeconds
     ) external returns (bytes32 execHash) {
         // Create a request and get its execHash.
-        execHash = requestExec(strategy, l1calldata, gasLimit, gasPrice, tip, inputTokens);
+        execHash = requestExec(strategy, l1Calldata, gasLimit, gasPrice, tip, inputTokens);
 
         // Schedule an unlock set to complete autoUnlockDelay seconds from now.
         unlockTokens(execHash, autoUnlockDelaySeconds);
@@ -393,7 +393,7 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
         newExecHash = NovaExecHashLib.compute({
             nonce: systemNonce,
             strategy: previousStrategy,
-            l1calldata: previousCalldata,
+            l1Calldata: previousCalldata,
             gasPrice: gasPrice
         });
 
