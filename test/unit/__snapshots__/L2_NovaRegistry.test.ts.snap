@@ -1,39 +1,39 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for a reverted request 1`] = `73694`;
+exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for a reverted request 1`] = `74074`;
 
-exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for an executed request 1`] = `73694`;
+exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for an executed request 1`] = `74074`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a request that overflows gas usage 1`] = `108416`;
+exports[`L2_NovaRegistry execCompleted allows completing a request that overflows gas usage 1`] = `108796`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a request with input tokens 1`] = `111226`;
+exports[`L2_NovaRegistry execCompleted allows completing a request with input tokens 1`] = `111606`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a resubmitted request 1`] = `115609`;
+exports[`L2_NovaRegistry execCompleted allows completing a resubmitted request 1`] = `115989`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a reverted request with input tokens 1`] = `111298`;
+exports[`L2_NovaRegistry execCompleted allows completing a reverted request with input tokens 1`] = `111678`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = `128326`;
+exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = `128706`;
 
-exports[`L2_NovaRegistry execCompleted allows completing an uncled request before it dies 1`] = `109058`;
+exports[`L2_NovaRegistry execCompleted allows completing an uncled request before it dies 1`] = `109438`;
 
 exports[`L2_NovaRegistry relockTokens allows relocking tokens 1`] = `32245`;
 
-exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `330479`;
+exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `336332`;
 
-exports[`L2_NovaRegistry requestExec allows making a simple request 1`] = `240686`;
+exports[`L2_NovaRegistry requestExec allows making a simple request 1`] = `242637`;
 
-exports[`L2_NovaRegistry requestExec allows making a simple request with one input token 1`] = `279425`;
+exports[`L2_NovaRegistry requestExec allows making a simple request with one input token 1`] = `283327`;
 
-exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `185865`;
+exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `187816`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `250978`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `252929`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `250991`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `252942`;
 
 exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `64950`;
 
 exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request with input tokens 1`] = `64950`;
 
-exports[`L2_NovaRegistry withdrawTokens allows withdrawing from a request with input tokens 1`] = `110785`;
+exports[`L2_NovaRegistry withdrawTokens allows withdrawing from a request with input tokens 1`] = `111355`;
 
-exports[`L2_NovaRegistry withdrawTokens allows withdrawing tokens from a simple request 1`] = `92618`;
+exports[`L2_NovaRegistry withdrawTokens allows withdrawing tokens from a simple request 1`] = `92808`;

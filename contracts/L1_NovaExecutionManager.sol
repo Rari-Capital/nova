@@ -27,7 +27,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The amount of gas to assume for each byte of calldata.
-    uint32 public constant AVERAGE_GAS_PER_CALLDATA_BYTE = 13;
+    uint256 public constant AVERAGE_GAS_PER_CALLDATA_BYTE = 13;
 
     /// @notice The bytes length of an abi encoded execCompleted call.
     uint256 public constant EXEC_COMPLETED_MESSAGE_BYTES_LENGTH = 132;
@@ -125,7 +125,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // We cannot allow calling iAbs_BaseCrossDomainMessenger.sendMessage directly,
         // as a malicious relayer could use it to trigger the registry's execCompleted
         // function and claim bounties without actually executing the proper request(s).
-        require(calldataSig != iAbs_BaseCrossDomainMessenger.sendMessage.selector, "UNSAFE_CALLDATA");
+        require(calldataSig != iOVM_CrossDomainMessenger.sendMessage.selector, "UNSAFE_CALLDATA");
 
         // Compute the execHash.
         bytes32 execHash =
@@ -157,6 +157,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         // Send message to unlock the bounty on L2.
         sendCrossDomainMessage(
             L2_NovaRegistryAddress,
+            EXEC_COMPLETED_MESSAGE_GAS_LIMIT,
             abi.encodeWithSelector(
                 L2_NovaRegistry(L2_NovaRegistryAddress).execCompleted.selector,
                 // Computed execHash:
@@ -167,8 +168,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
                 !success,
                 // Estimated gas used in total:
                 gasUsedEstimate
-            ),
-            EXEC_COMPLETED_MESSAGE_GAS_LIMIT
+            )
         );
 
         emit Exec(execHash, msg.sender, !success, gasUsedEstimate);

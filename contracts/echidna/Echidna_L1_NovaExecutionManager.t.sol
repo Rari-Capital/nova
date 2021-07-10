@@ -61,7 +61,7 @@ contract Echidna_L1_NovaExecutionManager {
                 deadline < block.timestamp ||
                     recipient == address(0) ||
                     strategy == address(executionManager) ||
-                    calldataSig == iAbs_BaseCrossDomainMessenger.sendMessage.selector ||
+                    calldataSig == iOVM_CrossDomainMessenger.sendMessage.selector ||
                     calldataSig == IERC20.transferFrom.selector
             );
         }

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.7.6;
 
-import "@eth-optimism/contracts/iOVM/bridge/messaging/iAbs_BaseCrossDomainMessenger.sol";
+import "@eth-optimism/contracts/iOVM/bridge/messaging/iOVM_CrossDomainMessenger.sol";
 
-contract MockCrossDomainMessenger is iAbs_BaseCrossDomainMessenger {
+contract MockCrossDomainMessenger is iOVM_CrossDomainMessenger {
     address public latestTarget;
     bytes public latestMessage;
     uint32 public latestGasLimit;
