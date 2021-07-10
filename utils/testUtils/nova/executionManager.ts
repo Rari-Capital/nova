@@ -1,7 +1,14 @@
 import { BytesLike } from "ethers";
 import { ethers } from "hardhat";
 import { computeExecHash } from ".";
-import { L1NovaExecutionManager } from "../../../typechain";
+import { getFactory } from "..";
+import {
+  L1NovaExecutionManager,
+  L2NovaRegistry,
+  L2NovaRegistry__factory,
+  MockCrossDomainMessenger,
+  MockCrossDomainMessenger__factory,
+} from "../../../typechain";
 
 /**
  * Checks an exec tx emitted events with reasonable values.
@@ -45,7 +52,7 @@ export async function executeRequest(
 
   // Get events and gas used from the tx.
   const { gasUsed, events } = await awaitedTx.wait();
-  const execCompletedEvent = events[events.length - 1];
+  const execEvent = events[events.length - 1];
 
   // Compute the execHash for the execution.
   const execHash = computeExecHash({
@@ -56,20 +63,45 @@ export async function executeRequest(
   });
 
   // Did it properly compute the request's execHash.
-  execCompletedEvent.args.execHash.should.equal(execHash);
+  execEvent.args.execHash.should.equal(execHash);
 
   // Was the relayer emitted as expected.
-  execCompletedEvent.args.relayer.should.equal(caller);
+  execEvent.args.relayer.should.equal(caller);
 
   // Did the request soft revert like intended (or not).
-  execCompletedEvent.args.reverted.should.equal(shouldSoftRevert);
+  execEvent.args.reverted.should.equal(shouldSoftRevert);
 
-  // @audit
-  // if (!ignoreGasUsedCheck) {
-  //   // The gasUsed estimate in the event should always be more than the actual gas used, but should never be more than 15,000 gas above.
-  //   const overestimateAmount = execCompletedEvent.args.gasUsed.toNumber() - gasUsed.toNumber();
-  //   overestimateAmount.should.be.within(0, 15_000);
-  // }
+  const estimatedGas = execEvent.args.gasUsed.toNumber();
+  if (!ignoreGasUsedCheck) {
+    // The gasUsed estimate in the event should always be more than the actual gas used, but should never be more than 15,000 gas above.
+    // const overestimateAmount = estimatedGas - gasUsed.toNumber();
+    // @audit overestimateAmount.should.be.within(0, 15_000);
+  }
 
-  return { tx, execHash, gasUsed, execCompletedEvent, ...config };
+  // Check messenger to make sure data was properly passed into it.
+  const messenger = (
+    await getFactory<MockCrossDomainMessenger__factory>("MockCrossDomainMessenger")
+  ).attach(await L1_NovaExecutionManager.messenger());
+
+  await messenger
+    .latestGasLimit()
+    .should.eventually.equal(await L1_NovaExecutionManager.EXEC_COMPLETED_MESSAGE_GAS_LIMIT());
+  await messenger.latestSender().should.eventually.equal(L1_NovaExecutionManager.address);
+  await messenger
+    .latestTarget()
+    .should.eventually.equal(await L1_NovaExecutionManager.L2_NovaRegistryAddress());
+  await messenger
+    .latestMessage()
+    .should.eventually.equal(
+      (
+        await getFactory<L2NovaRegistry__factory>("L2_NovaRegistry")
+      ).interface.encodeFunctionData("execCompleted", [
+        execHash,
+        l2Recipient,
+        shouldSoftRevert,
+        estimatedGas,
+      ])
+    );
+
+  return { tx, execHash, gasUsed, execEvent, ...config };
 }
