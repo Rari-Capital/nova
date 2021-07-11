@@ -11,7 +11,6 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
-  L2NovaRegistry__factory,
   L1NovaExecutionManager,
   L1NovaExecutionManager__factory,
   MockStrategy,
@@ -72,20 +71,6 @@ describe("L1_NovaExecutionManager", function () {
       // Make sure the hard revert text is correct.
       await L1_NovaExecutionManager.HARD_REVERT_TEXT().should.eventually.equal(
         "__NOVA__HARD__REVERT__"
-      );
-
-      // Make sure execCompletedMessageBytesLength is correct.
-      await L1_NovaExecutionManager.EXEC_COMPLETED_MESSAGE_BYTES_LENGTH().should.eventually.equal(
-        ((await (
-          await getFactory<L2NovaRegistry__factory>("L2_NovaRegistry")
-        ).interface.encodeFunctionData("execCompleted", [
-          ethers.utils.keccak256("0x00"),
-          ethers.constants.AddressZero,
-          false,
-          0,
-        ]).length) -
-          2) /
-          2
       );
     });
 

@@ -3,7 +3,6 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
 
@@ -12,7 +11,7 @@ import "./external/DSAuth.sol";
 import "./libraries/NovaExecHashLib.sol";
 import "./libraries/SigLib.sol";
 
-contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
+contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled {
     /*///////////////////////////////////////////////////////////////
                             HARD REVERT CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -26,11 +25,18 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
                           GAS ESTIMATION CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The amount of gas to assume for each byte of calldata.
-    uint256 public constant AVERAGE_GAS_PER_CALLDATA_BYTE = 13;
+    /// @notice The base cost of creating an Ethereum transaction.
+    uint256 public constant BASE_TRANSACTION_GAS = 21_000;
 
-    /// @notice The bytes length of an abi encoded execCompleted call.
-    uint256 public constant EXEC_COMPLETED_MESSAGE_BYTES_LENGTH = 132;
+    /// @notice The amount of gas to assume for each byte of calldata.
+    uint256 public constant AVERAGE_GAS_PER_CALLDATA_BYTE = 10;
+
+    /// @notice The amount of gas to assume the execCompleted message consumes.
+    uint256 public constant EXEC_COMPLETED_MESSAGE_GAS = 111500;
+
+    /*///////////////////////////////////////////////////////////////
+                       CROSS DOMAIN MESSAGE CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice The xDomainGasLimit to use for the call to execCompleted.
     uint32 public constant EXEC_COMPLETED_MESSAGE_GAS_LIMIT = 1_000_000;
@@ -96,12 +102,15 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
         bytes calldata l1Calldata,
         address l2Recipient,
         uint256 deadline
-    ) external nonReentrant {
+    ) external {
         // Measure gas left at the start of execution.
         uint256 startGas = gasleft();
 
         // Check that the deadline has not already passed.
         require(block.timestamp <= deadline, "PAST_DEADLINE");
+
+        // This prevents the strategy from performing a reentrancy attack.
+        require(currentExecHash == DEFAULT_EXECHASH, "ALREADY_EXECUTING");
 
         // Check authorization of the caller (equivalent to DSAuth's `auth` modifier).
         require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
@@ -147,12 +156,10 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled, ReentrancyGu
 
         // Estimate how much gas the relayer will have paid (not accounting for refunds):
         uint256 gasUsedEstimate =
-            10000 + /* Constant function call gas (21,000) + Auth and Reentrancy Guard gas (4,000) - Delete currentExecHash refund (15,000) */
+            BASE_TRANSACTION_GAS + /* Base gas cost of an Etheruem transaction */
                 (msg.data.length * AVERAGE_GAS_PER_CALLDATA_BYTE) + /* Calldata cost estimate */
                 (startGas - gasleft()) + /* Gas used so far */
-                (50 * EXEC_COMPLETED_MESSAGE_BYTES_LENGTH) + /* Cost per message calldata char * Message bytes length */
-                (EXEC_COMPLETED_MESSAGE_GAS_LIMIT / 32) + /* Cross domain gas limit / Enqueue gas burn */
-                74000; /* sendMessage/enqueue overhead */
+                EXEC_COMPLETED_MESSAGE_GAS; /* sendCrossDomainMessage cost */
 
         // Send message to unlock the bounty on L2.
         sendCrossDomainMessage(

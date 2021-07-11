@@ -47,8 +47,8 @@ contract MockStrategy {
     function thisFunctionWillTryToReenterAndHardRevertIfFails() external {
         L1_NovaExecutionManager em = L1_NovaExecutionManager(msg.sender);
 
-        try em.exec(0, address(0), "", address(0), 0) {} catch Error(string memory reason) {
-            if (keccak256(abi.encodePacked(reason)) == keccak256("ReentrancyGuard: reentrant call")) {
+        try em.exec(0, address(0), "", address(0), 999999999999999999999) {} catch Error(string memory reason) {
+            if (keccak256(abi.encodePacked(reason)) == keccak256("ALREADY_EXECUTING")) {
                 // If the call reverted due to reentrancy, signal this with a hard revert.
                 em.hardRevert();
             }

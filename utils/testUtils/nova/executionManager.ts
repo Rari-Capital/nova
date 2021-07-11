@@ -4,11 +4,16 @@ import { computeExecHash } from ".";
 import { getFactory } from "..";
 import {
   L1NovaExecutionManager,
-  L2NovaRegistry,
   L2NovaRegistry__factory,
-  MockCrossDomainMessenger,
   MockCrossDomainMessenger__factory,
 } from "../../../typechain";
+
+/**
+ * We use this global counter to
+ * generate unique (but deterministic values)
+ * for nonce in executeRequest.
+ */
+let globalNonce: number = 0;
 
 /**
  * Checks an exec tx emitted events with reasonable values.
@@ -30,7 +35,7 @@ export async function executeRequest(
   const caller = (await ethers.getSigners())[0].address;
 
   // Init default values if not provided.
-  config.nonce = config.nonce ?? 123456;
+  config.nonce = globalNonce++;
   config.l1Calldata = config.l1Calldata ?? "0x00";
   config.l2Recipient = config.l2Recipient ?? caller;
   config.deadline = config.deadline ?? 9999999999999;
@@ -73,9 +78,12 @@ export async function executeRequest(
 
   const estimatedGas = execEvent.args.gasUsed.toNumber();
   if (!ignoreGasUsedCheck) {
-    // The gasUsed estimate in the event should always be more than the actual gas used, but should never be more than 15,000 gas above.
-    // const overestimateAmount = estimatedGas - gasUsed.toNumber();
-    // @audit overestimateAmount.should.be.within(0, 15_000);
+    // The gasUsed estimate in the event should always be more than the actual gas used, but should never be more than 16,000 gas above.
+    const overestimateAmount = estimatedGas - gasUsed.toNumber();
+    if (overestimateAmount >= 500) {
+      console.log("Exec Overestimated By:", overestimateAmount, "gas");
+    }
+    overestimateAmount.should.be.within(0, 16_000);
   }
 
   // Check messenger to make sure data was properly passed into it.
