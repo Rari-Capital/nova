@@ -90,23 +90,25 @@ export async function increaseTimeAndMine(seconds: BigNumberish) {
  * To update the Jest snapshot run `npm run gas-changed`
  */
 export async function snapshotGasCost(x: Promise<ContractTransaction>) {
-  let receipt: ContractReceipt = await (await x).wait();
+  // Only check gas estimates if we're not in coverage mode, as gas estimates are messed up in coverage mode.
+  if (!process.env.HARDHAT_COVERAGE_MODE_ENABLED) {
+    let receipt: ContractReceipt = await (await x).wait();
+    try {
+      receipt.gasUsed.toNumber().should.toMatchSnapshot();
+    } catch (e) {
+      console.log(
+        chalk.red(
+          "(CHANGE) " +
+            e.message
+              .replace("expected", "used")
+              .replace("to equal", "gas, but the snapshot expected it to use") +
+            " gas"
+        )
+      );
 
-  try {
-    receipt.gasUsed.toNumber().should.toMatchSnapshot();
-  } catch (e) {
-    console.log(
-      chalk.red(
-        "(CHANGE) " +
-          e.message
-            .replace("expected", "used")
-            .replace("to equal", "gas, but the snapshot expected it to use") +
-          " gas"
-      )
-    );
-
-    if (process.env.CI) {
-      return Promise.reject("reverted: Gas consumption changed from expected.");
+      if (process.env.CI) {
+        return Promise.reject("reverted: Gas consumption changed from expected.");
+      }
     }
   }
 

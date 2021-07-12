@@ -181,11 +181,12 @@ export async function completeRequest(
     rewardRecipient: string;
     reverted: boolean;
     gasUsed: number;
+    sender?: string;
   }
 ) {
   const { execHash, rewardRecipient, reverted, gasUsed } = config;
 
-  await MockCrossDomainMessenger.sendMessageWithSender(
+  const tx = MockCrossDomainMessenger.relayMessage(
     L2_NovaRegistry.address,
     L2_NovaRegistry.interface.encodeFunctionData("execCompleted", [
       execHash,
@@ -193,11 +194,8 @@ export async function completeRequest(
       reverted,
       gasUsed,
     ]),
-    1_000_000,
-    fakeExecutionManagerAddress
+    config.sender ?? fakeExecutionManagerAddress
   );
-
-  const tx = MockCrossDomainMessenger.relayCurrentMessage();
   await tx;
 
   return { tx, ...config };

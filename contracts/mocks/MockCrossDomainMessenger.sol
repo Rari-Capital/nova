@@ -4,50 +4,37 @@ pragma solidity 0.7.6;
 import "@eth-optimism/contracts/iOVM/bridge/messaging/iOVM_CrossDomainMessenger.sol";
 
 contract MockCrossDomainMessenger is iOVM_CrossDomainMessenger {
-    address public latestTarget;
-    bytes public latestMessage;
-    uint32 public latestGasLimit;
-    address public latestSender;
+    uint256 constant SEND_MESSAGE_GAS_TO_CONSUME = 96000;
 
-    function xDomainMessageSender() external view override returns (address) {
-        return latestSender;
-    }
-
-    function sendMessageWithSender(
-        address _target,
-        bytes memory _message,
-        uint32 _gasLimit,
-        address _sender
-    ) public {
-        uint256 startingGas = gasleft();
-        latestTarget = _target;
-        latestMessage = _message;
-        latestGasLimit = _gasLimit;
-        latestSender = _sender;
-
-        // Mimic enqueue gas burn (https://github.com/ethereum-optimism/optimism/blob/master/packages/contracts/contracts/optimistic-ethereum/OVM/chain/OVM_CanonicalTransactionChain.sol) + sendMessage overhead.
-        uint256 gasToConsume = (_gasLimit / 32) + 74000;
+    function sendMessage(
+        address,
+        bytes memory,
+        uint32
+    ) external view override {
+        // Burn gas to make this function consume as
+        // much gas as a real sendMessage call would.
         uint256 i;
-        while (startingGas - gasleft() < gasToConsume) {
+        uint256 startingGas = gasleft();
+        while (startingGas - gasleft() < SEND_MESSAGE_GAS_TO_CONSUME) {
             i++;
         }
     }
 
-    function sendMessage(
-        address _target,
-        bytes memory _message,
-        uint32 _gasLimit
-    ) external override {
-        sendMessageWithSender(_target, _message, _gasLimit, msg.sender);
+    address public override xDomainMessageSender;
+
+    function relayMessage(
+        address target,
+        bytes calldata message,
+        address sender
+    ) external {
+        xDomainMessageSender = sender;
+        (bool success, bytes memory result) = target.call(message);
+        delete xDomainMessageSender;
+
+        require(success, getRevertMsg(result));
     }
 
-    function relayCurrentMessage() external {
-        (bool success, bytes memory result) = latestTarget.call(latestMessage);
-
-        require(success, _getRevertMsg(result));
-    }
-
-    function _getRevertMsg(bytes memory _returnData) internal pure returns (string memory) {
+    function getRevertMsg(bytes memory _returnData) internal pure returns (string memory) {
         // If the _res length is less than 68, then the transaction failed silently (without a revert message)
         if (_returnData.length < 68) return "Transaction reverted silently";
 

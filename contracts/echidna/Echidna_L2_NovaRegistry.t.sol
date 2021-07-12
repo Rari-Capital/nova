@@ -19,7 +19,7 @@ contract Echidna_L2_NovaRegistry is HevmUser {
         MockERC20 _mockETH = new MockERC20();
         mockETH = _mockETH;
 
-        registry = new L2_NovaRegistry(address(_mockETH), address(_mockCrossDomainMessenger));
+        registry = new L2_NovaRegistry(address(_mockETH), _mockCrossDomainMessenger);
     }
 
     function should_always_be_able_connect_execution_manager(address newExecutionManager) external {

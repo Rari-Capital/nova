@@ -4,14 +4,13 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
-
 import "./L2_NovaRegistry.sol";
 import "./external/DSAuth.sol";
+import "./external/CrossDomainEnabled.sol";
 import "./libraries/NovaExecHashLib.sol";
 import "./libraries/SigLib.sol";
 
-contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled {
+contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
     /*///////////////////////////////////////////////////////////////
                             HARD REVERT CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -25,32 +24,30 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled {
                           GAS ESTIMATION CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The base cost of creating an Ethereum transaction.
-    uint256 public constant BASE_TRANSACTION_GAS = 21_000;
+    /// @dev The base cost of creating an Ethereum transaction.
+    uint256 internal constant BASE_TRANSACTION_GAS = 21000;
 
-    /// @notice The amount of gas to assume for each byte of calldata.
-    uint256 public constant AVERAGE_GAS_PER_CALLDATA_BYTE = 10;
+    /// @dev The amount of gas to assume for each byte of calldata.
+    uint256 internal constant AVERAGE_GAS_PER_CALLDATA_BYTE = 10;
 
-    /// @notice The amount of gas to assume the execCompleted message consumes.
-    uint256 public constant EXEC_COMPLETED_MESSAGE_GAS = 111500;
+    /// @dev The amount of gas to assume the execCompleted message consumes.
+    uint256 internal constant EXEC_COMPLETED_MESSAGE_GAS = 100000;
 
     /*///////////////////////////////////////////////////////////////
-                       CROSS DOMAIN MESSAGE CONSTANTS
+                          CROSS DOMAIN CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The xDomainGasLimit to use for the call to execCompleted.
+    /// @dev The xDomainGasLimit to use for the call to execCompleted.
     uint32 public constant EXEC_COMPLETED_MESSAGE_GAS_LIMIT = 1_000_000;
-
-    /*///////////////////////////////////////////////////////////////
-                             REGISTRY ADDRESS
-    //////////////////////////////////////////////////////////////*/
 
     /// @notice The address of the L2_NovaRegistry to send cross domain messages to.
     address public immutable L2_NovaRegistryAddress;
 
     /// @param _L2_NovaRegistryAddress The address of the L2_NovaRegistry to send cross domain messages to.
-    /// @param _messenger The L1 xDomainMessenger contract to use for sending cross domain messages.
-    constructor(address _L2_NovaRegistryAddress, address _messenger) OVM_CrossDomainEnabled(_messenger) {
+    /// @param _xDomainMessenger The L1 xDomainMessenger contract to use for sending cross domain messages.
+    constructor(address _L2_NovaRegistryAddress, iOVM_CrossDomainMessenger _xDomainMessenger)
+        CrossDomainEnabled(_xDomainMessenger)
+    {
         L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
     }
 
@@ -84,7 +81,7 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled {
     address public currentRelayer;
     /// @dev The address of the strategy that is currently being called.
     /// @dev This will not be reset after each execution completes.
-    address internal currentlyExecutingStrategy;
+    address public currentlyExecutingStrategy;
 
     /*///////////////////////////////////////////////////////////////
                            STATEFUL FUNCTIONS
@@ -162,9 +159,8 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled {
                 EXEC_COMPLETED_MESSAGE_GAS; /* sendCrossDomainMessage cost */
 
         // Send message to unlock the bounty on L2.
-        sendCrossDomainMessage(
+        xDomainMessenger.sendMessage(
             L2_NovaRegistryAddress,
-            EXEC_COMPLETED_MESSAGE_GAS_LIMIT,
             abi.encodeWithSelector(
                 L2_NovaRegistry(L2_NovaRegistryAddress).execCompleted.selector,
                 // Computed execHash:
@@ -172,10 +168,11 @@ contract L1_NovaExecutionManager is DSAuth, OVM_CrossDomainEnabled {
                 // The reward recipient on L2:
                 l2Recipient,
                 // Did the call revert:
-                !success,
+                true,
                 // Estimated gas used in total:
                 gasUsedEstimate
-            )
+            ),
+            EXEC_COMPLETED_MESSAGE_GAS_LIMIT
         );
 
         emit Exec(execHash, msg.sender, !success, gasUsedEstimate);

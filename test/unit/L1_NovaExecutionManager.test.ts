@@ -59,7 +59,7 @@ describe("L1_NovaExecutionManager", function () {
 
     it("should properly use constructor arguments", async function () {
       // Make sure the constructor params were properly entered.
-      await L1_NovaExecutionManager.messenger().should.eventually.equal(
+      await L1_NovaExecutionManager.xDomainMessenger().should.eventually.equal(
         MockCrossDomainMessenger.address
       );
       await L1_NovaExecutionManager.L2_NovaRegistryAddress().should.eventually.equal(
@@ -134,7 +134,7 @@ describe("L1_NovaExecutionManager", function () {
       await executeRequest(L1_NovaExecutionManager, {
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
-        ignoreGasUsedCheck: true,
+        expectedGasOverestimateAmount: 99999999999999999, // Gas is messed up on the first exec, that's okay.
       });
     });
 
@@ -244,6 +244,7 @@ describe("L1_NovaExecutionManager", function () {
           "thisFunctionWillTransferFromRelayer",
           [MockERC20.address, weiAmount]
         ),
+        expectedGasOverestimateAmount: 15000, // 15000 more than expected will be consumed due to a gas refund.
       });
 
       await snapshotGasCost(tx)

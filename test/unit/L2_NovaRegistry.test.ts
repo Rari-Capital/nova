@@ -59,7 +59,9 @@ describe("L2_NovaRegistry", function () {
 
     it("should properly use constructor arguments", async function () {
       // Make sure the constructor params were properly entered.
-      await L2_NovaRegistry.messenger().should.eventually.equal(MockCrossDomainMessenger.address);
+      await L2_NovaRegistry.xDomainMessenger().should.eventually.equal(
+        MockCrossDomainMessenger.address
+      );
 
       await L2_NovaRegistry.ETH().should.eventually.equal(MockETH.address);
     });
@@ -545,7 +547,21 @@ describe("L2_NovaRegistry", function () {
         ethers.constants.AddressZero,
         false,
         0
-      ).should.revertedWith("OVM_XCHAIN: messenger contract unauthenticated");
+      ).should.revertedWith("NOT_CROSS_DOMAIN_MESSENGER");
+    });
+
+    it("does not allow calling execCompleted if wrong cross domain sender", async function () {
+      const [, rewardRecipient, randomUser] = signers;
+
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash: ethers.utils.solidityKeccak256([], []),
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+
+        // This causes the revert:
+        sender: randomUser.address,
+      }).should.be.revertedWith("WRONG_CROSS_DOMAIN_SENDER");
     });
 
     it("does not allow completing a random request", async function () {
@@ -965,13 +981,5 @@ describe("L2_NovaRegistry", function () {
       // Try claiming again.
       await L2_NovaRegistry.claimInputTokens(execHash).should.be.revertedWith("ALREADY_CLAIMED");
     });
-  });
-
-  describe("areTokensRemoved", function () {
-    // @audit
-  });
-
-  describe("areTokensUnlocked", function () {
-    // @audit
   });
 });

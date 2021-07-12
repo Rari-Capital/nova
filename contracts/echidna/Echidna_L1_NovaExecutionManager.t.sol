@@ -14,7 +14,7 @@ contract Echidna_L1_NovaExecutionManager {
     constructor() {
         MockCrossDomainMessenger _mockCrossDomainMessenger = new MockCrossDomainMessenger();
         mockCrossDomainMessenger = _mockCrossDomainMessenger;
-        executionManager = new L1_NovaExecutionManager(L2_NovaRegistryAddress, address(_mockCrossDomainMessenger));
+        executionManager = new L1_NovaExecutionManager(L2_NovaRegistryAddress, _mockCrossDomainMessenger);
     }
 
     function transferFromRelayer_should_always_be_not_executable(address token, uint256 amount) external {
@@ -43,11 +43,6 @@ contract Echidna_L1_NovaExecutionManager {
 
             // Relayer should be us and not reset:
             assert(executionManager.currentRelayer() == address(this));
-
-            // xDomain constants should always be as expected:
-            assert(mockCrossDomainMessenger.latestTarget() == L2_NovaRegistryAddress);
-            assert(mockCrossDomainMessenger.latestSender() == address(executionManager));
-            assert(mockCrossDomainMessenger.latestGasLimit() == executionManager.EXEC_COMPLETED_MESSAGE_GAS_LIMIT());
         } catch {
             // If it reverted, it should be because either;
             // - the deadline was in the past

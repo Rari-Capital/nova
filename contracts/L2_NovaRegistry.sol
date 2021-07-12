@@ -6,13 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@eth-optimism/contracts/libraries/bridge/OVM_CrossDomainEnabled.sol";
-
 import "./external/DSAuth.sol";
-
+import "./external/CrossDomainEnabled.sol";
 import "./libraries/NovaExecHashLib.sol";
 
-contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
+contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -30,8 +28,8 @@ contract L2_NovaRegistry is DSAuth, OVM_CrossDomainEnabled, ReentrancyGuard {
     IERC20 public immutable ETH;
 
     /// @param _ETH The ERC20 ETH users must use to pay for the L1 gas usage of request.
-    /// @param _messenger The L2 xDomainMessenger contract to trust for receiving messages.
-    constructor(address _ETH, address _messenger) OVM_CrossDomainEnabled(_messenger) {
+    /// @param _xDomainMessenger The L2 xDomainMessenger contract to trust for receiving messages.
+    constructor(address _ETH, iOVM_CrossDomainMessenger _xDomainMessenger) CrossDomainEnabled(_xDomainMessenger) {
         ETH = IERC20(_ETH);
     }
 
