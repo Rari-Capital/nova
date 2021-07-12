@@ -168,7 +168,7 @@ contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
                 // The reward recipient on L2:
                 l2Recipient,
                 // Did the call revert:
-                true,
+                !success,
                 // Estimated gas used in total:
                 gasUsedEstimate
             ),
