@@ -130,29 +130,11 @@ describe("L1_NovaExecutionManager", function () {
   });
 
   describe("exec/execWithRecipient", function () {
-    it("should properly complete the first exec", async function () {
-      await executeRequest(L1_NovaExecutionManager, {
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
-        expectedGasOverestimateAmount: 99999999999999999, // Gas is messed up on the first exec, that's okay.
-      });
-    });
-
     it("should revert if a hard revert is triggered", async function () {
       await executeRequest(L1_NovaExecutionManager, {
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert"),
       }).should.be.revertedWith("HARD_REVERT");
-    });
-
-    it("should not revert due to a soft revert", async function () {
-      const { tx } = await executeRequest(L1_NovaExecutionManager, {
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillRevert"),
-        shouldSoftRevert: true,
-      });
-
-      await snapshotGasCost(tx);
     });
 
     it("respects the deadline", async function () {
@@ -227,6 +209,16 @@ describe("L1_NovaExecutionManager", function () {
       await snapshotGasCost(tx);
 
       await MockStrategy.counter().should.eventually.equal(2);
+    });
+
+    it("should not revert due to a soft revert", async function () {
+      const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        strategy: MockStrategy.address,
+        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillRevert"),
+        shouldSoftRevert: true,
+      });
+
+      await snapshotGasCost(tx);
     });
   });
 

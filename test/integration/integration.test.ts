@@ -11,6 +11,8 @@ import {
   MockStrategy,
   MockStrategy__factory,
 } from "../../typechain";
+import { gweiToWei } from "../../utils";
+import { BigNumber } from "ethers";
 
 describe("Integration", function () {
   const watcher = new Watcher({
@@ -70,5 +72,32 @@ describe("Integration", function () {
     });
   });
 
-  describe("full request lifecycle", function () {});
+  describe("full request lifecycle", function () {
+    it("should allow creating a simple request", async function () {
+      await OVM_ETH.connect(l2Wallet).approve(
+        L2_NovaRegistry.address,
+        BigNumber.from(300_000).mul(gweiToWei(40))
+      ).should.not.be.reverted;
+
+      await L2_NovaRegistry.connect(l2Wallet).requestExec(
+        MockStrategy.address,
+        MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        300_000,
+        gweiToWei(40),
+        0,
+        []
+      ).should.not.be.reverted;
+    });
+
+    it("should allow executing the request", async function () {
+      await L1_NovaExecutionManager.connect(l1Wallet).exec(
+        0,
+        MockStrategy.address,
+        MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        l2Wallet.address,
+        99999999999,
+        { gasPrice: gweiToWei(40) }
+      ).should.not.be.reverted;
+    });
+  });
 });

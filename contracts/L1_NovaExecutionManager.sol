@@ -31,7 +31,7 @@ contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
     uint256 internal constant AVERAGE_GAS_PER_CALLDATA_BYTE = 10;
 
     /// @dev The amount of gas to assume the execCompleted message consumes.
-    uint256 internal constant EXEC_COMPLETED_MESSAGE_GAS = 160000;
+    uint256 internal constant EXEC_COMPLETED_MESSAGE_GAS = 155500;
 
     /*///////////////////////////////////////////////////////////////
                           CROSS DOMAIN CONSTANTS
