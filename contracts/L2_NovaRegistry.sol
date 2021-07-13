@@ -480,19 +480,19 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
         address inputTokenRecipient = getRequestInputTokenRecipientData[execHash].recipient;
         if (inputTokenRecipient != address(0)) {
             // The request has been executed or had its tokens withdrawn,
-            // so we know it's tokens are removed and won't be added back.
+            // so we know its tokens are removed and won't be added back.
             return (true, 0);
         }
 
         uint256 deathTimestamp = getRequestDeathTimestamp[execHash];
         if (deathTimestamp != 0) {
             if (block.timestamp >= deathTimestamp) {
-                // This request is an uncle which has died, meaning it's tokens
+                // This request is an uncle which has died, meaning its tokens
                 // have been removed and sent to a resubmitted request.
                 return (true, 0);
             } else {
                 // This request is an uncle which has not died yet, so we know
-                // it has tokens that will be removed on it's deathTimestamp.
+                // it has tokens that will be removed on its deathTimestamp.
                 return (false, deathTimestamp);
             }
         }
@@ -520,8 +520,8 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
             return (true, uncleDeathTimestamp);
         }
 
-        // This is a resubmitted request with an uncle that died properly without
-        // being executed early, so we know it has it's tokens.
+        // This is a resubmitted request with an uncle that died properly
+        // without being executed early, so we know it has its tokens.
         return (false, 0);
     }
 
