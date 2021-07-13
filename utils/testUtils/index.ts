@@ -79,6 +79,14 @@ export function getFactory<T>(name: string): Promise<T> {
   return ethers.getContractFactory(name) as any;
 }
 
+export function getOVMFactory<T>(name: string, l2: boolean, path?: string): T {
+  const artifact = require(`../../artifacts${l2 ? "-ovm" : ""}/contracts/${
+    path ?? ""
+  }${name}.sol/${name}.json`);
+
+  return new ethers.ContractFactory(artifact.abi, artifact.bytecode) as any;
+}
+
 /** Increases EVM time by `seconds` and mines a new block. */
 export async function increaseTimeAndMine(seconds: BigNumberish) {
   await ethers.provider.send("evm_increaseTime", [parseInt(seconds.toString())]);
@@ -137,6 +145,10 @@ export async function checkpointBalance(token: IERC20, user: string) {
   }
 
   return [calcIncrease, calcDecrease];
+}
+
+export function createLocalProvider(port: number) {
+  return new ethers.providers.JsonRpcProvider("http://127.0.0.1:" + port);
 }
 
 export * from "./nova";

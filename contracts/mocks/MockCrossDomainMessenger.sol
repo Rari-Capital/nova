@@ -4,7 +4,7 @@ pragma solidity 0.7.6;
 import "@eth-optimism/contracts/iOVM/bridge/messaging/iOVM_CrossDomainMessenger.sol";
 
 contract MockCrossDomainMessenger is iOVM_CrossDomainMessenger {
-    uint256 constant SEND_MESSAGE_GAS_TO_CONSUME = 96000;
+    uint256 constant SEND_MESSAGE_GAS_TO_CONSUME = 156000;
 
     function sendMessage(
         address,
