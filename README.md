@@ -2,7 +2,7 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/Rari-Capital/nova/badge.svg?branch=master)](https://coveralls.io/github/Rari-Capital/nova?branch=master) [![Fuzz Tests](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml) [![Integration Tests](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml) [![Unit Tests](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml) [![Nova Docs](https://img.shields.io/badge/Developer%20Docs-up%20to%20date-31C151?labelColor=333941&logo=github&logoColor=949DA5)](https://docs.rari.capital/nova)
 
-Nova is a **set of contracts** & **network of relayers** that enable seamless **L1-L2 interop** in a **trustless** and **composable** manner.
+Nova is a **set of contracts** & **network of relayers** that give **L2 contracts** the power to **read and write to L1** with **no trust tradeoffs**.
 
 # Resources
 
@@ -10,7 +10,7 @@ Nova is a **set of contracts** & **network of relayers** that enable seamless **
 
 - [Technical specification/whitepaper](/docs/spec.md)
 
-# Developing
+# Contributing
 
 [![Overview](https://lucid.app/publicSegments/view/bcca1b62-7344-4c82-aa5c-3954daf46840/image.png)](https://lucid.app/lucidchart/dca3b0ad-26ed-42f8-a871-1b03b40a2395/view)
 
