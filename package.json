@@ -1,7 +1,7 @@
 {
   "name": "nova",
   "version": "1.0.0",
-  "description": "🍣🌟",
+  "description": "Cross-layer execution firmware.",
   "scripts": {
     "compile": "hardhat compile && hardhat compile --network optimism",
     "integration-tests": "hardhat test --network optimism",
