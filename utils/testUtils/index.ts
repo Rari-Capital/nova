@@ -93,7 +93,8 @@ export async function increaseTimeAndMine(seconds: BigNumberish) {
   await ethers.provider.send("evm_mine", []);
 }
 
-/** Records the gas usage of a transaction, and checks against the most recent saved Jest snapshot.
+/**
+ *  Records the gas usage of a transaction, and checks against the most recent saved Jest snapshot.
  * If not in CI mode it won't stop tests (just show a console log).
  * To update the Jest snapshot run `npm run gas-changed`
  */
@@ -123,7 +124,8 @@ export async function snapshotGasCost(x: Promise<ContractTransaction>) {
   return x;
 }
 
-/** Checkpoints `user`'s ether `token` balance upon calling.
+/**
+ * Checkpoints `user`'s ether `token` balance upon calling.
  * Returns two functions (calcIncrease and calcDecrease,
  * calling calcIncrease will return the  `user`'s new `token`
  * balance minus the starting balance. Calling calcDecrease

@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { Watcher } from "@eth-optimism/watcher";
 import { getContractFactory } from "@eth-optimism/contracts";
-import { createLocalProvider, getOVMFactory } from "../../utils/testUtils";
+import { createLocalProvider, executeRequest, getOVMFactory } from "../../utils/testUtils";
 import {
   ERC20,
   L1NovaExecutionManager,
@@ -90,14 +90,13 @@ describe("Integration", function () {
     });
 
     it("should allow executing the request", async function () {
-      await L1_NovaExecutionManager.connect(l1Wallet).exec(
-        0,
-        MockStrategy.address,
-        MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
-        l2Wallet.address,
-        99999999999,
-        { gasPrice: gweiToWei(40) }
-      ).should.not.be.reverted;
+      await executeRequest(L1_NovaExecutionManager.connect(l1Wallet), {
+        relayer: l1Wallet.address,
+        nonce: 0,
+        strategy: MockStrategy.address,
+        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        gasPrice: gweiToWei(40),
+      });
     });
   });
 });

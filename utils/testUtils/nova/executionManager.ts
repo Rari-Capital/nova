@@ -1,6 +1,7 @@
 import { BytesLike } from "ethers";
-import hre, { ethers } from "hardhat";
+import { ethers } from "hardhat";
 import { computeExecHash } from ".";
+import { gweiToWei } from "../..";
 
 import { L1NovaExecutionManager } from "../../../typechain";
 
@@ -25,18 +26,19 @@ export async function executeRequest(
     l2Recipient?: string;
     deadline?: number;
     shouldSoftRevert?: boolean;
+    relayer: string;
+    gasPrice?: number;
     expectedGasOverestimateAmount?: number;
   }
 ) {
-  const caller = (await ethers.getSigners())[0].address;
-
   // Init default values if not provided.
   config.nonce = globalNonce++;
   config.l1Calldata = config.l1Calldata ?? "0x00";
-  config.l2Recipient = config.l2Recipient ?? caller;
+  config.l2Recipient = config.l2Recipient ?? config.relayer;
   config.deadline = config.deadline ?? 9999999999999;
   config.shouldSoftRevert = config.shouldSoftRevert ?? false;
   config.expectedGasOverestimateAmount = config.expectedGasOverestimateAmount ?? 0;
+  config.gasPrice = config.gasPrice ?? gweiToWei(10);
 
   const {
     nonce,
@@ -46,9 +48,13 @@ export async function executeRequest(
     deadline,
     shouldSoftRevert,
     expectedGasOverestimateAmount,
+    relayer,
+    gasPrice,
   } = config;
 
-  const tx = L1_NovaExecutionManager.exec(nonce, strategy, l1Calldata, l2Recipient, deadline);
+  const tx = L1_NovaExecutionManager.exec(nonce, strategy, l1Calldata, l2Recipient, deadline, {
+    gasPrice,
+  });
   const awaitedTx = await tx;
 
   // Get events and gas used from the tx.
@@ -67,7 +73,7 @@ export async function executeRequest(
   execEvent.args.execHash.should.equal(execHash);
 
   // Was the relayer emitted as expected.
-  execEvent.args.relayer.should.equal(caller);
+  execEvent.args.relayer.should.equal(relayer);
 
   // Did the request soft revert like intended (or not).
   execEvent.args.reverted.should.equal(shouldSoftRevert);

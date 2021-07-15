@@ -131,14 +131,20 @@ describe("L1_NovaExecutionManager", function () {
 
   describe("exec/execWithRecipient", function () {
     it("should revert if a hard revert is triggered", async function () {
+      const [relayer] = signers;
+
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert"),
       }).should.be.revertedWith("HARD_REVERT");
     });
 
     it("respects the deadline", async function () {
+      const [relayer] = signers;
+
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         // Set a deadline 60 seconds in the past
         deadline: Math.floor(Date.now() / 1000) - 60,
@@ -146,14 +152,20 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("should not allow specifying a null recipient", async function () {
+      const [relayer] = signers;
+
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l2Recipient: ethers.constants.AddressZero,
       }).should.be.revertedWith("NEED_RECIPIENT");
     });
 
     it("should not allow calling sendMessage", async function () {
+      const [relayer] = signers;
+
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockCrossDomainMessenger.address,
         l1Calldata: MockCrossDomainMessenger.interface.encodeFunctionData("sendMessage", [
           ethers.constants.AddressZero,
@@ -164,7 +176,10 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("should not allow calling transferFrom", async function () {
+      const [relayer] = signers;
+
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockERC20.address,
         l1Calldata: MockERC20.interface.encodeFunctionData("transferFrom", [
           ethers.constants.AddressZero,
@@ -175,13 +190,19 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("should not allow self calls", async function () {
+      const [relayer] = signers;
+
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: L1_NovaExecutionManager.address,
       }).should.be.revertedWith("UNSAFE_STRATEGY");
     });
 
     it("should not allow reentrancy", async function () {
+      const [relayer] = signers;
+
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTryToReenterAndHardRevertIfFails"
@@ -190,7 +211,10 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("should properly execute a minimal exec", async function () {
+      const [relayer] = signers;
+
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
       });
@@ -199,9 +223,12 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("should properly execute a stateful exec", async function () {
+      const [relayer] = signers;
+
       await MockStrategy.counter().should.eventually.equal(1);
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillModifyState"),
       });
@@ -212,7 +239,10 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("should not revert due to a soft revert", async function () {
+      const [relayer] = signers;
+
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillRevert"),
         shouldSoftRevert: true,
@@ -230,7 +260,10 @@ describe("L1_NovaExecutionManager", function () {
       const weiAmount = ethers.utils.parseEther("1337");
       await MockERC20.approve(L1_NovaExecutionManager.address, weiAmount);
 
+      const [relayer] = signers;
+
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
@@ -249,7 +282,10 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will hard revert if tokens were not approved", async function () {
+      const [relayer] = signers;
+
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
@@ -259,11 +295,14 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will properly handle a transferFrom with no return value", async function () {
+      const [relayer] = signers;
+
       const NoReturnValueERC20 = await (
         await getFactory<NoReturnValueERC20__factory>("NoReturnValueERC20")
       ).deploy();
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
@@ -275,11 +314,14 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will hard revert if transferFrom returns a non-bool", async function () {
+      const [relayer] = signers;
+
       const BadReturnValueERC20 = await (
         await getFactory<BadReturnValueERC20__factory>("BadReturnValueERC20")
       ).deploy();
 
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
@@ -289,11 +331,14 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will hard revert if transferFrom returns false without reverting", async function () {
+      const [relayer] = signers;
+
       const ReturnFalseERC20 = await (
         await getFactory<ReturnFalseERC20__factory>("ReturnFalseERC20")
       ).deploy();
 
       await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
@@ -318,15 +363,16 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will not allow a random contract to call during execution", async function () {
-      const [user] = signers;
+      const [relayer] = signers;
 
-      const [calcUserIncrease] = await checkpointBalance(MockERC20, user.address);
+      const [calcUserIncrease] = await checkpointBalance(MockERC20, relayer.address);
 
       // Approve the right amount of input tokens.
       const weiAmount = ethers.utils.parseEther("420");
       await MockERC20.approve(L1_NovaExecutionManager.address, weiAmount);
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData(
           "thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens",
