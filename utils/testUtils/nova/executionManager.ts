@@ -38,7 +38,7 @@ export async function executeRequest(
   config.deadline = config.deadline ?? 9999999999999;
   config.shouldSoftRevert = config.shouldSoftRevert ?? false;
   config.expectedGasOverestimateAmount = config.expectedGasOverestimateAmount ?? 0;
-  config.gasPrice = config.gasPrice ?? gweiToWei(10);
+  config.gasPrice = config.gasPrice ?? 15;
 
   const {
     nonce,
