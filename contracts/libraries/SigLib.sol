@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.7.6;
 
 /// @notice Utility library used to extract the function signature (first 4 bytes) from abi encoded calldata.
