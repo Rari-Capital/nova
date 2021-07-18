@@ -6,7 +6,7 @@ import "@eth-optimism/contracts/iOVM/bridge/messaging/iOVM_CrossDomainMessenger.
 /// @notice Helper contract for contracts performing cross-domain communications.
 /// @author OptimismPBC (https://github.com/ethereum-optimism/optimism)
 contract CrossDomainEnabled {
-    /// @notice Messenger contract used to send and recieve messages from the other domain.
+    /// @notice Messenger contract used to send and receive messages from the other domain.
     iOVM_CrossDomainMessenger public immutable xDomainMessenger;
 
     /// @param _xDomainMessenger Address of the CrossDomainMessenger on the current layer.

@@ -10,6 +10,7 @@ import "@nomiclabs/hardhat-etherscan";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "hardhat-interface-generator";
 import { removeConsoleLog } from "hardhat-preprocessor";
 
 import "@nomiclabs/hardhat-waffle";

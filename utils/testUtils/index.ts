@@ -9,16 +9,19 @@ import { ethers } from "hardhat";
 import { BigNumberish, Contract, ContractReceipt, ContractTransaction } from "ethers";
 
 import chalk from "chalk";
-import { IERC20, DSRoles } from "../../typechain";
+import { IERC20, PauseableDSRoles } from "../../typechain";
 import { Interface } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
-/** Authorizes anyone to call any function on a contract via a DSRoles. */
-export async function authorizeEveryFunction(DSRoles: DSRoles, contract: Contract) {
+/** Authorizes anyone to call any function on a contract via a PauseableDSRoles. */
+export async function authorizeEveryFunction(
+  PauseableDSRoles: PauseableDSRoles,
+  contract: Contract
+) {
   const statefulFragments = getAllStatefulFragments(contract.interface);
 
   for (const fragment of statefulFragments) {
-    await DSRoles.setPublicCapability(
+    await PauseableDSRoles.setPublicCapability(
       contract.address,
       contract.interface.getSighash(fragment),
       true

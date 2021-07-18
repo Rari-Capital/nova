@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity >=0.4.23;
 
 /// @notice Utility library used to extract the function signature (first 4 bytes) from abi encoded calldata.
 library SigLib {

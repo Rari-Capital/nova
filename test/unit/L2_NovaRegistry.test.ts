@@ -6,8 +6,8 @@ import {
   MockCrossDomainMessenger,
   MockCrossDomainMessenger__factory,
   MockERC20,
-  DSRoles,
-  DSRoles__factory,
+  PauseableDSRoles,
+  PauseableDSRoles__factory,
   MockERC20__factory,
   L2NovaRegistry,
 } from "../../typechain";
@@ -36,7 +36,7 @@ describe("L2_NovaRegistry", function () {
   });
 
   let L2_NovaRegistry: L2NovaRegistry;
-  let DSRoles: DSRoles;
+  let PauseableDSRoles: PauseableDSRoles;
 
   /// Mocks
   let MockETH: MockERC20;
@@ -87,24 +87,24 @@ describe("L2_NovaRegistry", function () {
     });
 
     describe("dsRoles", function () {
-      it("should properly deploy a DSRoles", async function () {
-        DSRoles = await (await getFactory<DSRoles__factory>("DSRoles")).deploy();
+      it("should properly deploy a PauseableDSRoles", async function () {
+        PauseableDSRoles = await (await getFactory<PauseableDSRoles__factory>("PauseableDSRoles")).deploy();
       });
 
       it("should properly init the owner", async function () {
         const [deployer] = signers;
 
-        await DSRoles.owner().should.eventually.equal(deployer.address);
+        await PauseableDSRoles.owner().should.eventually.equal(deployer.address);
       });
 
       it("should properly permit authorization all stateful functions", async function () {
-        await authorizeEveryFunction(DSRoles, L2_NovaRegistry);
+        await authorizeEveryFunction(PauseableDSRoles, L2_NovaRegistry);
       });
 
       it("should allow setting the owner to null", async function () {
-        await DSRoles.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
+        await PauseableDSRoles.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
 
-        await DSRoles.owner().should.eventually.equal(ethers.constants.AddressZero);
+        await PauseableDSRoles.owner().should.eventually.equal(ethers.constants.AddressZero);
       });
     });
 
@@ -115,12 +115,12 @@ describe("L2_NovaRegistry", function () {
         await L2_NovaRegistry.owner().should.eventually.equal(deployer.address);
       });
 
-      it("should allow connecting to the DSRoles", async function () {
+      it("should allow connecting to the PauseableDSRoles", async function () {
         await L2_NovaRegistry.authority().should.eventually.equal(ethers.constants.AddressZero);
 
-        await L2_NovaRegistry.setAuthority(DSRoles.address).should.not.be.reverted;
+        await L2_NovaRegistry.setAuthority(PauseableDSRoles.address).should.not.be.reverted;
 
-        await L2_NovaRegistry.authority().should.eventually.equal(DSRoles.address);
+        await L2_NovaRegistry.authority().should.eventually.equal(PauseableDSRoles.address);
       });
 
       it("should allow setting the owner to null", async function () {

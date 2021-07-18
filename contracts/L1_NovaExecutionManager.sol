@@ -4,8 +4,8 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@rari-capital/dappsys/src/DSAuth.sol";
 import "./L2_NovaRegistry.sol";
-import "./external/DSAuth.sol";
 import "./external/CrossDomainEnabled.sol";
 import "./libraries/NovaExecHashLib.sol";
 import "./libraries/SigLib.sol";
@@ -124,7 +124,7 @@ contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
         // Extract the 4 byte function signature from l1Calldata.
         bytes4 calldataSig = SigLib.fromCalldata(l1Calldata);
 
-        // We canot allow calling IERC20.transferFrom directly, as a malicious
+        // We cannot allow calling IERC20.transferFrom directly, as a malicious
         // relayer could steal tokens approved to the registry by other relayers.
         require(calldataSig != IERC20.transferFrom.selector, "UNSAFE_CALLDATA");
 
@@ -153,7 +153,7 @@ contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
 
         // Estimate how much gas the relayer will have paid (not accounting for refunds):
         uint256 gasUsedEstimate =
-            BASE_TRANSACTION_GAS + /* Base gas cost of an Etheruem transaction */
+            BASE_TRANSACTION_GAS + /* Base gas cost of an Ethereum transaction */
                 (msg.data.length * AVERAGE_GAS_PER_CALLDATA_BYTE) + /* Calldata cost estimate */
                 (startGas - gasleft()) + /* Gas used so far */
                 EXEC_COMPLETED_MESSAGE_GAS; /* sendCrossDomainMessage cost */
@@ -192,7 +192,7 @@ contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
         require(currentExecHash != DEFAULT_EXECHASH, "NO_ACTIVE_EXECUTION");
 
         // Transfer the token from the relayer the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
-        (bool success, bytes memory returndata) =
+        (bool success, bytes memory returnData) =
             address(token).call(
                 // Encode a call to transferFrom.
                 abi.encodeWithSelector(IERC20(token).transferFrom.selector, currentRelayer, msg.sender, amount)
@@ -202,10 +202,10 @@ contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
         require(success, HARD_REVERT_TEXT);
 
         // If it returned something, hard revert if it is not a positive bool.
-        if (returndata.length > 0) {
-            if (returndata.length == 32) {
+        if (returnData.length > 0) {
+            if (returnData.length == 32) {
                 // It returned a bool, hard revert if it is not a positive bool.
-                require(abi.decode(returndata, (bool)), HARD_REVERT_TEXT);
+                require(abi.decode(returnData, (bool)), HARD_REVERT_TEXT);
             } else {
                 // It returned some data that was not a bool, let's hard revert.
                 revert(HARD_REVERT_TEXT);
@@ -217,7 +217,7 @@ contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
                             PURE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Convience function that triggers a hard revert.
+    /// @notice Convenience function that triggers a hard revert.
     function hardRevert() external pure {
         // Call revert with the hard revert text.
         revert(HARD_REVERT_TEXT);

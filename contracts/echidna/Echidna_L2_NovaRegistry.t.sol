@@ -80,5 +80,5 @@ contract Echidna_L2_NovaRegistry is HevmUser {
 
     // TODO: uncle timestamp should always be before unlock timestamp
     // TODO: uncle should never be executable after it dies, etc
-    // TODO: should never allow speeindg up a request multiples times
+    // TODO: should never allow speeding up a request multiples times
 }

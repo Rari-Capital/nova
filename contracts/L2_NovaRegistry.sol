@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./external/DSAuth.sol";
+import "@rari-capital/dappsys/src/DSAuth.sol";
 import "./external/CrossDomainEnabled.sol";
 import "./libraries/NovaExecHashLib.sol";
 
