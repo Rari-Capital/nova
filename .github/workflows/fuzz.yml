@@ -1,18 +1,17 @@
 name: Fuzz Tests
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   echidna:
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
         testName:
           - L1_NovaExecutionManager
           - L2_NovaRegistry
-          - SimpleDSGuard
-          - LowGasSafeMath
 
     steps:
       - uses: actions/checkout@v2
@@ -57,5 +56,14 @@ jobs:
           sudo tar -xf /tmp/echidna-test.tar.gz -C /usr/bin
           sudo chmod +x /usr/bin/echidna-test
 
-      - name: Fuzz ${{ matrix.testName }}
-        run: npm run fuzz ${{ matrix.testName }}
+      - name: Quick Fuzz ${{ matrix.testName }}
+        if: ${{ github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/master' && github.base_ref != 'master' }} # Only run quick fuzz if we're not pushing to master or making a PR going to master.
+        run: npm run quick-fuzz ${{ matrix.testName }}
+
+      - name: Long Fuzz ${{ matrix.testName }}
+        if: ${{ github.event_name != 'workflow_dispatch' && (github.ref == 'refs/heads/master' || github.base_ref == 'master') }} # Only run long fuzz if we're pushing to master or making a PR going to master.
+        run: npm run long-fuzz ${{ matrix.testName }}
+
+      - name: Deep Fuzz ${{ matrix.testName }}
+        if: ${{ github.event_name == 'workflow_dispatch' }} # Only run deep fuzz if triggered manually.
+        run: npm run deep-fuzz ${{ matrix.testName }}
