@@ -1,5 +1,5 @@
 // @unsupported: ovm
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.7.6;
 
 import "../L1_NovaExecutionManager.sol";
@@ -42,6 +42,17 @@ contract MockStrategy {
         external
     {
         evilContract.tryToStealRelayerTokens(msg.sender, token, amount);
+    }
+
+    function thisFunctionWillTryToReenterAndHardRevertIfFails() external {
+        L1_NovaExecutionManager em = L1_NovaExecutionManager(msg.sender);
+
+        try em.exec(0, address(0), "", address(0), 999999999999999999999) {} catch Error(string memory reason) {
+            if (keccak256(abi.encodePacked(reason)) == keccak256("ALREADY_EXECUTING")) {
+                // If the call reverted due to reentrancy, signal this with a hard revert.
+                em.hardRevert();
+            }
+        }
     }
 
     function thisFunctionWillRevert() external pure {

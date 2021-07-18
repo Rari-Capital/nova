@@ -10,6 +10,7 @@ import "@nomiclabs/hardhat-etherscan";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "hardhat-interface-generator";
 import { removeConsoleLog } from "hardhat-preprocessor";
 
 import "@nomiclabs/hardhat-waffle";
@@ -36,13 +37,14 @@ const config: HardhatUserConfig = {
 
     optimism: {
       url: "http://127.0.0.1:8545",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : undefined,
-      // This sets the gas price to 0 for all transactions on L2. We do this
-      // because account balances are not automatically initiated with an ETH
-      // balance.
       gasPrice: 0,
-      ovm: true, // This sets the network as using the ovm and ensure contract will be compiled against that.
+      ovm: true,
     },
+  },
+
+  ovm: {
+    // This version supports ETH opcodes
+    solcVersion: "0.7.6+commit.3b061308",
   },
 
   solidity: {
@@ -56,19 +58,12 @@ const config: HardhatUserConfig = {
       metadata: {
         bytecodeHash: "none",
       },
-
-      outputSelection: {
-        "*": {
-          "*": ["storageLayout"],
-        },
-      },
     },
   },
 
   preprocess: {
     eachLine: removeConsoleLog(
-      (hre) =>
-        hre.network.name !== "hardhat" && hre.network.name !== "localhost"
+      (hre) => hre.network.name !== "hardhat" && hre.network.name !== "localhost"
     ),
   },
 
