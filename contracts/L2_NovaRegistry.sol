@@ -24,6 +24,11 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice The maximum amount of input tokens that may be added to a request.
     uint256 public constant MAX_INPUT_TOKENS = 5;
 
+    /// @notice If an execution on L1 soft reverts, the reward recipient
+    /// will only be receive (1/PENALTY_TIP_DIVISOR) percent of the request's
+    /// tip. The remaining portion will be refunded to the request's creator.
+    uint256 public constant PENALTY_TIP_DIVISOR = 2;
+
     /// @notice The ERC20 ETH users must use to pay for the L1 gas usage of request.
     IERC20 public immutable ETH;
 
@@ -451,10 +456,10 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
         // The amount of ETH to pay for the gas used (capped at the gas limit).
         uint256 gasPayment = gasPrice.mul(gasUsed > gasLimit ? gasLimit : gasUsed);
 
-        // The amount of ETH to pay as the tip to the rewardRecepient.
-        // If the transaction reverted the recipient will get 50% of the tip
-        // and the creator will be refunded the remaining portion.
-        uint256 recipientTip = reverted ? (tip.div(2)) : tip;
+        // The amount of ETH to pay as the tip to the rewardRecipient.
+        // If the execution reverted the recipient will get (1/PENALTY_TIP_DIVISOR)
+        // percent of the tip. The creator will be refunded the remaining portion.
+        uint256 recipientTip = reverted ? (tip.div(PENALTY_TIP_DIVISOR)) : tip;
 
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
 
