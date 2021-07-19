@@ -1,6 +1,6 @@
 # Nova
 
-**Nova is a <u>set of contracts</u> & <u>network of relayers</u> that enable seamless <u>L1-L2 interop</u> in a <u>trustless</u> and <u>composable</u> manner.**
+**Nova gives your <u>L2 contracts</u> the power to <u>read and write to L1 without trust tradeoffs</u>.**
 
 <img width="500" style="float: right;" alt="Explainer" src="https://i.imgur.com/TbbAhLd.png">
 
@@ -375,13 +375,7 @@ function swapExactTokensForTokens(
   input.approve(address(uniswapRouter), amountIn);
 
   // Perform the swap
-  uniswapRouter.swapExactTokensForTokens(
-    amountIn,
-    amountOutMin,
-    path,
-    address(this),
-    deadline
-  );
+  uniswapRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), deadline);
   uint256 outputAmount = output.balanceOf(address(this));
 
   // Approve the output tokens to the token bridge
