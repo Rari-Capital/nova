@@ -1,6 +1,6 @@
 # Nova
 
-**Nova gives your <u>L2 contracts</u> the power to <u>read and write to L1 without trust tradeoffs</u>.**
+**Nova gives your <u>L2 contracts</u> the power to <u>read and _write to L1 without trust tradeoffs_</u>.**
 
 <img width="500" style="float: right;" alt="Explainer" src="https://i.imgur.com/TbbAhLd.png">
 
