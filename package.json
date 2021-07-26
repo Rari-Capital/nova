@@ -53,7 +53,7 @@
   "dependencies": {
     "@eth-optimism/contracts": "^0.4.4",
     "@openzeppelin/contracts": "^3.4.0",
-    "@rari-capital/solmate": "^2.1.0",
+    "@rari-capital/solmate": "^2.2.2",
     "hardhat-interface-generator": "0.0.6"
   }
 }
