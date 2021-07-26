@@ -1,5 +1,5 @@
 // @unsupported: ovm
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.7.6;
 
 interface Hevm {
@@ -16,7 +16,7 @@ interface Hevm {
     function load(address, bytes32) external returns (bytes32);
 }
 
-abstract contract HevmUser {
+abstract contract HevmHelper {
     bytes20 internal constant CHEAT_CODE = bytes20(uint160(uint256(keccak256("hevm cheat code"))));
     Hevm internal constant hevm = Hevm(address(CHEAT_CODE));
 }

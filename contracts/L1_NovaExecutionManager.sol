@@ -3,14 +3,16 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@rari-capital/dappsys/src/DSAuth.sol";
-import "./L2_NovaRegistry.sol";
-import "./external/CrossDomainEnabled.sol";
-import "./libraries/NovaExecHashLib.sol";
-import "./libraries/SigLib.sol";
+import {Auth} from "@rari-capital/solmate/src/auth/Auth.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
+import {SigLib} from "./libraries/SigLib.sol";
+import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
+import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDomainEnabled.sol";
+
+import {L2_NovaRegistry} from "./L2_NovaRegistry.sol";
+
+contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /*///////////////////////////////////////////////////////////////
                             HARD REVERT CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -109,8 +111,8 @@ contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
         // This prevents the strategy from performing a reentrancy attack.
         require(currentExecHash == DEFAULT_EXECHASH, "ALREADY_EXECUTING");
 
-        // Check authorization of the caller (equivalent to DSAuth's `auth` modifier).
-        require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
+        // Check authorization of the caller (equivalent to Auth's `requiresAuth` modifier).
+        require(isAuthorized(msg.sender, msg.sig), "UNAUTHORIZED");
 
         // We cannot allow providing address(0) for l2Recipient, as the registry
         // uses address(0) to indicate a request has not had its tokens removed yet.
@@ -183,7 +185,7 @@ contract L1_NovaExecutionManager is DSAuth, CrossDomainEnabled {
     /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
     /// @param token The ER20-compliant token to transfer to the currently executing strategy.
     /// @param amount The amount of `token` (scaled by its decimals) to transfer to the currently executing strategy.
-    function transferFromRelayer(address token, uint256 amount) external auth {
+    function transferFromRelayer(address token, uint256 amount) external requiresAuth {
         // Only the currently executing strategy is allowed to call this function.
         require(msg.sender == currentlyExecutingStrategy, "NOT_CURRENT_STRATEGY");
 

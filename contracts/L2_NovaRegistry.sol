@@ -1,16 +1,18 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@rari-capital/dappsys/src/DSAuth.sol";
-import "./external/CrossDomainEnabled.sol";
-import "./libraries/NovaExecHashLib.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
+import {Auth} from "@rari-capital/solmate/src/auth/Auth.sol";
+import {ReentrancyGuard} from "@rari-capital/solmate/src/utils/ReentrancyGuard.sol";
+
+import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
+import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDomainEnabled.sol";
+
+contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -48,7 +50,7 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice Authorizes the `_L1_NovaExecutionManagerAddress` to make cross domain calls to `execCompleted`.
     /// @notice Each call to `connectExecutionManager` overrides the previous value, you cannot have multiple authorized execution managers at once.
     /// @param _L1_NovaExecutionManagerAddress The address to be authorized to make cross domain calls to `execCompleted`.
-    function connectExecutionManager(address _L1_NovaExecutionManagerAddress) external auth {
+    function connectExecutionManager(address _L1_NovaExecutionManagerAddress) external requiresAuth {
         L1_NovaExecutionManagerAddress = _L1_NovaExecutionManagerAddress;
 
         emit ConnectExecutionManager(_L1_NovaExecutionManagerAddress);
@@ -203,7 +205,7 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
         uint256 gasPrice,
         uint256 tip,
         InputToken[] calldata inputTokens
-    ) public nonReentrant auth returns (bytes32 execHash) {
+    ) public nonReentrant requiresAuth returns (bytes32 execHash) {
         // Do not allow more than MAX_INPUT_TOKENS input tokens.
         require(inputTokens.length <= MAX_INPUT_TOKENS, "TOO_MANY_INPUTS");
 
@@ -264,7 +266,7 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient
     /// (either the l2Recpient given in `execCompleted` or the request creator if the request reverted).
     /// @param execHash The hash of the executed request.
-    function claimInputTokens(bytes32 execHash) external nonReentrant auth {
+    function claimInputTokens(bytes32 execHash) external nonReentrant requiresAuth {
         // Get a pointer to the input token recipient data.
         InputTokenRecipientData storage inputTokenRecipientData = getRequestInputTokenRecipientData[execHash];
 
@@ -289,7 +291,7 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to unlock.
     /// @param unlockDelaySeconds The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
-    function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public auth {
+    function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public requiresAuth {
         // Ensure the request has not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
@@ -309,7 +311,7 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
 
     /// @notice Cancels a scheduled unlock.
     /// @param execHash The unique hash of the request which has an unlock scheduled.
-    function relockTokens(bytes32 execHash) external auth {
+    function relockTokens(bytes32 execHash) external requiresAuth {
         // Ensure the request has not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
@@ -328,7 +330,7 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice The creator of the request associated with `execHash` must call `unlockTokens` and wait the `unlockDelaySeconds` they specified before calling `withdrawTokens`.
     /// @notice Anyone may call this function, but the tokens will still go the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to withdraw from.
-    function withdrawTokens(bytes32 execHash) external nonReentrant auth {
+    function withdrawTokens(bytes32 execHash) external nonReentrant requiresAuth {
         // Ensure that the tokens are unlocked.
         (bool tokensUnlocked, ) = areTokensUnlocked(execHash);
         require(tokensUnlocked, "NOT_UNLOCKED");
@@ -363,7 +365,7 @@ contract L2_NovaRegistry is DSAuth, CrossDomainEnabled, ReentrancyGuard {
     /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
     /// @return newExecHash The unique identifier for the resubmitted request.
-    function speedUpRequest(bytes32 execHash, uint256 gasPrice) external auth returns (bytes32 newExecHash) {
+    function speedUpRequest(bytes32 execHash, uint256 gasPrice) external requiresAuth returns (bytes32 newExecHash) {
         // Ensure that msg.sender is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
         // Ensure tokens have not already been removed.

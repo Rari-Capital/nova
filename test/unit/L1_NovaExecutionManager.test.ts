@@ -1,6 +1,4 @@
 import {
-  authorizeEveryFunction,
-  checkAllFunctionsForAuth,
   checkpointBalance,
   executeRequest,
   getFactory,
@@ -22,8 +20,7 @@ import {
   NoReturnValueERC20__factory,
   BadReturnValueERC20__factory,
   ReturnFalseERC20__factory,
-  PauseableDSRoles,
-  PauseableDSRoles__factory,
+  MockAuthority__factory,
 } from "../../typechain";
 
 describe("L1_NovaExecutionManager", function () {
@@ -33,7 +30,6 @@ describe("L1_NovaExecutionManager", function () {
   });
 
   let L1_NovaExecutionManager: L1NovaExecutionManager;
-  let PauseableDSRoles: PauseableDSRoles;
 
   /// Mocks
   let MockERC20: MockERC20;
@@ -57,6 +53,15 @@ describe("L1_NovaExecutionManager", function () {
       ).deploy(ethers.constants.AddressZero, MockCrossDomainMessenger.address);
     });
 
+    it("should allow changing the execution manager's authority", async function () {
+      // Set the authority to a MockAuthority that always returns true.
+      await L1_NovaExecutionManager.setAuthority(
+        (
+          await (await getFactory<MockAuthority__factory>("MockAuthority")).deploy()
+        ).address
+      );
+    });
+
     it("should properly use constructor arguments", async function () {
       // Make sure the constructor params were properly entered.
       await L1_NovaExecutionManager.xDomainMessenger().should.eventually.equal(
@@ -72,54 +77,6 @@ describe("L1_NovaExecutionManager", function () {
       await L1_NovaExecutionManager.HARD_REVERT_TEXT().should.eventually.equal(
         "__NOVA__HARD__REVERT__"
       );
-    });
-
-    it("should not allow calling stateful functions before permitted", async function () {
-      const [, nonDeployer] = signers;
-
-      await checkAllFunctionsForAuth(L1_NovaExecutionManager, nonDeployer);
-    });
-
-    describe("dsRoles", function () {
-      it("should properly deploy a PauseableDSRoles", async function () {
-        PauseableDSRoles = await (
-          await getFactory<PauseableDSRoles__factory>("PauseableDSRoles")
-        ).deploy();
-      });
-
-      it("should properly permit authorization all stateful functions", async function () {
-        await authorizeEveryFunction(PauseableDSRoles, L1_NovaExecutionManager);
-      });
-
-      it("should allow setting the owner to null", async function () {
-        await PauseableDSRoles.setOwner(ethers.constants.AddressZero).should.not.be.reverted;
-
-        await PauseableDSRoles.owner().should.eventually.equal(ethers.constants.AddressZero);
-      });
-    });
-
-    describe("dsAuth", function () {
-      it("should properly init the owner", async function () {
-        const [deployer] = signers;
-
-        await L1_NovaExecutionManager.owner().should.eventually.equal(deployer.address);
-      });
-
-      it("should allow connecting to the PauseableDSRoles", async function () {
-        await L1_NovaExecutionManager.authority().should.eventually.equal(
-          ethers.constants.AddressZero
-        );
-
-        await L1_NovaExecutionManager.setAuthority(PauseableDSRoles.address).should.not.be.reverted;
-
-        await L1_NovaExecutionManager.authority().should.eventually.equal(PauseableDSRoles.address);
-      });
-
-      it("should allow setting the owner to null", async function () {
-        await L1_NovaExecutionManager.setOwner(ethers.constants.AddressZero);
-
-        await L1_NovaExecutionManager.owner().should.eventually.equal(ethers.constants.AddressZero);
-      });
     });
   });
 
@@ -210,6 +167,17 @@ describe("L1_NovaExecutionManager", function () {
           "thisFunctionWillTryToReenterAndHardRevertIfFails"
         ),
       }).should.be.revertedWith("HARD_REVERT");
+    });
+
+    it("should properly execute the first exec", async function () {
+      const [relayer] = signers;
+
+      // We don't measure gas here because the first run can be weird.
+      await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
+        strategy: MockStrategy.address,
+        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+      });
     });
 
     it("should properly execute a minimal exec", async function () {

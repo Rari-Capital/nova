@@ -1,14 +1,16 @@
 // @unsupported: ovm
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "../L2_NovaRegistry.sol";
-import "../mocks/MockCrossDomainMessenger.sol";
-import "../mocks/MockERC20.sol";
-import "./Hevm.sol";
+import {HevmHelper} from "./Hevm.sol";
 
-contract Echidna_L2_NovaRegistry is HevmUser {
+import {MockERC20} from "../mocks/MockERC20.sol";
+import {MockCrossDomainMessenger} from "../mocks/MockCrossDomainMessenger.sol";
+
+import {L2_NovaRegistry} from "../L2_NovaRegistry.sol";
+
+contract Echidna_L2_NovaRegistry is HevmHelper {
     L2_NovaRegistry internal immutable registry;
     MockCrossDomainMessenger internal immutable mockCrossDomainMessenger;
     MockERC20 internal immutable mockETH;
