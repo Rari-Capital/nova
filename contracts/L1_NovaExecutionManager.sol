@@ -119,18 +119,19 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         require(l2Recipient != address(0), "NEED_RECIPIENT");
 
         // We cannot allow calling the execution manager itself, as a malicious
-        // relayer could call DSAuth and OVM_CrossDomainEnabled inherited functions
-        // to change owners, blacklist relayers, and send cross domain messages at will.
+        // relayer could call Auth and CrossDomainEnabled inherited functions to
+        // change owners, blacklist relayers, and send cross domain messages at will.
         require(strategy != address(this), "UNSAFE_STRATEGY");
 
         // Extract the 4 byte function signature from l1Calldata.
+        // After Solidity 0.8.5 we can do this inline using slices.
         bytes4 calldataSig = SigLib.fromCalldata(l1Calldata);
 
         // We cannot allow calling IERC20.transferFrom directly, as a malicious
         // relayer could steal tokens approved to the registry by other relayers.
         require(calldataSig != IERC20.transferFrom.selector, "UNSAFE_CALLDATA");
 
-        // We cannot allow calling iAbs_BaseCrossDomainMessenger.sendMessage directly,
+        // We cannot allow calling iOVM_CrossDomainMessenger.sendMessage directly,
         // as a malicious relayer could use it to trigger the registry's execCompleted
         // function and claim bounties without actually executing the proper request(s).
         require(calldataSig != iOVM_CrossDomainMessenger.sendMessage.selector, "UNSAFE_CALLDATA");

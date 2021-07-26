@@ -2,6 +2,7 @@
 pragma solidity 0.7.6;
 
 /// @notice Utility library used to extract the function signature (first 4 bytes) from abi encoded calldata.
+/// @dev After solc 0.8.5 this can be done inline with slice operations, which would allow us to remove SigLib.
 library SigLib {
     /// @notice Extracts the function signature (first 4 bytes) from abi encoded calldata.
     /// @param inputCalldata Abi encoded calldata.
