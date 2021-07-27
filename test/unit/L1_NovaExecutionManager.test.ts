@@ -324,7 +324,7 @@ describe("L1_NovaExecutionManager", function () {
       ).should.be.revertedWith("NOT_CURRENT_STRATEGY");
     });
 
-    it("will not allow the prevous strategy to call if not executing", async function () {
+    it("will not allow the previous strategy to call if not executing", async function () {
       await MockStrategy.thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
         L1_NovaExecutionManager.address,
         MockERC20.address,
