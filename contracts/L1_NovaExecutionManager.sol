@@ -118,9 +118,9 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // uses address(0) to indicate a request has not had its tokens removed yet.
         require(l2Recipient != address(0), "NEED_RECIPIENT");
 
-        // We cannot allow calling the execution manager itself, as a malicious
-        // relayer could call Auth and CrossDomainEnabled inherited functions to
-        // change owners, blacklist relayers, and send cross domain messages at will.
+        // We cannot allow calling the execution manager itself, as any malicious
+        // relayer could exploit Auth inherited functions to change ownership, blacklist
+        // other relayers, or freeze the contract entirely, without being properly authorized.
         require(strategy != address(this), "UNSAFE_STRATEGY");
 
         // Extract the 4 byte function signature from l1Calldata.
