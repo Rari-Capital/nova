@@ -14,47 +14,43 @@ import {L2_NovaRegistry} from "./L2_NovaRegistry.sol";
 
 contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /*///////////////////////////////////////////////////////////////
-                            HARD REVERT CONSTANTS
+                        HARD REVERT CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The revert message text used to cause a hard revert.
     string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
+
     /// @dev The hash of the hard revert message.
-    bytes32 internal constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
+    bytes32 public constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
 
     /*///////////////////////////////////////////////////////////////
-                          GAS ESTIMATION CONSTANTS
+                    CROSS DOMAIN MESSAGE CONSTANTS
     //////////////////////////////////////////////////////////////*/
-
-    /// @dev The base cost of creating an Ethereum transaction.
-    uint256 internal constant BASE_TRANSACTION_GAS = 21000;
-
-    /// @dev The amount of gas to assume for each byte of calldata.
-    uint256 internal constant AVERAGE_GAS_PER_CALLDATA_BYTE = 10;
-
-    /// @dev The amount of gas to assume the execCompleted message consumes.
-    uint256 internal constant EXEC_COMPLETED_MESSAGE_GAS = 155500;
-
-    /*///////////////////////////////////////////////////////////////
-                          CROSS DOMAIN CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev The xDomainGasLimit to use for the call to execCompleted.
-    uint32 public constant EXEC_COMPLETED_MESSAGE_GAS_LIMIT = 1_000_000;
 
     /// @notice The address of the L2_NovaRegistry to send cross domain messages to.
-    address public immutable L2_NovaRegistryAddress;
+    /// @dev This address will not have contract code on L1, it is the address of a contract
+    /// deployed on L2. We can only communicate with this address using cross domain messages.
+    address public immutable L2_NOVA_REGISTRY_ADDRESS;
 
-    /// @param _L2_NovaRegistryAddress The address of the L2_NovaRegistry to send cross domain messages to.
-    /// @param _xDomainMessenger The L1 xDomainMessenger contract to use for sending cross domain messages.
-    constructor(address _L2_NovaRegistryAddress, iOVM_CrossDomainMessenger _xDomainMessenger)
-        CrossDomainEnabled(_xDomainMessenger)
-    {
-        L2_NovaRegistryAddress = _L2_NovaRegistryAddress;
+    /// @notice The xDomainGasLimit to use for the cross domain call to execCompleted.
+    /// @dev This needs to factor in the overhead of relaying the message on L2 (currently ~800k),
+    /// along with the actual L2 gas cost of calling the L2_NovaRegistry's execCompleted function.
+    uint32 public immutable EXEC_COMPLETED_MESSAGE_GAS_LIMIT;
+
+    /// @param _L2_NOVA_REGISTRY_ADDRESS The address of the L2_NovaRegistry on L2 to send cross domain messages to.
+    /// @param _CROSS_DOMAIN_MESSENGER The L1 xDomainMessenger contract to use for sending cross domain messages.
+    /// @param _EXEC_COMPLETED_MESSAGE_GAS_LIMIT The xDomainGasLimit to use for the cross domain call to execCompleted.
+    constructor(
+        address _L2_NOVA_REGISTRY_ADDRESS,
+        iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER,
+        uint32 _EXEC_COMPLETED_MESSAGE_GAS_LIMIT
+    ) CrossDomainEnabled(_CROSS_DOMAIN_MESSENGER) {
+        L2_NOVA_REGISTRY_ADDRESS = _L2_NOVA_REGISTRY_ADDRESS;
+        EXEC_COMPLETED_MESSAGE_GAS_LIMIT = _EXEC_COMPLETED_MESSAGE_GAS_LIMIT;
     }
 
     /*///////////////////////////////////////////////////////////////
-                                  EVENTS
+                                EVENTS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when `exec` is called.
@@ -64,16 +60,40 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     event Exec(bytes32 indexed execHash, address relayer, bool reverted, uint256 gasUsed);
 
     /*///////////////////////////////////////////////////////////////
-                       EXECUTION CONTEXT CONSTANTS
+                     GAS ESTIMATION CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The amount of gas to assume each byte of calldata consumes.
+    /// @dev Stored as a uint128 so it gets packed with missingGasEstimate.
+    /// @dev This needs to factor in raw calldata costs, along with the hidden
+    /// cost of abi decoding and copying the calldata into an Solidity function.
+    uint128 public calldataByteGasEstimate = 13;
+
+    /// @notice The amount of gas the system assumes it has not accounted for.
+    /// @dev Stored as a uint128 so it gets packed with calldataByteGasEstimate.
+    /// @dev This needs to factor in the base transaction gas (currently 21000), along
+    /// with the gas cost of sending the cross domain message and emitting the Exec event.
+    uint128 public missingGasEstimate = 200000;
+
+    /// @notice Updates the missingGasEstimate configuration value.
+    /// @param newMissingGasEstimate The updated value to use for missingGasEstimate.
+    function setMissingGasEstimate(uint128 newMissingGasEstimate) external requiresAuth {
+        missingGasEstimate = newMissingGasEstimate;
+    }
+
+    /// @notice Updates the calldataByteGasEstimate configuration value.
+    /// @param newCalldataByteGasEstimate The updated value to use for calldataByteGasEstimate.
+    function setCalldataByteGasEstimate(uint128 newCalldataByteGasEstimate) external requiresAuth {
+        calldataByteGasEstimate = newCalldataByteGasEstimate;
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                        EXECUTION CONTEXT STORAGE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The 'default' value for `currentExecHash`.
     /// @notice Outside of an active `exec` call `currentExecHash` will always equal DEFAULT_EXECHASH.
     bytes32 public constant DEFAULT_EXECHASH = 0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEF;
-
-    /*///////////////////////////////////////////////////////////////
-                        EXECUTION CONTEXT STORAGE
-    //////////////////////////////////////////////////////////////*/
 
     /// @notice The execHash computed from the currently executing call to `exec`.
     /// @notice This will be reset to DEFAULT_EXECHASH after each execution completes.
@@ -156,16 +176,15 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
 
         // Estimate how much gas the relayer will have paid (not accounting for refunds):
         uint256 gasUsedEstimate =
-            BASE_TRANSACTION_GAS + /* Base gas cost of an Ethereum transaction */
-                (msg.data.length * AVERAGE_GAS_PER_CALLDATA_BYTE) + /* Calldata cost estimate */
-                (startGas - gasleft()) + /* Gas used so far */
-                EXEC_COMPLETED_MESSAGE_GAS; /* sendCrossDomainMessage cost */
+            missingGasEstimate + /* Estimate of unaccounted for gas usage (base tx cost + sendMessage) */
+                (msg.data.length * calldataByteGasEstimate) + /* Calldata cost estimate */
+                (startGas - gasleft()); /* Gas used so far */
 
         // Send message to unlock the bounty on L2.
-        xDomainMessenger.sendMessage(
-            L2_NovaRegistryAddress,
+        CROSS_DOMAIN_MESSENGER.sendMessage(
+            L2_NOVA_REGISTRY_ADDRESS,
             abi.encodeWithSelector(
-                L2_NovaRegistry(L2_NovaRegistryAddress).execCompleted.selector,
+                L2_NovaRegistry.execCompleted.selector,
                 // Computed execHash:
                 execHash,
                 // The reward recipient on L2:

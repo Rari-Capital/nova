@@ -1,16 +1,16 @@
-import { BytesLike } from "ethers";
-import { ethers } from "hardhat";
+import { BytesLike, ContractTransaction } from "ethers";
 import { computeExecHash } from ".";
-import { gweiToWei } from "../..";
+import chalk from "chalk";
 
 import { L1NovaExecutionManager } from "../../../typechain";
+import ora from "ora";
 
 /**
  * We use this global counter to
  * generate unique (but deterministic values)
  * for nonce in executeRequest.
  */
-let globalNonce: number = 0;
+let globalNonce: number = 1;
 
 /**
  * Checks an exec tx emitted events with reasonable values.
@@ -32,7 +32,7 @@ export async function executeRequest(
   }
 ) {
   // Init default values if not provided.
-  config.nonce = globalNonce++;
+  config.nonce = config.nonce ?? globalNonce++;
   config.l1Calldata = config.l1Calldata ?? "0x00";
   config.l2Recipient = config.l2Recipient ?? config.relayer;
   config.deadline = config.deadline ?? 9999999999999;
@@ -82,9 +82,62 @@ export async function executeRequest(
   if (!process.env.HARDHAT_COVERAGE_MODE_ENABLED) {
     // The gasUsed estimate in the event should always be more than the actual gas used, but should never be more than 16,000 gas above.
     const overestimateAmount = execEvent.args.gasUsed.toNumber() - gasUsed.toNumber();
-    console.log("Exec Overestimated By:", overestimateAmount, "gas");
-    overestimateAmount.should.be.within(0, 500 + expectedGasOverestimateAmount);
+    overestimateAmount.should.be.within(0, 1000 + expectedGasOverestimateAmount);
   }
 
   return { tx, execHash, gasUsed, execEvent, ...config };
+}
+
+/**
+ * Finds the optimal missing gas estimate for an execution manager based on a single exec tx.
+ */
+async function findOptimalMissingGasEstimate(
+  L1_NovaExecutionManager: L1NovaExecutionManager,
+  tx: Promise<ContractTransaction>
+) {
+  const { gasUsed, events, blockNumber } = await (await tx).wait();
+  const execEvent = events[events.length - 1];
+
+  const previousMissingGasEstimate = (
+    await L1_NovaExecutionManager.missingGasEstimate({ blockTag: blockNumber })
+  ).toNumber();
+
+  const underestimateAmount = gasUsed.toNumber() - execEvent.args.gasUsed.toNumber();
+
+  return {
+    underestimateAmount,
+    previousMissingGasEstimate,
+    optimalMissingGasEstimate: previousMissingGasEstimate + underestimateAmount,
+  };
+}
+
+/**
+ * Tunes an execution manager's missing gas estimate based on single exec tx.
+ */
+export async function tuneMissingGasEstimate(
+  L1_NovaExecutionManager: L1NovaExecutionManager,
+  tx: Promise<ContractTransaction>
+) {
+  const { previousMissingGasEstimate, optimalMissingGasEstimate } =
+    await findOptimalMissingGasEstimate(L1_NovaExecutionManager, tx);
+
+  const loader = ora({
+    text: chalk.gray(
+      `tuning missing gas estimate from ${chalk.green(
+        previousMissingGasEstimate.toString()
+      )} to ${chalk.green(optimalMissingGasEstimate.toString())}\n`
+    ),
+    color: "green",
+    indent: 6,
+  }).start();
+
+  await (
+    await L1_NovaExecutionManager.setMissingGasEstimate(
+      // Update the gas estimate based on the delta (lower it if its over, increase it if its under) and give it 500 gas of leeway.
+      optimalMissingGasEstimate + 500
+    )
+  ).wait();
+
+  loader.indent = 0;
+  loader.stop();
 }

@@ -15,7 +15,7 @@ contract Echidna_L1_NovaExecutionManager {
     constructor() {
         MockCrossDomainMessenger _mockCrossDomainMessenger = new MockCrossDomainMessenger();
         mockCrossDomainMessenger = _mockCrossDomainMessenger;
-        executionManager = new L1_NovaExecutionManager(L2_NovaRegistryAddress, _mockCrossDomainMessenger);
+        executionManager = new L1_NovaExecutionManager(L2_NovaRegistryAddress, _mockCrossDomainMessenger, 0);
     }
 
     function transferFromRelayer_should_always_be_not_executable(address token, uint256 amount) external {

@@ -64,7 +64,7 @@ describe("L2_NovaRegistry", function () {
 
     it("should properly use constructor arguments", async function () {
       // Make sure the constructor params were properly entered.
-      await L2_NovaRegistry.xDomainMessenger().should.eventually.equal(
+      await L2_NovaRegistry.CROSS_DOMAIN_MESSENGER().should.eventually.equal(
         MockCrossDomainMessenger.address
       );
 

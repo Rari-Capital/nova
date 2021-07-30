@@ -3,47 +3,56 @@ dotenv.config();
 
 import { HardhatUserConfig } from "hardhat/config";
 
-import { gweiToWei } from "./utils";
-
 // Plugins:
+import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
+import "hardhat-tracer";
 import "solidity-coverage";
 import "hardhat-interface-generator";
 import { removeConsoleLog } from "hardhat-preprocessor";
 
-import "@nomiclabs/hardhat-waffle";
-import "@nomiclabs/hardhat-ethers";
-
 // Optimism plugins:
 import "@eth-optimism/hardhat-ovm";
 
+// Tasks:
 import "./tasks";
 
 const config: HardhatUserConfig = {
   networks: {
     mainnet: {
-      url: "https://mainnet.infura.io/v3/" + process.env.INFURA_KEY,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : undefined,
-      gasPrice: gweiToWei(process.env.GWEI_GAS_PRICE ?? "50"),
+      url: process.env.MAINNET_RPC_URL,
+      accounts: [process.env.PRIVATE_KEY],
     },
 
     kovan: {
-      url: "https://kovan.infura.io/v3/" + process.env.INFURA_KEY,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : undefined,
-      gasPrice: gweiToWei(process.env.GWEI_GAS_PRICE ?? "10"),
+      url: process.env.KOVAN_RPC_URL,
+      accounts: [process.env.PRIVATE_KEY],
+    },
+
+    optimisticMainnet: {
+      url: "https://mainnet.optimism.io",
+      accounts: [process.env.PRIVATE_KEY],
+      ovm: true,
+    },
+
+    optimisticKovan: {
+      url: "https://kovan.optimism.io",
+      accounts: [process.env.PRIVATE_KEY],
+      ovm: true,
     },
 
     optimism: {
-      url: "http://127.0.0.1:8545",
-      gasPrice: 0,
+      url: "http://localhost:8545",
+      accounts: ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],
       ovm: true,
     },
   },
 
   ovm: {
-    // This version supports ETH opcodes
+    // This version supports ETH opcodes:
     solcVersion: "0.7.6+commit.3b061308",
   },
 
@@ -52,7 +61,7 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1_000_000,
+        runs: 1000000,
       },
 
       metadata: {
@@ -61,10 +70,11 @@ const config: HardhatUserConfig = {
     },
   },
 
-  preprocess: {
-    eachLine: removeConsoleLog(
-      (hre) => hre.network.name !== "hardhat" && hre.network.name !== "localhost"
-    ),
+  paths: {
+    tests:
+      process.argv.includes("optimism") || process.argv.includes("optimisticKovan")
+        ? "test/integration"
+        : "test/unit",
   },
 
   etherscan: {
@@ -75,18 +85,20 @@ const config: HardhatUserConfig = {
     target: "ethers-v5",
   },
 
-  paths: {
-    tests: process.argv.includes("optimism") ? "test/integration" : "test/unit",
+  mocha: {
+    // 5 minutes:
+    timeout: 300000,
   },
 
-  mocha: {
-    // 5 minutes
-    timeout: 300000,
+  preprocess: {
+    eachLine: removeConsoleLog(
+      (hre) => hre.network.name !== "hardhat" && hre.network.name !== "localhost"
+    ),
   },
 
   gasReporter: {
     currency: "USD",
-    gasPrice: parseInt(process.env.GWEI_GAS_PRICE ?? "100"),
+    gasPrice: 30,
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
   },
 };

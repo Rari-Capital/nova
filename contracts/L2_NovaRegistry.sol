@@ -20,16 +20,16 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The minimum delay between when `unlockTokens` and `withdrawTokens` can be called.
-    uint256 public constant MIN_UNLOCK_DELAY_SECONDS = 300;
-
-    /// @notice The maximum amount of input tokens that may be added to a request.
-    uint256 public constant MAX_INPUT_TOKENS = 5;
-
     /// @notice If an execution on L1 soft reverts, the reward recipient
     /// will only be receive (1/PENALTY_TIP_DIVISOR) percent of the request's
     /// tip. The remaining portion will be refunded to the request's creator.
     uint256 public constant PENALTY_TIP_DIVISOR = 2;
+
+    /// @notice The maximum amount of input tokens that may be added to a request.
+    uint256 public constant MAX_INPUT_TOKENS = 5;
+
+    /// @notice The minimum delay between when `unlockTokens` and `withdrawTokens` can be called.
+    uint256 public constant MIN_UNLOCK_DELAY_SECONDS = 300;
 
     /// @notice The ERC20 ETH users must use to pay for the L1 gas usage of request.
     IERC20 public immutable ETH;

@@ -4,17 +4,17 @@
   "description": "Cross-layer execution firmware.",
   "scripts": {
     "compile": "hardhat compile && hardhat compile --network optimism",
-    "integration-tests": "hardhat test --network optimism",
     "unit-tests": "hardhat test",
-    "gas-changed": "UPDATE_SNAPSHOT=1 CI=true hardhat test && npx codechecks",
     "coverage": "hardhat coverage",
+    "verify": "hardhat verify",
+    "integration-tests": "hardhat test --network optimism",
+    "kovan-integration-tests": "hardhat test --network optimisticKovan",
+    "gas-changed": "UPDATE_SNAPSHOT=1 CI=true hardhat test && npx codechecks",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
+    "clean": "hardhat clean && rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm ./coverage ./crytic-export ./contracts/echidna/echidna_corpus ./contracts/echidna/contracts",
     "quick-fuzz": "./fuzz.sh quick",
     "long-fuzz": "./fuzz.sh long",
-    "deep-fuzz": "./fuzz.sh deep",
-    "deploy": "hardhat deploy",
-    "verify": "hardhat verify",
-    "clean": "hardhat clean && rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm ./coverage ./crytic-export ./contracts/echidna/echidna_corpus ./contracts/echidna/contracts"
+    "deep-fuzz": "./fuzz.sh deep"
   },
   "author": "t11s",
   "license": "AGPL-3.0-only",
@@ -23,7 +23,7 @@
     "@eth-optimism/hardhat-ovm": "^0.2.2",
     "@eth-optimism/watcher": "0.0.1-alpha.9",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@nomiclabs/hardhat-etherscan": "^2.1.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.3",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@typechain/ethers-v5": "^7.0.1",
     "@typechain/hardhat": "^2.1.2",
@@ -54,6 +54,8 @@
     "@eth-optimism/contracts": "^0.4.4",
     "@openzeppelin/contracts": "^3.4.0",
     "@rari-capital/solmate": "^2.2.2",
-    "hardhat-interface-generator": "0.0.6"
+    "hardhat-interface-generator": "0.0.6",
+    "hardhat-tracer": "^1.0.0-alpha.6",
+    "ora": "^5.4.1"
   }
 }

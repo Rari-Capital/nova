@@ -3,6 +3,7 @@ import {
   executeRequest,
   getFactory,
   snapshotGasCost,
+  tuneMissingGasEstimate,
 } from "../../utils/testUtils";
 
 import { ethers } from "hardhat";
@@ -22,6 +23,7 @@ import {
   ReturnFalseERC20__factory,
   MockAuthority__factory,
 } from "../../typechain";
+import { gweiToWei } from "../../utils";
 
 describe("L1_NovaExecutionManager", function () {
   let signers: SignerWithAddress[];
@@ -50,24 +52,24 @@ describe("L1_NovaExecutionManager", function () {
     it("should properly deploy the execution manager", async function () {
       L1_NovaExecutionManager = await (
         await getFactory<L1NovaExecutionManager__factory>("L1_NovaExecutionManager")
-      ).deploy(ethers.constants.AddressZero, MockCrossDomainMessenger.address);
+      ).deploy(ethers.constants.AddressZero, MockCrossDomainMessenger.address, 0);
     });
 
     it("should allow changing the execution manager's authority", async function () {
+      const MockAuthority = await (
+        await getFactory<MockAuthority__factory>("MockAuthority")
+      ).deploy();
+
       // Set the authority to a MockAuthority that always returns true.
-      await L1_NovaExecutionManager.setAuthority(
-        (
-          await (await getFactory<MockAuthority__factory>("MockAuthority")).deploy()
-        ).address
-      );
+      await L1_NovaExecutionManager.setAuthority(MockAuthority.address);
     });
 
     it("should properly use constructor arguments", async function () {
       // Make sure the constructor params were properly entered.
-      await L1_NovaExecutionManager.xDomainMessenger().should.eventually.equal(
+      await L1_NovaExecutionManager.CROSS_DOMAIN_MESSENGER().should.eventually.equal(
         MockCrossDomainMessenger.address
       );
-      await L1_NovaExecutionManager.L2_NovaRegistryAddress().should.eventually.equal(
+      await L1_NovaExecutionManager.L2_NOVA_REGISTRY_ADDRESS().should.eventually.equal(
         ethers.constants.AddressZero
       );
     });
@@ -77,6 +79,36 @@ describe("L1_NovaExecutionManager", function () {
       await L1_NovaExecutionManager.HARD_REVERT_TEXT().should.eventually.equal(
         "__NOVA__HARD__REVERT__"
       );
+    });
+
+    it("should allow tuning the missing gas estimate", async function () {
+      const [relayer] = signers;
+
+      const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
+        nonce: 420,
+        strategy: MockStrategy.address,
+        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        gasPrice: gweiToWei(50),
+
+        // It will overestimate before tuning.
+        expectedGasOverestimateAmount: 99999999999999,
+      });
+
+      await tuneMissingGasEstimate(L1_NovaExecutionManager, tx);
+    });
+
+    it("should allow updating the calldata byte gas estimate", async function () {
+      const originalValue = await L1_NovaExecutionManager.calldataByteGasEstimate();
+
+      // Test updating the calldata byte gas estimate.
+      await L1_NovaExecutionManager.setCalldataByteGasEstimate(originalValue.add(1));
+      await L1_NovaExecutionManager.calldataByteGasEstimate().should.eventually.equal(
+        originalValue.add(1)
+      );
+
+      // Restore it to its original value.
+      await L1_NovaExecutionManager.setCalldataByteGasEstimate(originalValue);
     });
   });
 
@@ -167,17 +199,6 @@ describe("L1_NovaExecutionManager", function () {
           "thisFunctionWillTryToReenterAndHardRevertIfFails"
         ),
       }).should.be.revertedWith("HARD_REVERT");
-    });
-
-    it("should properly execute the first exec", async function () {
-      const [relayer] = signers;
-
-      // We don't measure gas here because the first run can be weird.
-      await executeRequest(L1_NovaExecutionManager, {
-        relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
-      });
     });
 
     it("should properly execute a minimal exec", async function () {

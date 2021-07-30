@@ -6,11 +6,12 @@ chai.use(chaiAsPromised);
 chai.should();
 
 import { ethers } from "hardhat";
-import { BigNumberish, Contract, ContractReceipt, ContractTransaction } from "ethers";
+import { BigNumberish, ContractReceipt, ContractTransaction } from "ethers";
 
 import chalk from "chalk";
 import { IERC20 } from "../../typechain";
 import { Interface } from "ethers/lib/utils";
+import ora from "ora";
 
 /** Returns an array of function fragments that are stateful from an interface. */
 export function getAllStatefulFragments(contractInterface: Interface) {
@@ -92,8 +93,25 @@ export async function checkpointBalance(token: IERC20, user: string) {
   return [calcIncrease, calcDecrease];
 }
 
-export function createLocalProvider(port: number) {
-  return new ethers.providers.JsonRpcProvider("http://127.0.0.1:" + port);
+/**
+ * Waits for a cross domain message originating on L1 to be relayed on L2.
+ */
+export async function waitForL1ToL2Relay(l1Tx: Promise<ContractTransaction>, watcher: any) {
+  const res = await l1Tx;
+  await res.wait();
+
+  const [l2ToL1XDomainMsgHash] = await watcher.getMessageHashesFromL1Tx(res.hash);
+
+  const loader = ora({
+    text: chalk.gray(`waiting for L1 -> L2 cross domain message to be relayed\n`),
+    color: "green",
+    indent: 6,
+  }).start();
+
+  await watcher.getL2TransactionReceipt(l2ToL1XDomainMsgHash);
+
+  loader.indent = 0;
+  loader.stop();
 }
 
 export * from "./nova";

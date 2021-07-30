@@ -4,21 +4,11 @@ pragma solidity 0.7.6;
 import {iOVM_CrossDomainMessenger} from "@eth-optimism/contracts/iOVM/bridge/messaging/iOVM_CrossDomainMessenger.sol";
 
 contract MockCrossDomainMessenger is iOVM_CrossDomainMessenger {
-    uint256 constant SEND_MESSAGE_GAS_TO_CONSUME = 151500;
-
     function sendMessage(
         address,
         bytes memory,
         uint32
-    ) external view override {
-        // Burn gas to make this function consume as
-        // much gas as a real sendMessage call would.
-        uint256 i;
-        uint256 startingGas = gasleft();
-        while (startingGas - gasleft() < SEND_MESSAGE_GAS_TO_CONSUME) {
-            i++;
-        }
-    }
+    ) external view override {}
 
     address public override xDomainMessageSender;
 
