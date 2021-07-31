@@ -15,7 +15,7 @@
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
 
     "fuzz": "./fuzz.sh",
-   
+
     "clean": "hardhat clean && rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm ./coverage ./crytic-export ./contracts/echidna/echidna_corpus ./contracts/echidna/contracts"
   },
   "author": "t11s",
@@ -40,20 +40,20 @@
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.1.0",
-    "hardhat": "^2.2.1",
+    "hardhat": "^2.5.0",
     "hardhat-gas-reporter": "^1.0.4",
+    "hardhat-interface-generator": "0.0.6",
     "hardhat-preprocessor": "^0.1.3",
+    "hardhat-tracer": "^1.0.0-alpha.6",
     "mocha-chai-jest-snapshot": "^1.1.1",
+    "ora": "^5.4.1",
     "prettier": "^2.2.1",
     "prettier-plugin-solidity": "^1.0.0-beta.10",
     "solidity-coverage": "^0.8.0-beta.0",
     "ts-generator": "^0.1.1",
     "ts-node": "^9.1.1",
     "typechain": "^5.0.0",
-    "typescript": "^4.2.3",
-    "hardhat-interface-generator": "0.0.6",
-    "hardhat-tracer": "^1.0.0-alpha.6",
-    "ora": "^5.4.1"
+    "typescript": "^4.2.3"
   },
   "dependencies": {
     "@eth-optimism/contracts": "^0.4.4",
