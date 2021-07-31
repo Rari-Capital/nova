@@ -37,7 +37,6 @@ export async function executeRequest(
   config.deadline = config.deadline ?? 9999999999999;
   config.shouldSoftRevert = config.shouldSoftRevert ?? false;
   config.expectedGasOverestimateAmount = config.expectedGasOverestimateAmount ?? 0;
-  config.gasPrice = config.gasPrice ?? 15;
 
   const {
     nonce,
@@ -51,9 +50,19 @@ export async function executeRequest(
     gasPrice,
   } = config;
 
-  const tx = L1_NovaExecutionManager.exec(nonce, strategy, l1Calldata, l2Recipient, deadline, {
-    gasPrice,
-  });
+  const tx = L1_NovaExecutionManager.exec(
+    nonce,
+    strategy,
+    l1Calldata,
+    l2Recipient,
+    deadline,
+
+    config.gasPrice
+      ? {
+          gasPrice,
+        }
+      : {}
+  );
   const awaitedTx = await tx;
 
   // Get events and gas used from the tx.

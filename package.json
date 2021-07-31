@@ -4,17 +4,19 @@
   "description": "Cross-layer execution firmware.",
   "scripts": {
     "compile": "hardhat compile && hardhat compile --network optimism",
+
     "unit-tests": "hardhat test",
-    "coverage": "hardhat coverage",
-    "verify": "hardhat verify",
     "integration-tests": "hardhat test --network optimism",
     "kovan-integration-tests": "hardhat test --network optimisticKovan",
-    "gas-changed": "UPDATE_SNAPSHOT=1 CI=true hardhat test && npx codechecks",
+
+    "gas-changed": "UPDATE_SNAPSHOT=1 CI=true hardhat test",
+
+    "coverage": "hardhat coverage",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
-    "clean": "hardhat clean && rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm ./coverage ./crytic-export ./contracts/echidna/echidna_corpus ./contracts/echidna/contracts",
-    "quick-fuzz": "./fuzz.sh quick",
-    "long-fuzz": "./fuzz.sh long",
-    "deep-fuzz": "./fuzz.sh deep"
+
+    "fuzz": "./fuzz.sh",
+   
+    "clean": "hardhat clean && rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm ./coverage ./crytic-export ./contracts/echidna/echidna_corpus ./contracts/echidna/contracts"
   },
   "author": "t11s",
   "license": "AGPL-3.0-only",
@@ -48,14 +50,14 @@
     "ts-generator": "^0.1.1",
     "ts-node": "^9.1.1",
     "typechain": "^5.0.0",
-    "typescript": "^4.2.3"
+    "typescript": "^4.2.3",
+    "hardhat-interface-generator": "0.0.6",
+    "hardhat-tracer": "^1.0.0-alpha.6",
+    "ora": "^5.4.1"
   },
   "dependencies": {
     "@eth-optimism/contracts": "^0.4.4",
     "@openzeppelin/contracts": "^3.4.0",
-    "@rari-capital/solmate": "^2.2.2",
-    "hardhat-interface-generator": "0.0.6",
-    "hardhat-tracer": "^1.0.0-alpha.6",
-    "ora": "^5.4.1"
+    "@rari-capital/solmate": "^2.2.2"
   }
 }

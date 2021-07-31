@@ -7,7 +7,6 @@ import {
   getFactory,
   snapshotGasCost,
 } from "../../utils/testUtils";
-import { gweiToWei } from "../../utils";
 import { tuneMissingGasEstimate } from "../../tasks/tune";
 
 import {
@@ -89,7 +88,6 @@ describe("L1_NovaExecutionManager", function () {
         nonce: 420,
         strategy: MockStrategy.address,
         l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
-        gasPrice: gweiToWei(50),
 
         // It will overestimate before tuning.
         expectedGasOverestimateAmount: 99999999999999,

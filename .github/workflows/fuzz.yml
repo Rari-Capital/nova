@@ -58,12 +58,8 @@ jobs:
 
       - name: Quick Fuzz ${{ matrix.testName }}
         if: ${{ github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/master' && github.base_ref != 'master' }} # Only run quick fuzz if we're not pushing to master or making a PR going to master.
-        run: npm run quick-fuzz ${{ matrix.testName }}
+        run: npm run fuzz quick ${{ matrix.testName }}
 
       - name: Long Fuzz ${{ matrix.testName }}
         if: ${{ github.event_name != 'workflow_dispatch' && (github.ref == 'refs/heads/master' || github.base_ref == 'master') }} # Only run long fuzz if we're pushing to master or making a PR going to master.
-        run: npm run long-fuzz ${{ matrix.testName }}
-
-      - name: Deep Fuzz ${{ matrix.testName }}
-        if: ${{ github.event_name == 'workflow_dispatch' }} # Only run deep fuzz if triggered manually.
-        run: npm run deep-fuzz ${{ matrix.testName }}
+        run: npm run fuzz long ${{ matrix.testName }}
