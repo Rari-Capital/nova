@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import ora from "ora";
 
-import { task, types } from "hardhat/config";
+import { task } from "hardhat/config";
 import { TransactionResponse } from "@ethersproject/abstract-provider";
 
 import { L1NovaExecutionManager } from "../typechain";

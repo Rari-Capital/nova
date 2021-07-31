@@ -79,7 +79,6 @@ artifacts
 artifacts-ovm
 cache-ovm
 cache
-typechain
 cache
 coverage.json
 typechain-ovm
