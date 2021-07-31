@@ -22,11 +22,17 @@ npm run unit-tests
 
 ## Unit Tests With Coverage
 
+After running tests with coverage, an lcov report will be exported to `coverage/index.html`. 
+
+If you are on MacOS you can quickly open the report with `npm run open-coverage-report`.
+
 ```bash
 npm run coverage
 ```
 
 ## Update Gas Snapshots
+
+If you make a contribution that changes the gas usage of the contracts, run this command before committing. 
 
 ```bash
 npm run gas-changed
@@ -38,6 +44,14 @@ npm run gas-changed
 
 ```bash
 npm run integration-tests
+```
+
+## Kovan Integration Tests 
+
+You must set the `PRIVATE_KEY` and `KOVAN_RPC_URL` environment variables before running integration tests on Kovan.
+
+```bash
+npm run kovan-integration-tests
 ```
 
 ## Fuzz With Echidna
