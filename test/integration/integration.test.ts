@@ -1,13 +1,15 @@
 import hre, { ethers } from "hardhat";
 import { Watcher } from "@eth-optimism/watcher";
 import { getContractFactory } from "@eth-optimism/contracts";
+
 import {
   deployAndLogVerificationInfo,
   executeRequest,
   getOVMFactory,
-  tuneMissingGasEstimate,
   waitForL1ToL2Relay,
 } from "../../utils/testUtils";
+import { tuneMissingGasEstimate } from "../../tasks/tune";
+
 import {
   ERC20,
   L1NovaExecutionManager,

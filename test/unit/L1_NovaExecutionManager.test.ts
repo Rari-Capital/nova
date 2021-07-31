@@ -1,13 +1,14 @@
+import { ethers } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+
 import {
   checkpointBalance,
   executeRequest,
   getFactory,
   snapshotGasCost,
-  tuneMissingGasEstimate,
 } from "../../utils/testUtils";
-
-import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { gweiToWei } from "../../utils";
+import { tuneMissingGasEstimate } from "../../tasks/tune";
 
 import {
   L1NovaExecutionManager,
@@ -23,7 +24,6 @@ import {
   ReturnFalseERC20__factory,
   MockAuthority__factory,
 } from "../../typechain";
-import { gweiToWei } from "../../utils";
 
 describe("L1_NovaExecutionManager", function () {
   let signers: SignerWithAddress[];

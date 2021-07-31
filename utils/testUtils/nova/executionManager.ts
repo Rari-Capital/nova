@@ -1,9 +1,8 @@
-import { BytesLike, ContractTransaction } from "ethers";
+import { BytesLike } from "ethers";
+
 import { computeExecHash } from ".";
-import chalk from "chalk";
 
 import { L1NovaExecutionManager } from "../../../typechain";
-import ora from "ora";
 
 /**
  * We use this global counter to
@@ -86,68 +85,4 @@ export async function executeRequest(
   }
 
   return { tx, execHash, gasUsed, execEvent, ...config };
-}
-
-/**
- * Finds the optimal missing gas estimate for an execution manager based on a single exec tx.
- */
-async function findOptimalMissingGasEstimate(
-  L1_NovaExecutionManager: L1NovaExecutionManager,
-  tx: Promise<ContractTransaction>
-) {
-  const { gasUsed, events, blockNumber } = await (await tx).wait();
-  const execEvent = events[events.length - 1];
-
-  const previousMissingGasEstimate = (
-    await L1_NovaExecutionManager.missingGasEstimate({ blockTag: blockNumber })
-  ).toNumber();
-
-  const underestimateAmount = gasUsed.toNumber() - execEvent.args.gasUsed.toNumber();
-
-  return {
-    underestimateAmount,
-    previousMissingGasEstimate,
-    optimalMissingGasEstimate: previousMissingGasEstimate + underestimateAmount,
-  };
-}
-
-/**
- * Tunes an execution manager's missing gas estimate based on single exec tx.
- */
-export async function tuneMissingGasEstimate(
-  L1_NovaExecutionManager: L1NovaExecutionManager,
-  tx: Promise<ContractTransaction>
-) {
-  const { previousMissingGasEstimate, optimalMissingGasEstimate } =
-    await findOptimalMissingGasEstimate(L1_NovaExecutionManager, tx);
-
-  console.log();
-
-  const loader = ora({
-    text: chalk.gray(
-      `tuning missing gas estimate from ${chalk.magenta(
-        previousMissingGasEstimate.toString()
-      )} to ${chalk.magenta(optimalMissingGasEstimate.toString())}\n`
-    ),
-    color: "magenta",
-    indent: 6,
-  }).start();
-
-  await (
-    await L1_NovaExecutionManager.setMissingGasEstimate(
-      // Update the gas estimate based on the delta (lower it if its over, increase it if its under) and give it 500 gas of leeway.
-      optimalMissingGasEstimate + 500
-    )
-  ).wait();
-
-  loader.stopAndPersist({
-    symbol: chalk.magenta("✓"),
-    text: chalk.gray(
-      `tuned missing gas estimate from ${chalk.magenta(
-        previousMissingGasEstimate.toString()
-      )} to ${chalk.magenta(optimalMissingGasEstimate.toString())}\n`
-    ),
-  });
-
-  loader.indent = 0;
 }

@@ -5,15 +5,13 @@ chai.use(jestSnapshotPlugin());
 chai.use(chaiAsPromised);
 chai.should();
 
+import chalk from "chalk";
+import ora from "ora";
 import hre, { ethers } from "hardhat";
 import { BigNumberish, ContractFactory, ContractReceipt, ContractTransaction } from "ethers";
-
-import chalk from "chalk";
-import { IERC20, ReturnFalseERC20__factory } from "../../typechain";
 import { Interface } from "ethers/lib/utils";
-import ora from "ora";
-import { retryOperation } from "..";
-import { HttpNetworkConfig } from "hardhat/types";
+
+import { IERC20 } from "../../typechain";
 
 /** Returns an array of function fragments that are stateful from an interface. */
 export function getAllStatefulFragments(contractInterface: Interface) {
@@ -103,23 +101,35 @@ export async function checkpointBalance(token: IERC20, user: string) {
  * Waits for a cross domain message originating on L1 to be relayed on L2.
  */
 export async function waitForL1ToL2Relay(l1Tx: Promise<ContractTransaction>, watcher: any) {
-  const res = await l1Tx;
-  await res.wait();
-
-  const [l2ToL1XDomainMsgHash] = await watcher.getMessageHashesFromL1Tx(res.hash);
+  console.log();
 
   const loader = ora({
-    text: chalk.gray(`waiting for L1 -> L2 cross domain message to be relayed\n`),
-    color: "green",
+    text: chalk.grey(`waiting for L1 -> L2 cross domain message to be relayed\n`),
+    color: "yellow",
     indent: 6,
   }).start();
 
-  await watcher.getL2TransactionReceipt(l2ToL1XDomainMsgHash);
+  const res = await l1Tx;
+  await res.wait();
+
+  const [l1ToL2XDomainMsgHash] = await watcher.getMessageHashesFromL1Tx(res.hash);
+
+  const receipt: ContractReceipt = await watcher.getL2TransactionReceipt(l1ToL2XDomainMsgHash);
+
+  loader.stopAndPersist({
+    symbol: chalk.yellow("✓"),
+    text: chalk.gray(
+      `relay completed on L2 for cross domain message: ${chalk.yellow(receipt.transactionHash)}\n`
+    ),
+  });
 
   loader.indent = 0;
   loader.stop();
 }
 
+/**
+ * Deploys a contract and if it's on a network that has etherscan, logs info on how to verify it on Etherscan.
+ */
 export async function deployAndLogVerificationInfo<T extends ContractFactory>(
   factory: T,
   ...args: Parameters<T["deploy"]>

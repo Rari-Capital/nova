@@ -1,4 +1,5 @@
-import { BigNumber, BigNumberish, ContractTransaction } from "ethers";
+import { BigNumber, BigNumberish } from "ethers";
+
 import { computeExecHash } from ".";
 import { getFactory } from "..";
 import { gweiToWei } from "../..";

@@ -1,15 +1,6 @@
 import { ethers } from "hardhat";
+import { BigNumber } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-
-import {
-  L2NovaRegistry__factory,
-  MockCrossDomainMessenger,
-  MockCrossDomainMessenger__factory,
-  MockERC20,
-  MockAuthority__factory,
-  MockERC20__factory,
-  L2NovaRegistry,
-} from "../../typechain";
 
 import {
   getFactory,
@@ -24,7 +15,16 @@ import {
   completeRequest,
   speedUpRequest,
 } from "../../utils/testUtils";
-import { BigNumber } from "ethers";
+
+import {
+  L2NovaRegistry__factory,
+  MockCrossDomainMessenger,
+  MockCrossDomainMessenger__factory,
+  MockERC20,
+  MockAuthority__factory,
+  MockERC20__factory,
+  L2NovaRegistry,
+} from "../../typechain";
 
 describe("L2_NovaRegistry", function () {
   let signers: SignerWithAddress[];

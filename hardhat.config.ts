@@ -18,7 +18,8 @@ import { removeConsoleLog } from "hardhat-preprocessor";
 import "@eth-optimism/hardhat-ovm";
 
 // Tasks:
-import "./tasks";
+import "./tasks/tune";
+import "./tasks/compile";
 
 const config: HardhatUserConfig = {
   networks: {
