@@ -2,6 +2,7 @@ import hre, { ethers } from "hardhat";
 import { Watcher } from "@eth-optimism/watcher";
 import { getContractFactory } from "@eth-optimism/contracts";
 import {
+  deployAndLogVerificationInfo,
   executeRequest,
   getOVMFactory,
   tuneMissingGasEstimate,
@@ -61,24 +62,28 @@ describe("Integration", function () {
         .connect(l2Wallet)
         .attach("0x4200000000000000000000000000000000000006");
 
-      MockStrategy = await getOVMFactory<MockStrategy__factory>("MockStrategy", false, "mocks/")
-        .connect(l1Wallet)
-        .deploy();
+      MockStrategy = await deployAndLogVerificationInfo(
+        getOVMFactory<MockStrategy__factory>("MockStrategy", false, "mocks/").connect(l1Wallet)
+      );
     });
 
     it("should properly deploy the registry", async function () {
-      L2_NovaRegistry = await getOVMFactory<L2NovaRegistry__factory>("L2_NovaRegistry", true)
-        .connect(l2Wallet)
-        .deploy(OVM_ETH.address, watcher.l2.messengerAddress);
+      L2_NovaRegistry = await deployAndLogVerificationInfo(
+        getOVMFactory<L2NovaRegistry__factory>("L2_NovaRegistry", true).connect(l2Wallet),
+        OVM_ETH.address,
+        watcher.l2.messengerAddress
+      );
     });
 
     it("should properly deploy the execution manager", async function () {
-      L1_NovaExecutionManager = await getOVMFactory<L1NovaExecutionManager__factory>(
-        "L1_NovaExecutionManager",
-        false
-      )
-        .connect(l1Wallet)
-        .deploy(L2_NovaRegistry.address, watcher.l1.messengerAddress, 1_500_000);
+      L1_NovaExecutionManager = await deployAndLogVerificationInfo(
+        getOVMFactory<L1NovaExecutionManager__factory>("L1_NovaExecutionManager", false).connect(
+          l1Wallet
+        ),
+        L2_NovaRegistry.address,
+        watcher.l1.messengerAddress,
+        1_500_000
+      );
     });
 
     it("should properly link the registry to the execution manager", async function () {

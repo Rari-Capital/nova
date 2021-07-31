@@ -121,13 +121,15 @@ export async function tuneMissingGasEstimate(
   const { previousMissingGasEstimate, optimalMissingGasEstimate } =
     await findOptimalMissingGasEstimate(L1_NovaExecutionManager, tx);
 
+  console.log();
+
   const loader = ora({
     text: chalk.gray(
-      `tuning missing gas estimate from ${chalk.green(
+      `tuning missing gas estimate from ${chalk.magenta(
         previousMissingGasEstimate.toString()
-      )} to ${chalk.green(optimalMissingGasEstimate.toString())}\n`
+      )} to ${chalk.magenta(optimalMissingGasEstimate.toString())}\n`
     ),
-    color: "green",
+    color: "magenta",
     indent: 6,
   }).start();
 
@@ -138,6 +140,14 @@ export async function tuneMissingGasEstimate(
     )
   ).wait();
 
+  loader.stopAndPersist({
+    symbol: chalk.magenta("✓"),
+    text: chalk.gray(
+      `tuned missing gas estimate from ${chalk.magenta(
+        previousMissingGasEstimate.toString()
+      )} to ${chalk.magenta(optimalMissingGasEstimate.toString())}\n`
+    ),
+  });
+
   loader.indent = 0;
-  loader.stop();
 }

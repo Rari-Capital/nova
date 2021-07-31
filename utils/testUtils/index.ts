@@ -5,13 +5,15 @@ chai.use(jestSnapshotPlugin());
 chai.use(chaiAsPromised);
 chai.should();
 
-import { ethers } from "hardhat";
-import { BigNumberish, ContractReceipt, ContractTransaction } from "ethers";
+import hre, { ethers } from "hardhat";
+import { BigNumberish, ContractFactory, ContractReceipt, ContractTransaction } from "ethers";
 
 import chalk from "chalk";
-import { IERC20 } from "../../typechain";
+import { IERC20, ReturnFalseERC20__factory } from "../../typechain";
 import { Interface } from "ethers/lib/utils";
 import ora from "ora";
+import { retryOperation } from "..";
+import { HttpNetworkConfig } from "hardhat/types";
 
 /** Returns an array of function fragments that are stateful from an interface. */
 export function getAllStatefulFragments(contractInterface: Interface) {
@@ -23,7 +25,11 @@ export function getFactory<T>(name: string): Promise<T> {
   return ethers.getContractFactory(name) as any;
 }
 
-export function getOVMFactory<T>(name: string, l2: boolean, path?: string): T {
+export function getOVMFactory<T extends ContractFactory>(
+  name: string,
+  l2: boolean,
+  path?: string
+): T {
   const artifact = require(`../../artifacts${l2 ? "-ovm" : ""}/contracts/${
     path ?? ""
   }${name}.sol/${name}.json`);
@@ -112,6 +118,49 @@ export async function waitForL1ToL2Relay(l1Tx: Promise<ContractTransaction>, wat
 
   loader.indent = 0;
   loader.stop();
+}
+
+export async function deployAndLogVerificationInfo<T extends ContractFactory>(
+  factory: T,
+  ...args: Parameters<T["deploy"]>
+): Promise<ReturnType<T["deploy"]>> {
+  const chainID = await factory.signer.getChainId();
+  const [networkName] = Object.entries(hre.config.networks).find(
+    ([, config]) => config.chainId == chainID
+  );
+
+  // We can add 69 and 10 to this once Hardhat fixes OE verification:
+  const shouldPrintVerifyInfo = chainID == 1 || chainID == 42;
+
+  if (shouldPrintVerifyInfo) {
+    console.log();
+  }
+
+  const loader = ora({
+    text: chalk.gray(`deploying contract on ${chalk.blue(networkName)}\n`),
+    color: "blue",
+    indent: 6,
+  }).start();
+
+  const deployed = await (await factory.deploy(...args)).deployed();
+
+  if (shouldPrintVerifyInfo) {
+    loader.stopAndPersist({
+      symbol: chalk.blue("✓"),
+      text: chalk.gray(
+        `npx hardhat verify --network ${networkName} ${chalk.blue(deployed.address)} ${args.join(
+          " "
+        )}\n`
+      ),
+    });
+
+    loader.indent = 0;
+  } else {
+    loader.indent = 0;
+    loader.stop();
+  }
+
+  return deployed;
 }
 
 export * from "./nova";

@@ -25,29 +25,34 @@ const config: HardhatUserConfig = {
     mainnet: {
       url: process.env.MAINNET_RPC_URL,
       accounts: [process.env.PRIVATE_KEY],
+      chainId: 1,
     },
 
     kovan: {
       url: process.env.KOVAN_RPC_URL,
       accounts: [process.env.PRIVATE_KEY],
+      chainId: 42,
     },
 
     optimisticMainnet: {
       url: "https://mainnet.optimism.io",
       accounts: [process.env.PRIVATE_KEY],
       ovm: true,
+      chainId: 10,
     },
 
     optimisticKovan: {
       url: "https://kovan.optimism.io",
       accounts: [process.env.PRIVATE_KEY],
       ovm: true,
+      chainId: 69,
     },
 
     optimism: {
       url: "http://localhost:8545",
       accounts: ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],
       ovm: true,
+      chainId: 420,
     },
   },
 
