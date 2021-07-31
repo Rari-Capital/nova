@@ -21,30 +21,32 @@ import "@eth-optimism/hardhat-ovm";
 import "./tasks/tune";
 import "./tasks/compile";
 
+const accounts = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
+
 const config: HardhatUserConfig = {
   networks: {
     mainnet: {
-      url: process.env.MAINNET_RPC_URL,
-      accounts: [process.env.PRIVATE_KEY],
+      url: process.env.MAINNET_RPC_URL ?? "",
+      accounts,
       chainId: 1,
     },
 
     kovan: {
-      url: process.env.KOVAN_RPC_URL,
-      accounts: [process.env.PRIVATE_KEY],
+      url: process.env.KOVAN_RPC_URL ?? "",
+      accounts,
       chainId: 42,
     },
 
     optimisticMainnet: {
       url: "https://mainnet.optimism.io",
-      accounts: [process.env.PRIVATE_KEY],
+      accounts,
       ovm: true,
       chainId: 10,
     },
 
     optimisticKovan: {
       url: "https://kovan.optimism.io",
-      accounts: [process.env.PRIVATE_KEY],
+      accounts,
       ovm: true,
       chainId: 69,
     },
