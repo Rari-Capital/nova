@@ -48,9 +48,9 @@ npm run integration-tests
 npm run fuzz deep {{CONTRACT_NAME}}
 ```
 
-Replace `{{CONTRACT_NAME}}` with the name of a contract that is fuzzed in `contracts/echidna`. A full list can be found here:
+Replace `{{CONTRACT_NAME}}` with a contract that is fuzzed in `contracts/echidna`. A full list can be found here:
 
-https://github.com/Rari-Capital/nova/blob/master/.github/workflows/fuzz.yml#L12-L13
+https://github.com/Rari-Capital/nova/blob/master/.github/workflows/fuzz.yml#L13-L14
 
 There are 3 fuzz "modes" setup for this project:
 
