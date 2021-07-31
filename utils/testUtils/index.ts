@@ -9,14 +9,8 @@ import chalk from "chalk";
 import ora from "ora";
 import hre, { ethers } from "hardhat";
 import { BigNumberish, ContractFactory, ContractReceipt, ContractTransaction } from "ethers";
-import { Interface } from "ethers/lib/utils";
 
 import { IERC20 } from "../../typechain";
-
-/** Returns an array of function fragments that are stateful from an interface. */
-export function getAllStatefulFragments(contractInterface: Interface) {
-  return Object.values(contractInterface.functions).filter((f) => !f.constant);
-}
 
 /** Gets an ethers factory for a contract. T should be the typechain factory type of the contract (ie: MockERC20__factory). */
 export function getFactory<T>(name: string): Promise<T> {
