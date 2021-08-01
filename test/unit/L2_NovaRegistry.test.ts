@@ -356,7 +356,7 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("NO_UNLOCK_SCHEDULED");
     });
 
-    it("does not allow relocking tokens on a requst with tokens removed", async function () {
+    it("does not allow relocking tokens on a request with tokens removed", async function () {
       const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
@@ -396,7 +396,7 @@ describe("L2_NovaRegistry", function () {
       ).should.be.revertedWith("NOT_CREATOR");
     });
 
-    it("does not allow speeding up rquests with tokens removed", async function () {
+    it("does not allow speeding up requests with tokens removed", async function () {
       const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();

@@ -184,7 +184,7 @@ Claims input tokens earned from executing a request. Request creators must also 
 This function may consume a fair bit of gas as it transfers multiple ERC20s at once.
 :::
 
-Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recpient given in `execCompleted` or the request creator if the request reverted).
+Anyone may call this function, but the tokens will be sent to the proper input token recipient (either the l2Recipient given in `execCompleted` or the request creator if the request reverted).
 
 ### Check if tokens are removed
 
@@ -325,7 +325,7 @@ This function returns the execHash computed from the current call to [`exec`](#e
 function currentRelayer() external view returns (address)
 ```
 
-This function returns the current "relayer" (address that made the current call to [`exec`](#execute-request)). Strategy contrats may wish to call this function to ensure only a trusted party is able to execute the strategy or to release additional rewards for the relayer, etc.
+This function returns the current "relayer" (address that made the current call to [`exec`](#execute-request)). Strategy contracts may wish to call this function to ensure only a trusted party is able to execute the strategy or to release additional rewards for the relayer, etc.
 
 ### Transfer Tokens From The Relayer
 
@@ -383,4 +383,5 @@ function swapExactTokensForTokens(
   // Send the tokens up to L2 with the recipient being the `to` param
   optimismTokenBridge.depositAsERC20(address(output), to, outputAmount);
 }
+
 ```

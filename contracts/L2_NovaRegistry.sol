@@ -264,7 +264,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice Claims input tokens earned from executing a request.
     /// @notice Request creators must also call this function if their request reverted (as input tokens are not sent to relayers if the request reverts).
     /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient
-    /// (either the l2Recpient given in `execCompleted` or the request creator if the request reverted).
+    /// (either the l2Recipient given in `execCompleted` or the request creator if the request reverted).
     /// @param execHash The hash of the executed request.
     function claimInputTokens(bytes32 execHash) external nonReentrant requiresAuth {
         // Get a pointer to the input token recipient data.
@@ -295,7 +295,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // Ensure the request has not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
-        // Make sure that an unlock is not arleady scheduled.
+        // Make sure that an unlock is not already scheduled.
         require(getRequestUnlockTimestamp[execHash] == 0, "UNLOCK_ALREADY_SCHEDULED");
         // Make sure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
@@ -523,7 +523,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         if (uncleDeathTimestamp > block.timestamp) {
             // This request is a resubmitted version of its uncle which has
             // not "died" yet, so we know it does not have its tokens yet,
-            // but will recieve them after the uncleDeathTimestamp.
+            // but will receive them after the uncleDeathTimestamp.
             return (true, uncleDeathTimestamp);
         }
 
