@@ -1,5 +1,7 @@
 import chalk from "chalk";
 import ora from "ora";
+import chai from "chai";
+chai.should();
 
 import { task } from "hardhat/config";
 import { TransactionResponse } from "@ethersproject/abstract-provider";
@@ -93,12 +95,13 @@ export async function tuneMissingGasEstimate(
     indent: 6,
   }).start();
 
-  await (
-    await L1_NovaExecutionManager.setMissingGasEstimate(
-      // Update the gas estimate based on the delta (lower it if its over, increase it if its under) and give it 500 gas of leeway.
-      optimalMissingGasEstimate + 500
-    )
-  ).wait();
+  // Add a 500 gas buffer for a bit of leeway.
+  const newMissingGasEstimate = optimalMissingGasEstimate + 500;
+
+  // Update the missing gas estimate on-chain.
+  await L1_NovaExecutionManager.setMissingGasEstimate(newMissingGasEstimate)
+    .should.emit(L1_NovaExecutionManager, "MissingGasEstimateUpdated")
+    .withArgs(newMissingGasEstimate);
 
   loader.stopAndPersist({
     symbol: chalk.magenta("✓"),

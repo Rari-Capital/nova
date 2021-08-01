@@ -183,12 +183,18 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
 
   events: {
     "AuthorityUpdated(address)": EventFragment;
+    "CalldataByeGasEstimateUpdated(uint256)": EventFragment;
     "Exec(bytes32,address,bool,uint256)": EventFragment;
+    "MissingGasEstimateUpdated(uint256)": EventFragment;
     "OwnerUpdated(address)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "AuthorityUpdated"): EventFragment;
+  getEvent(
+    nameOrSignatureOrTopic: "CalldataByeGasEstimateUpdated"
+  ): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Exec"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "MissingGasEstimateUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnerUpdated"): EventFragment;
 }
 
@@ -434,6 +440,10 @@ export class L1NovaExecutionManager extends BaseContract {
       authority?: string | null
     ): TypedEventFilter<[string], { authority: string }>;
 
+    CalldataByeGasEstimateUpdated(
+      newCalldataByteGasEstimate?: null
+    ): TypedEventFilter<[BigNumber], { newCalldataByteGasEstimate: BigNumber }>;
+
     Exec(
       execHash?: BytesLike | null,
       relayer?: null,
@@ -448,6 +458,10 @@ export class L1NovaExecutionManager extends BaseContract {
         gasUsed: BigNumber;
       }
     >;
+
+    MissingGasEstimateUpdated(
+      newMissingGasEstimate?: null
+    ): TypedEventFilter<[BigNumber], { newMissingGasEstimate: BigNumber }>;
 
     OwnerUpdated(
       owner?: string | null

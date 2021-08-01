@@ -53,6 +53,14 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted when `setMissingGasEstimate` is called.
+    /// @param newMissingGasEstimate The updated missingGasEstimate.
+    event MissingGasEstimateUpdated(uint256 newMissingGasEstimate);
+
+    /// @notice Emitted when `setCalldataByteGasEstimate` is called.
+    /// @param newCalldataByteGasEstimate The updated calldataByteGasEstimate.
+    event CalldataByeGasEstimateUpdated(uint256 newCalldataByteGasEstimate);
+
     /// @notice Emitted when `exec` is called.
     /// @param execHash The execHash computed from arguments and transaction context.
     /// @param reverted Will be true if the strategy call reverted, will be false if not.
@@ -79,12 +87,16 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @param newMissingGasEstimate The updated value to use for missingGasEstimate.
     function setMissingGasEstimate(uint128 newMissingGasEstimate) external requiresAuth {
         missingGasEstimate = newMissingGasEstimate;
+
+        emit MissingGasEstimateUpdated(newMissingGasEstimate);
     }
 
     /// @notice Updates the calldataByteGasEstimate configuration value.
     /// @param newCalldataByteGasEstimate The updated value to use for calldataByteGasEstimate.
     function setCalldataByteGasEstimate(uint128 newCalldataByteGasEstimate) external requiresAuth {
         calldataByteGasEstimate = newCalldataByteGasEstimate;
+
+        emit CalldataByeGasEstimateUpdated(newCalldataByteGasEstimate);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -95,15 +107,17 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @notice Outside of an active `exec` call `currentExecHash` will always equal DEFAULT_EXECHASH.
     bytes32 public constant DEFAULT_EXECHASH = 0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEF;
 
-    /// @notice The execHash computed from the currently executing call to `exec`.
-    /// @notice This will be reset to DEFAULT_EXECHASH after each execution completes.
-    bytes32 public currentExecHash = DEFAULT_EXECHASH;
     /// @notice The address who called `exec`.
     /// @notice This will not be reset after each execution completes.
     address public currentRelayer;
+
     /// @dev The address of the strategy that is currently being called.
     /// @dev This will not be reset after each execution completes.
     address public currentlyExecutingStrategy;
+
+    /// @notice The execHash computed from the currently executing call to `exec`.
+    /// @notice This will be reset to DEFAULT_EXECHASH after each execution completes.
+    bytes32 public currentExecHash = DEFAULT_EXECHASH;
 
     /*///////////////////////////////////////////////////////////////
                            STATEFUL FUNCTIONS
