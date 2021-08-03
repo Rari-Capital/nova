@@ -21,8 +21,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice If an execution on L1 soft reverts, the reward recipient
-    /// will only be receive (1/PENALTY_TIP_DIVISOR) percent of the request's
-    /// tip. The remaining portion will be refunded to the request's creator.
+    /// will only receive the tip divided by the PENALTY_TIP_DIVISOR. The
+    /// the remaining portion will be refunded to the creator of the request.
     uint256 public constant PENALTY_TIP_DIVISOR = 2;
 
     /// @notice The maximum amount of input tokens that may be added to a request.
@@ -234,7 +234,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // Transfer in ETH to pay for max gas usage + tip.
         ETH.safeTransferFrom(msg.sender, address(this), gasLimit.mul(gasPrice).add(tip));
 
-        // Transfer input tokens in that the msg.sender has approved.
+        // Transfer input tokens in that msg.sender has approved.
         for (uint256 i = 0; i < inputTokens.length; i++) {
             inputTokens[i].l2Token.safeTransferFrom(msg.sender, address(this), inputTokens[i].amount);
 
@@ -302,7 +302,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // Make sure the delay is greater than the minimum.
         require(unlockDelaySeconds >= MIN_UNLOCK_DELAY_SECONDS, "DELAY_TOO_SMALL");
 
-        // Set the delay timestamp to (current timestamp + the delay)
+        // Set the unlock timestamp to: block.timestamp + unlockDelaySeconds.
         uint256 unlockTimestamp = block.timestamp.add(unlockDelaySeconds);
         getRequestUnlockTimestamp[execHash] = unlockTimestamp;
 
@@ -368,7 +368,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     function speedUpRequest(bytes32 execHash, uint256 gasPrice) external requiresAuth returns (bytes32 newExecHash) {
         // Ensure that msg.sender is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
-        // Ensure tokens have not already been removed.
+        // Ensure tokens have not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
         // Ensure the request has not already been sped up.
@@ -458,9 +458,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // The amount of ETH to pay for the gas used (capped at the gas limit).
         uint256 gasPayment = gasPrice.mul(gasUsed > gasLimit ? gasLimit : gasUsed);
 
-        // The amount of ETH to pay as the tip to the rewardRecipient.
-        // If the execution reverted the recipient will get (1/PENALTY_TIP_DIVISOR)
-        // percent of the tip. The creator will be refunded the remaining portion.
+        // The amount of ETH to pay as the tip to the rewardRecipient. If the
+        // execution reverted the reward recipient will only receive the tip divided
+        // by the PENALTY_TIP_DIVISOR. The creator will be refunded the remaining portion.
         uint256 recipientTip = reverted ? (tip.div(PENALTY_TIP_DIVISOR)) : tip;
 
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
