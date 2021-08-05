@@ -22,13 +22,23 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 interface EchidnaL1NovaExecutionManagerInterface
   extends ethers.utils.Interface {
   functions: {
-    "exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(uint256,address,bytes,address,uint256)": FunctionFragment;
+    "exec_should_not_affect_currentExecHash(uint256,address,bytes,address,uint256)": FunctionFragment;
+    "should_always_allow_updating_the_calldata_byte_gas_estimate(uint128)": FunctionFragment;
+    "should_always_allow_updating_the_missing_gas_estimate(uint128)": FunctionFragment;
     "transferFromRelayer_should_always_be_not_executable(address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage",
+    functionFragment: "exec_should_not_affect_currentExecHash",
     values: [BigNumberish, string, BytesLike, string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "should_always_allow_updating_the_calldata_byte_gas_estimate",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "should_always_allow_updating_the_missing_gas_estimate",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "transferFromRelayer_should_always_be_not_executable",
@@ -36,7 +46,15 @@ interface EchidnaL1NovaExecutionManagerInterface
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage",
+    functionFragment: "exec_should_not_affect_currentExecHash",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "should_always_allow_updating_the_calldata_byte_gas_estimate",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "should_always_allow_updating_the_missing_gas_estimate",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -91,12 +109,22 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
   interface: EchidnaL1NovaExecutionManagerInterface;
 
   functions: {
-    exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
+    exec_should_not_affect_currentExecHash(
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
       recipient: string,
       deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    should_always_allow_updating_the_calldata_byte_gas_estimate(
+      newCalldataByteGasEstimate: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    should_always_allow_updating_the_missing_gas_estimate(
+      newMissingGasEstimate: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -107,12 +135,22 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
     ): Promise<ContractTransaction>;
   };
 
-  exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
+  exec_should_not_affect_currentExecHash(
     nonce: BigNumberish,
     strategy: string,
     l1Calldata: BytesLike,
     recipient: string,
     deadline: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  should_always_allow_updating_the_calldata_byte_gas_estimate(
+    newCalldataByteGasEstimate: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  should_always_allow_updating_the_missing_gas_estimate(
+    newMissingGasEstimate: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -123,12 +161,22 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
+    exec_should_not_affect_currentExecHash(
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
       recipient: string,
       deadline: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    should_always_allow_updating_the_calldata_byte_gas_estimate(
+      newCalldataByteGasEstimate: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    should_always_allow_updating_the_missing_gas_estimate(
+      newMissingGasEstimate: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -142,12 +190,22 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
   filters: {};
 
   estimateGas: {
-    exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
+    exec_should_not_affect_currentExecHash(
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
       recipient: string,
       deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    should_always_allow_updating_the_calldata_byte_gas_estimate(
+      newCalldataByteGasEstimate: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    should_always_allow_updating_the_missing_gas_estimate(
+      newMissingGasEstimate: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -159,12 +217,22 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
   };
 
   populateTransaction: {
-    exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
+    exec_should_not_affect_currentExecHash(
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
       recipient: string,
       deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    should_always_allow_updating_the_calldata_byte_gas_estimate(
+      newCalldataByteGasEstimate: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    should_always_allow_updating_the_missing_gas_estimate(
+      newMissingGasEstimate: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

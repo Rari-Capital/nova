@@ -18,12 +18,22 @@ contract Echidna_L1_NovaExecutionManager {
         executionManager = new L1_NovaExecutionManager(L2_NovaRegistryAddress, _mockCrossDomainMessenger, 0);
     }
 
+    function should_always_allow_updating_the_missing_gas_estimate(uint128 newMissingGasEstimate) external {
+        executionManager.setMissingGasEstimate(newMissingGasEstimate);
+
+        assert(executionManager.missingGasEstimate() == newMissingGasEstimate);
+    }
+
+    function should_always_allow_updating_the_calldata_byte_gas_estimate(uint128 newCalldataByteGasEstimate) external {
+        executionManager.setCalldataByteGasEstimate(newCalldataByteGasEstimate);
+
+        assert(executionManager.calldataByteGasEstimate() == newCalldataByteGasEstimate);
+    }
+
     function transferFromRelayer_should_always_be_not_executable(address token, uint256 amount) external {
         try executionManager.transferFromRelayer(token, amount) {
-            // If the call succeeded, something is wrong:
             assert(false);
         } catch Error(string memory reason) {
-            // If the called errored, it should be a NO_ACTIVE_EXECUTION/NOT_CURRENT_STRATEGY error. If not, something is wrong:
             bytes32 hashedReason = keccak256(abi.encodePacked(reason));
             assert(
                 hashedReason == keccak256("NO_ACTIVE_EXECUTION") || hashedReason == keccak256("NOT_CURRENT_STRATEGY")
@@ -31,7 +41,7 @@ contract Echidna_L1_NovaExecutionManager {
         }
     }
 
-    function exec_should_not_affect_currentExecHash_and_should_send_an_xDomainMessage(
+    function exec_should_not_affect_currentExecHash(
         uint256 nonce,
         address strategy,
         bytes memory l1Calldata,
@@ -39,11 +49,9 @@ contract Echidna_L1_NovaExecutionManager {
         uint256 deadline
     ) external {
         try executionManager.exec(nonce, strategy, l1Calldata, recipient, deadline) {
-            // ExecHash should always be reset:
             assert(executionManager.currentExecHash() == executionManager.DEFAULT_EXECHASH());
-
-            // Relayer should be us and not reset:
             assert(executionManager.currentRelayer() == address(this));
+            assert(executionManager.currentlyExecutingStrategy() == strategy);
         } catch {
             // If it reverted, it should be because either;
             // - the deadline was in the past
@@ -51,7 +59,6 @@ contract Echidna_L1_NovaExecutionManager {
             // - recipient == address(0)
             // - the calldata had transferFrom as the sig
             // - the calldata had sendMessage as the sig
-            // If not, something is wrong:
             bytes4 calldataSig = SigLib.fromCalldata(l1Calldata);
             assert(
                 deadline < block.timestamp ||

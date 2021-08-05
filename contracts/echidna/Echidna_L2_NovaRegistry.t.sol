@@ -38,33 +38,14 @@ contract Echidna_L2_NovaRegistry is HevmHelper {
         uint256 tip,
         uint256 unlockDelay
     ) external {
-        // Calculate how much wei the registry will bill us:
-        uint256 weiOwed = (gasPrice * gasLimit) + tip;
+        (bytes32 execHash, uint256 preRequestBalance, ) = createRequest(strategy, l1Calldata, gasLimit, gasPrice, tip);
 
-        // Mint and approve the right amount of tokens to the registry.
-        mintAndApproveToRegistry(weiOwed);
-
-        // Calculate how much ETH we have now before the registry consumes it:
-        uint256 preRequestBalance = mockETH.balanceOf(address(this));
-
-        // Make the request:
-        bytes32 execHash =
-            registry.requestExec(strategy, l1Calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0));
-
-        // Ensure that our balance properly decreased.
-        assert(mockETH.balanceOf(address(this)) == (preRequestBalance - weiOwed));
-
-        // Attempt to unlock tokens.
         try registry.unlockTokens(execHash, unlockDelay) {
-            // Time travel to when the tokens unlock:
             hevm.warp(block.timestamp + unlockDelay);
 
-            // Attempt to withdraw tokens:
             try registry.withdrawTokens(execHash) {
-                // Assert after withdrawing that our balance did not change.
                 assert(mockETH.balanceOf(address(this)) == preRequestBalance);
             } catch {
-                // This should not revert, if it does something is wrong.
                 assert(false);
             }
         } catch {
@@ -78,43 +59,64 @@ contract Echidna_L2_NovaRegistry is HevmHelper {
     function speeding_up_a_request_multiple_times_should_fail(
         address strategy,
         bytes calldata l1Calldata,
-        uint256 gasLimit,
-        uint256 gasPrice,
-        uint256 tip,
-        uint256 gasDelta1,
-        uint256 gasDelta2
+        uint64 gasLimit,
+        uint64 gasPrice,
+        uint64 tip,
+        uint64 gasDelta1,
+        uint64 gasDelta2
     ) external {
-        // Mint and approve the right amount of tokens to the registry.
-        mintAndApproveToRegistry((gasPrice * gasLimit) + tip);
+        (bytes32 execHash, , ) = createRequest(strategy, l1Calldata, gasLimit, gasPrice, tip);
 
-        bytes32 execHash =
-            // Make a starting request.
-            registry.requestExec(strategy, l1Calldata, gasLimit, gasPrice, tip, new L2_NovaRegistry.InputToken[](0));
-
-        // Mint and approve the right amount of tokens to the registry.
         mintAndApproveToRegistry(gasDelta1 * gasLimit);
-
-        // Speed up the starting request.
         registry.speedUpRequest(execHash, gasPrice + gasDelta1);
 
-        // Mint and approve the right amount of tokens to the registry.
         mintAndApproveToRegistry(gasDelta2 * gasLimit);
-
-        // Try to speed up the starting request again.
         try registry.speedUpRequest(execHash, gasPrice + gasDelta2) {
-            // This should always revert, if not something is wrong.
             assert(false);
         } catch {}
     }
 
+    /*///////////////////////////////////////////////////////////////
+                            INTERNAL UTILS
+    //////////////////////////////////////////////////////////////*/
+
+    function createRequest(
+        address strategy,
+        bytes calldata l1Calldata,
+        uint256 gasLimit,
+        uint256 gasPrice,
+        uint256 tip
+    )
+        internal
+        returns (
+            bytes32 execHash,
+            uint256 preRequestBalance,
+            uint256 weiOwed
+        )
+    {
+        weiOwed = (gasPrice * gasLimit) + tip;
+        mintAndApproveToRegistry(weiOwed);
+
+        preRequestBalance = mockETH.balanceOf(address(this));
+
+        execHash = registry.requestExec(
+            strategy,
+            l1Calldata,
+            gasLimit,
+            gasPrice,
+            tip,
+            new L2_NovaRegistry.InputToken[](0)
+        );
+
+        assert(mockETH.balanceOf(address(this)) == (preRequestBalance - weiOwed));
+    }
+
     function mintAndApproveToRegistry(uint256 amount) internal {
-        // Mint us some extra tokens if we need:
         uint256 preMintBalance = mockETH.balanceOf(address(this));
         if (amount > preMintBalance) {
             mockETH.mint(amount - preMintBalance);
         }
 
-        // Approve the wei owed to the registry:
         mockETH.approve(address(registry), amount);
     }
 }

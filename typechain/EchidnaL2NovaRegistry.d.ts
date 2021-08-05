@@ -23,7 +23,7 @@ interface EchidnaL2NovaRegistryInterface extends ethers.utils.Interface {
   functions: {
     "requestExec_and_unlock_and_withdraw_tokens_should_work(address,bytes,uint256,uint256,uint256,uint256)": FunctionFragment;
     "should_always_be_able_connect_execution_manager(address)": FunctionFragment;
-    "speeding_up_a_request_multiple_times_should_fail(address,bytes,uint256,uint256,uint256,uint256,uint256)": FunctionFragment;
+    "speeding_up_a_request_multiple_times_should_fail(address,bytes,uint64,uint64,uint64,uint64,uint64)": FunctionFragment;
   };
 
   encodeFunctionData(
