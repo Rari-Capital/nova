@@ -127,4 +127,4 @@ _In summary, these two contracts enable what could be described as "cross-layer 
 
 ## External Assumptions
 
-- [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridging.html) does not contain any flaws that would allow third parties to tamper with or forge the origin of a message.
+- [Optimism's cross domain message passing system](https://community.optimism.io/docs/developers/bridge/messaging.html) does not contain any flaws that would allow third parties to tamper with or forge the origin of a message.
