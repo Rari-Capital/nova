@@ -27,7 +27,7 @@ interface MockERC20Interface extends ethers.utils.Interface {
     "decimals()": FunctionFragment;
     "decreaseAllowance(address,uint256)": FunctionFragment;
     "increaseAllowance(address,uint256)": FunctionFragment;
-    "mint(uint256)": FunctionFragment;
+    "mint(address,uint256)": FunctionFragment;
     "name()": FunctionFragment;
     "symbol()": FunctionFragment;
     "totalSupply()": FunctionFragment;
@@ -53,7 +53,10 @@ interface MockERC20Interface extends ethers.utils.Interface {
     functionFragment: "increaseAllowance",
     values: [string, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: "mint", values: [BigNumberish]): string;
+  encodeFunctionData(
+    functionFragment: "mint",
+    values: [string, BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "symbol", values?: undefined): string;
   encodeFunctionData(
@@ -176,6 +179,7 @@ export class MockERC20 extends BaseContract {
     ): Promise<ContractTransaction>;
 
     mint(
+      recipient: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -229,6 +233,7 @@ export class MockERC20 extends BaseContract {
   ): Promise<ContractTransaction>;
 
   mint(
+    recipient: string,
     amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -281,7 +286,11 @@ export class MockERC20 extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
-    mint(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
+    mint(
+      recipient: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     name(overrides?: CallOverrides): Promise<string>;
 
@@ -353,6 +362,7 @@ export class MockERC20 extends BaseContract {
     ): Promise<BigNumber>;
 
     mint(
+      recipient: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -410,6 +420,7 @@ export class MockERC20 extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     mint(
+      recipient: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;

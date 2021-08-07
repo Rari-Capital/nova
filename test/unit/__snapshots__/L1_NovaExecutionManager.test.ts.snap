@@ -6,7 +6,7 @@ exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute 
 
 exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a stateful exec 1`] = `49845`;
 
-exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `78602`;
+exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `88802`;
 
 exports[`L1_NovaExecutionManager transferFromRelayer will not allow a random contract to call during execution 1`] = `56179`;
 
