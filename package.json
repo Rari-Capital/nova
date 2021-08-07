@@ -38,7 +38,7 @@
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.1.0",
-    "hardhat": "^2.5.0",
+    "hardhat": "^2.6.0",
     "hardhat-gas-reporter": "^1.0.4",
     "hardhat-interface-generator": "0.0.6",
     "hardhat-preprocessor": "^0.1.3",
