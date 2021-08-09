@@ -19,3 +19,9 @@ However, with this additional risk comes additional reward, as relaying will be 
 7. Wait 20 blocks for the request to be relayed (this delay is built into Optimism's cross domain messaging service, we cannot avoid it)
 
 9. Claim input tokens if neccessary: https://github.com/Rari-Capital/nova/blob/master/contracts/L2_NovaRegistry.sol#L269
+
+### Gotchas
+
+- Strategy contracts might use wildly different amounts of gas depending on part of the chain's state. If chain state changes signifcantly between the simulation and when the `exec` transaction is included on chain, the relayer could end up overpaying for a transaction. **(THIS IS BEING FIXED)**
+
+- Strategy contracts may trigger a "hard revert" at any time, so be cautious of arbitrary strategies. **(THIS IS BEING FIXED)**
