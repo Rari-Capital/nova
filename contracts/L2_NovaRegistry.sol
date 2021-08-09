@@ -47,13 +47,12 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice The address of the only contract authorized to make cross domain calls to `execCompleted`.
     address public L1_NovaExecutionManagerAddress;
 
-    /// @notice Authorizes the `_L1_NovaExecutionManagerAddress` to make cross domain calls to `execCompleted`.
-    /// @notice Each call to `connectExecutionManager` overrides the previous value, you cannot have multiple authorized execution managers at once.
-    /// @param _L1_NovaExecutionManagerAddress The address to be authorized to make cross domain calls to `execCompleted`.
-    function connectExecutionManager(address _L1_NovaExecutionManagerAddress) external requiresAuth {
-        L1_NovaExecutionManagerAddress = _L1_NovaExecutionManagerAddress;
+    /// @notice Authorizes `newExecutionManagerAddress` to make cross domain calls to `execCompleted`.
+    /// @param newExecutionManagerAddress The address to authorized to make cross domain calls to `execCompleted`.
+    function connectExecutionManager(address newExecutionManagerAddress) external requiresAuth {
+        L1_NovaExecutionManagerAddress = newExecutionManagerAddress;
 
-        emit ConnectExecutionManager(_L1_NovaExecutionManagerAddress);
+        emit ConnectExecutionManager(newExecutionManagerAddress);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -61,7 +60,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when `connectExecutionManager` is called.
-    event ConnectExecutionManager(address _L1_NovaExecutionManagerAddress);
+    /// @param newExecutionManagerAddress The new value for L1_NovaExecutionManagerAddress.
+    event ConnectExecutionManager(address newExecutionManagerAddress);
 
     /// @notice Emitted when `requestExec` is called.
     /// @param execHash The unique identifier generated for this request.
