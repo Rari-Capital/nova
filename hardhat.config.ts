@@ -25,6 +25,10 @@ const accounts = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
 
 const config: HardhatUserConfig = {
   networks: {
+    hardhat: {
+      initialBaseFeePerGas: 0,
+    },
+
     mainnet: {
       url: process.env.MAINNET_RPC_URL ?? "",
       accounts,
