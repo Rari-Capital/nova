@@ -20,11 +20,6 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice If an execution on L1 soft reverts, the reward recipient
-    /// will only receive the tip divided by the PENALTY_TIP_DIVISOR. The
-    /// the remaining portion will be refunded to the creator of the request.
-    uint256 public constant PENALTY_TIP_DIVISOR = 2;
-
     /// @notice The maximum amount of input tokens that may be added to a request.
     uint256 public constant MAX_INPUT_TOKENS = 5;
 
@@ -97,12 +92,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @param newExecHash The execHash of the resubmitted request (copy of its uncle with an updated gasPrice).
     /// @param newNonce The nonce of the resubmitted request.
     /// @param switchTimestamp When the uncled request (`execHash`) will have its tokens transferred to the resubmitted request (`newExecHash`).
-    event SpeedUpRequest(
-        bytes32 indexed execHash,
-        bytes32 indexed newExecHash,
-        uint256 newNonce,
-        uint256 switchTimestamp
-    );
+    event SpeedUpRequest(bytes32 indexed execHash, bytes32 indexed newExecHash, uint256 newNonce, uint256 switchTimestamp);
 
     /*///////////////////////////////////////////////////////////////
                        GLOBAL NONCE COUNTER STORAGE
@@ -212,12 +202,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // Increment global nonce.
         systemNonce += 1;
         // Compute execHash for this request.
-        execHash = NovaExecHashLib.compute({
-            nonce: systemNonce,
-            strategy: strategy,
-            l1Calldata: l1Calldata,
-            gasPrice: gasPrice
-        });
+        execHash = NovaExecHashLib.compute({nonce: systemNonce, strategy: strategy, l1Calldata: l1Calldata, gasPrice: gasPrice});
 
         // Store all critical request data.
         getRequestCreator[execHash] = msg.sender;
@@ -315,9 +300,12 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // Ensure the request has not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
+
         // Make sure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
-        // Ensure the request is scheduled to unlock.
+
+        // Ensure the request is actually scheduled to unlock. We don't allow relocking if
+        // the request isn't unlocking to prevent emitting RelockTokens in an unhelpful context.
         require(getRequestUnlockTimestamp[execHash] != 0, "NO_UNLOCK_SCHEDULED");
 
         // Reset the unlock timestamp to 0.
@@ -347,10 +335,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         emit WithdrawTokens(execHash);
 
         // Transfer the ETH which would have been used for (gas + tip) back to the creator.
-        ETH.safeTransfer(
-            creator,
-            getRequestGasPrice[execHash].mul(getRequestGasLimit[execHash]).add(getRequestTip[execHash])
-        );
+        ETH.safeTransfer(creator, getRequestGasPrice[execHash].mul(getRequestGasLimit[execHash]).add(getRequestTip[execHash]));
 
         // Transfer input tokens back to the creator.
         InputToken[] memory inputTokens = requestInputTokens[execHash];
@@ -458,17 +443,12 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // The amount of ETH to pay for the gas used (capped at the gas limit).
         uint256 gasPayment = gasPrice.mul(gasUsed > gasLimit ? gasLimit : gasUsed);
 
-        // The amount of ETH to pay as the tip to the rewardRecipient. If the
-        // execution reverted the reward recipient will only receive the tip divided
-        // by the PENALTY_TIP_DIVISOR. The creator will be refunded the remaining portion.
-        uint256 recipientTip = reverted ? (tip.div(PENALTY_TIP_DIVISOR)) : tip;
-
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
 
-        // Refund the creator any unused gas + refund some of the tip if reverted
-        ETH.safeTransfer(creator, gasLimit.mul(gasPrice).sub(gasPayment).add(tip.sub(recipientTip)));
-        // Pay the recipient the gas payment + the tip.
-        ETH.safeTransfer(rewardRecipient, gasPayment.add(recipientTip));
+        // Refund the creator any unused gas + the tip (if execution reverted).
+        ETH.safeTransfer(creator, gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0));
+        // Pay the recipient the gas payment + the tip (if execution succeeded).
+        ETH.safeTransfer(rewardRecipient, gasPayment.add(reverted ? 0 : tip));
     }
 
     /*///////////////////////////////////////////////////////////////
