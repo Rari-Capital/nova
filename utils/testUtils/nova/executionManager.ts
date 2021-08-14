@@ -1,8 +1,9 @@
 import { BytesLike } from "ethers";
 
 import { computeExecHash } from ".";
+import { getFactory } from "..";
 
-import { L1NovaExecutionManager } from "../../../typechain";
+import { L1NovaExecutionManager, MockStrategy__factory } from "../../../typechain";
 
 /**
  * We use this global counter to
@@ -90,8 +91,24 @@ export async function executeRequest(
   if (!process.env.HARDHAT_COVERAGE_MODE_ENABLED) {
     // The gasUsed estimate in the event should always be more than the actual gas used, but should never be more than 16,000 gas above.
     const overestimateAmount = execEvent.args.gasUsed.toNumber() - gasUsed.toNumber();
+    console.log(overestimateAmount);
     overestimateAmount.should.be.within(0, 1000 + expectedGasOverestimateAmount);
   }
 
   return { tx, execHash, gasUsed, execEvent, ...config };
+}
+
+export enum StrategyRiskLevel {
+  UNKNOWN,
+  SAFE,
+  UNSAFE,
+}
+
+export async function deployStrategy(
+  executionManager: L1NovaExecutionManager,
+  riskLevel?: StrategyRiskLevel
+) {
+  return await (
+    await getFactory<MockStrategy__factory>("MockStrategy")
+  ).deploy(executionManager.address, riskLevel ?? StrategyRiskLevel.UNKNOWN);
 }

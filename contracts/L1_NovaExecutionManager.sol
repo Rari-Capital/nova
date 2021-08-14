@@ -17,10 +17,12 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                         HARD REVERT CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The revert message text used to cause a hard revert.
+    /// @notice The revert message text used to trigger a hard revert.
+    /// @notice The execution manager will ignore hard reverts if they are triggered by a strategy not registered as UNSAFE.
     string public constant HARD_REVERT_TEXT = "__NOVA__HARD__REVERT__";
 
-    /// @dev The hash of the hard revert message.
+    /// @notice The keccak256 hash of the hard revert text.
+    /// @dev The exec function uses this hash the compare the revert reason of an execution with the hard revert text.
     bytes32 public constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
 
     /*///////////////////////////////////////////////////////////////
@@ -61,6 +63,10 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @param newCalldataByteGasEstimate The updated calldataByteGasEstimate.
     event CalldataByeGasEstimateUpdated(uint256 newCalldataByteGasEstimate);
 
+    /// @notice Emitted when `registerSelfAsStrategy` is called.
+    /// @param strategyRiskLevel The StrategyRiskLevel the strategy registered itself as.
+    event StrategyRegistered(StrategyRiskLevel strategyRiskLevel);
+
     /// @notice Emitted when `exec` is called.
     /// @param execHash The execHash computed from arguments and transaction context.
     /// @param reverted Will be true if the strategy call reverted, will be false if not.
@@ -100,27 +106,69 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     }
 
     /*///////////////////////////////////////////////////////////////
+                    STRATEGY REGISTRATION STORAGE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Risk classifications for strategies.
+    enum StrategyRiskLevel {
+        /// The strategy has not been assigned a risk level.
+        /// It has the equivalent abilities of a SAFE strategy,
+        /// but could upgrade itself to an UNSAFE strategy at any time.
+        UNKNOWN,
+        /// The strategy has registered itself as a safe strategy,
+        /// meaning it cannot use transferFromRelayer or trigger a hard
+        /// revert. A SAFE strategy cannot upgrade itself to become UNSAFE.
+        SAFE,
+        /// The strategy has registered itself as an unsafe strategy,
+        /// meaning it has access to all the functionality the execution
+        /// manager provides like transferFromRelayer and the ability to hard
+        /// revert. An UNSAFE strategy cannot downgrade itself to become SAFE.
+        UNSAFE
+    }
+
+    /// @notice Maps strategy addresses to their registered risk level.
+    /// @dev This mapping is used to determine if strategies can access transferFromRelayer and trigger hard reverts.
+    mapping(address => StrategyRiskLevel) public getStrategyRiskLevel;
+
+    /// @notice Registers msg.sender as a strategy with the passed in risk level.
+    /// @dev A strategy can only register once, and will have no way to change its risk level after registering.
+    /// @param strategyRiskLevel The risk level the strategy is registering as. Strategies cannot register as UNKNOWN.
+    function registerSelfAsStrategy(StrategyRiskLevel strategyRiskLevel) external requiresAuth {
+        // Ensure the strategy has not already registered itself, as if strategies could change their type arbitrarily
+        // they would be able to trick relayers into executing them believing they were safe and then use unsafe functionality.
+        require(getStrategyRiskLevel[msg.sender] == StrategyRiskLevel.UNKNOWN, "ALREADY_REGISTERED");
+
+        // Strategies can't register as UNKNOWN as it could lead to StrategyRegistered being emitted multiples times which could confuse relayers.
+        require(strategyRiskLevel != StrategyRiskLevel.UNKNOWN, "INVALID_RISK_LEVEL");
+
+        // Set the strategy's risk level.
+        getStrategyRiskLevel[msg.sender] = strategyRiskLevel;
+
+        emit StrategyRegistered(strategyRiskLevel);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                         EXECUTION CONTEXT STORAGE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The 'default' value for `currentExecHash`.
-    /// @notice Outside of an active `exec` call `currentExecHash` will always equal DEFAULT_EXECHASH.
+    /// @dev Outside of an active `exec` call `currentExecHash` will always equal DEFAULT_EXECHASH.
     bytes32 public constant DEFAULT_EXECHASH = 0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEF;
 
     /// @notice The address who called `exec`.
-    /// @notice This will not be reset after each execution completes.
+    /// @dev This will not be reset after each execution completes.
     address public currentRelayer;
 
-    /// @dev The address of the strategy that is currently being called.
+    /// @notice The address of the strategy that is currently being called.
     /// @dev This will not be reset after each execution completes.
     address public currentlyExecutingStrategy;
 
     /// @notice The execHash computed from the currently executing call to `exec`.
-    /// @notice This will be reset to DEFAULT_EXECHASH after each execution completes.
+    /// @dev This will be reset to DEFAULT_EXECHASH after each execution completes.
     bytes32 public currentExecHash = DEFAULT_EXECHASH;
 
     /*///////////////////////////////////////////////////////////////
-                           STATEFUL FUNCTIONS
+                            EXECUTION LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Executes a request and sends tip/inputs to a specific address.
@@ -128,7 +176,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @param strategy The strategy requested in the request.
     /// @param l1Calldata The calldata associated with the request.
     /// @param l2Recipient The address of the account on L2 to receive the tip/inputs.
-    /// @param deadline Timestamp after which the transaction will revert.
+    /// @param deadline Timestamp after which the transaction will immediately revert.
     function exec(
         uint256 nonce,
         address strategy,
@@ -142,7 +190,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Check that the deadline has not already passed.
         require(block.timestamp <= deadline, "PAST_DEADLINE");
 
-        // This prevents the strategy from performing a reentrancy attack.
+        // Prevent the strategy from performing a reentrancy attack.
         require(currentExecHash == DEFAULT_EXECHASH, "ALREADY_EXECUTING");
 
         // Check authorization of the caller (equivalent to Auth's `requiresAuth` modifier).
@@ -182,8 +230,11 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Call the strategy.
         (bool success, bytes memory returnData) = strategy.call(l1Calldata);
 
-        // Revert if the strategy hard reverted.
-        require(success || keccak256(returnData) != HARD_REVERT_HASH, "HARD_REVERT");
+        // Revert if a valid hard revert was triggered. A hard revert is only valid if the strategy had a risk level of UNSAFE.
+        require(
+            success || keccak256(returnData) != HARD_REVERT_HASH || getStrategyRiskLevel[strategy] != StrategyRiskLevel.UNSAFE,
+            "HARD_REVERT"
+        );
 
         // Reset currentExecHash to default so `transferFromRelayer` becomes uncallable again.
         currentExecHash = DEFAULT_EXECHASH;
@@ -214,20 +265,30 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         emit Exec(execHash, msg.sender, !success, gasUsedEstimate);
     }
 
+    /*///////////////////////////////////////////////////////////////
+                          STRATEGY UTILITIES
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Transfers tokens from the relayer (the account that called execute) has approved to the execution manager for the currently executing strategy.
     /// @notice Can only be called by the currently executing strategy (if there is one at all).
+    /// @notice The currently execution strategy must be registered as UNSAFE to use this function.
     /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
     /// @param token The ER20-compliant token to transfer to the currently executing strategy.
     /// @param amount The amount of `token` (scaled by its decimals) to transfer to the currently executing strategy.
     function transferFromRelayer(address token, uint256 amount) external requiresAuth {
         // Only the currently executing strategy is allowed to call this function.
+        // From here on msg.sender is used to access the strategy for gas efficiency.
         require(msg.sender == currentlyExecutingStrategy, "NOT_CURRENT_STRATEGY");
 
         // Ensure currentExecHash is not set to DEFAULT_EXECHASH as otherwise
-        // a strategy could call this function outside of an active execution.
+        // a malicious strategy could take tokens outside of an active execution.
         require(currentExecHash != DEFAULT_EXECHASH, "NO_ACTIVE_EXECUTION");
 
-        // Transfer the token from the relayer the currently executing strategy (msg.sender is enforced to be the currentlyExecutingStrategy above).
+        // Ensure the strategy has registered itself as UNSAFE so relayers can
+        // avoid strategies that use transferFromRelayer if they want to be cautious.
+        require(getStrategyRiskLevel[msg.sender] == StrategyRiskLevel.UNSAFE, "UNSUPPORTED_RISK_LEVEL");
+
+        // Transfer the token from the relayer the currently executing strategy.
         (bool success, bytes memory returnData) =
             address(token).call(
                 // Encode a call to transferFrom.
@@ -249,11 +310,8 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         }
     }
 
-    /*///////////////////////////////////////////////////////////////
-                            PURE FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
     /// @notice Convenience function that triggers a hard revert.
+    /// @notice The execution manager will ignore hard reverts if they are triggered by a strategy not registered as UNSAFE.
     function hardRevert() external pure {
         // Call revert with the hard revert text.
         revert(HARD_REVERT_TEXT);

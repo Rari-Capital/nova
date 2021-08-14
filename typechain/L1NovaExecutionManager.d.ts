@@ -33,9 +33,11 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     "currentRelayer()": FunctionFragment;
     "currentlyExecutingStrategy()": FunctionFragment;
     "exec(uint256,address,bytes,address,uint256)": FunctionFragment;
+    "getStrategyRiskLevel(address)": FunctionFragment;
     "hardRevert()": FunctionFragment;
     "missingGasEstimate()": FunctionFragment;
     "owner()": FunctionFragment;
+    "registerSelfAsStrategy(uint8)": FunctionFragment;
     "setAuthority(address)": FunctionFragment;
     "setCalldataByteGasEstimate(uint128)": FunctionFragment;
     "setMissingGasEstimate(uint128)": FunctionFragment;
@@ -89,6 +91,10 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     values: [BigNumberish, string, BytesLike, string, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "getStrategyRiskLevel",
+    values: [string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "hardRevert",
     values?: undefined
   ): string;
@@ -97,6 +103,10 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "registerSelfAsStrategy",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "setAuthority",
     values: [string]
@@ -157,12 +167,20 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "exec", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "getStrategyRiskLevel",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "hardRevert", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "missingGasEstimate",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "registerSelfAsStrategy",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "setAuthority",
     data: BytesLike
@@ -187,6 +205,7 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     "Exec(bytes32,address,bool,uint256)": EventFragment;
     "MissingGasEstimateUpdated(uint256)": EventFragment;
     "OwnerUpdated(address)": EventFragment;
+    "StrategyRegistered(uint8)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "AuthorityUpdated"): EventFragment;
@@ -196,6 +215,7 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
   getEvent(nameOrSignatureOrTopic: "Exec"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "MissingGasEstimateUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnerUpdated"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "StrategyRegistered"): EventFragment;
 }
 
 export class L1NovaExecutionManager extends BaseContract {
@@ -275,11 +295,21 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    getStrategyRiskLevel(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<[number]>;
+
     hardRevert(overrides?: CallOverrides): Promise<[void]>;
 
     missingGasEstimate(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
+
+    registerSelfAsStrategy(
+      strategyRiskLevel: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
     setAuthority(
       newAuthority: string,
@@ -339,11 +369,21 @@ export class L1NovaExecutionManager extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  getStrategyRiskLevel(
+    arg0: string,
+    overrides?: CallOverrides
+  ): Promise<number>;
+
   hardRevert(overrides?: CallOverrides): Promise<void>;
 
   missingGasEstimate(overrides?: CallOverrides): Promise<BigNumber>;
 
   owner(overrides?: CallOverrides): Promise<string>;
+
+  registerSelfAsStrategy(
+    strategyRiskLevel: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   setAuthority(
     newAuthority: string,
@@ -405,11 +445,21 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    getStrategyRiskLevel(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<number>;
+
     hardRevert(overrides?: CallOverrides): Promise<void>;
 
     missingGasEstimate(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<string>;
+
+    registerSelfAsStrategy(
+      strategyRiskLevel: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     setAuthority(
       newAuthority: string,
@@ -466,6 +516,10 @@ export class L1NovaExecutionManager extends BaseContract {
     OwnerUpdated(
       owner?: string | null
     ): TypedEventFilter<[string], { owner: string }>;
+
+    StrategyRegistered(
+      strategyRiskLevel?: null
+    ): TypedEventFilter<[number], { strategyRiskLevel: number }>;
   };
 
   estimateGas: {
@@ -502,11 +556,21 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    getStrategyRiskLevel(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     hardRevert(overrides?: CallOverrides): Promise<BigNumber>;
 
     missingGasEstimate(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
+
+    registerSelfAsStrategy(
+      strategyRiskLevel: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
     setAuthority(
       newAuthority: string,
@@ -577,6 +641,11 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    getStrategyRiskLevel(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     hardRevert(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     missingGasEstimate(
@@ -584,6 +653,11 @@ export class L1NovaExecutionManager extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    registerSelfAsStrategy(
+      strategyRiskLevel: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     setAuthority(
       newAuthority: string,

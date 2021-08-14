@@ -33,6 +33,18 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Authority__factory>;
     getContractFactory(
+      name: "EchidnaL1NovaExecutionManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.EchidnaL1NovaExecutionManager__factory>;
+    getContractFactory(
+      name: "EchidnaL2NovaRegistry",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.EchidnaL2NovaRegistry__factory>;
+    getContractFactory(
+      name: "Hevm",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Hevm__factory>;
+    getContractFactory(
       name: "CrossDomainEnabled",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CrossDomainEnabled__factory>;

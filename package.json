@@ -9,7 +9,7 @@
     "integration-tests": "hardhat test --network optimism",
     "kovan-integration-tests": "hardhat test --network optimisticKovan",
 
-    "gas-changed": "UPDATE_SNAPSHOT=1 CI=true hardhat test",
+    "gas-changed": "UPDATE_SNAPSHOT=1 hardhat test",
 
     "coverage": "hardhat coverage",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",

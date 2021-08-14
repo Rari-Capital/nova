@@ -27,7 +27,7 @@ jobs:
         run: npm run unit-tests
 
       - name: Run unit tests with coverage
-        run: CI= npm run coverage # Unset CI variable so the gas changes don't fail the step
+        run: npm run coverage
 
       - name: Upload report to Coveralls
         uses: coverallsapp/github-action@master

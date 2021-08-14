@@ -21,12 +21,12 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface EvilExternalContractInterface extends ethers.utils.Interface {
   functions: {
-    "tryToStealRelayerTokens(address,address,uint256)": FunctionFragment;
+    "tryToStealRelayerTokens(address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
     functionFragment: "tryToStealRelayerTokens",
-    values: [string, string, BigNumberish]
+    values: [string, BigNumberish]
   ): string;
 
   decodeFunctionResult(
@@ -82,7 +82,6 @@ export class EvilExternalContract extends BaseContract {
 
   functions: {
     tryToStealRelayerTokens(
-      executionManager: string,
       token: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -90,7 +89,6 @@ export class EvilExternalContract extends BaseContract {
   };
 
   tryToStealRelayerTokens(
-    executionManager: string,
     token: string,
     amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -98,18 +96,16 @@ export class EvilExternalContract extends BaseContract {
 
   callStatic: {
     tryToStealRelayerTokens(
-      executionManager: string,
       token: string,
       amount: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<void>;
+    ): Promise<boolean>;
   };
 
   filters: {};
 
   estimateGas: {
     tryToStealRelayerTokens(
-      executionManager: string,
       token: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -118,7 +114,6 @@ export class EvilExternalContract extends BaseContract {
 
   populateTransaction: {
     tryToStealRelayerTokens(
-      executionManager: string,
       token: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }

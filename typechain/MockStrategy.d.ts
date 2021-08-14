@@ -28,8 +28,7 @@ interface MockStrategyInterface extends ethers.utils.Interface {
     "thisFunctionWillNotRevert()": FunctionFragment;
     "thisFunctionWillRevert()": FunctionFragment;
     "thisFunctionWillTransferFromRelayer(address,uint256)": FunctionFragment;
-    "thisFunctionWillTryToReenterAndHardRevertIfFails()": FunctionFragment;
-    "thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(address,address,uint256)": FunctionFragment;
+    "thisFunctionWillTryToReenter()": FunctionFragment;
   };
 
   encodeFunctionData(functionFragment: "counter", values?: undefined): string;
@@ -58,12 +57,8 @@ interface MockStrategyInterface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "thisFunctionWillTryToReenterAndHardRevertIfFails",
+    functionFragment: "thisFunctionWillTryToReenter",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager",
-    values: [string, string, BigNumberish]
   ): string;
 
   decodeFunctionResult(functionFragment: "counter", data: BytesLike): Result;
@@ -92,15 +87,17 @@ interface MockStrategyInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "thisFunctionWillTryToReenterAndHardRevertIfFails",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager",
+    functionFragment: "thisFunctionWillTryToReenter",
     data: BytesLike
   ): Result;
 
-  events: {};
+  events: {
+    "ReentrancyFailed()": EventFragment;
+    "StealRelayerTokensFailed()": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "ReentrancyFailed"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "StealRelayerTokensFailed"): EventFragment;
 }
 
 export class MockStrategy extends BaseContract {
@@ -171,14 +168,7 @@ export class MockStrategy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    thisFunctionWillTryToReenterAndHardRevertIfFails(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
-      executionManager: string,
-      token: string,
-      amount: BigNumberish,
+    thisFunctionWillTryToReenter(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
@@ -207,14 +197,7 @@ export class MockStrategy extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  thisFunctionWillTryToReenterAndHardRevertIfFails(
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
-    executionManager: string,
-    token: string,
-    amount: BigNumberish,
+  thisFunctionWillTryToReenter(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -241,19 +224,14 @@ export class MockStrategy extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    thisFunctionWillTryToReenterAndHardRevertIfFails(
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
-      executionManager: string,
-      token: string,
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    thisFunctionWillTryToReenter(overrides?: CallOverrides): Promise<void>;
   };
 
-  filters: {};
+  filters: {
+    ReentrancyFailed(): TypedEventFilter<[], {}>;
+
+    StealRelayerTokensFailed(): TypedEventFilter<[], {}>;
+  };
 
   estimateGas: {
     counter(overrides?: CallOverrides): Promise<BigNumber>;
@@ -280,14 +258,7 @@ export class MockStrategy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    thisFunctionWillTryToReenterAndHardRevertIfFails(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
-      executionManager: string,
-      token: string,
-      amount: BigNumberish,
+    thisFunctionWillTryToReenter(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
@@ -323,14 +294,7 @@ export class MockStrategy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    thisFunctionWillTryToReenterAndHardRevertIfFails(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
-      executionManager: string,
-      token: string,
-      amount: BigNumberish,
+    thisFunctionWillTryToReenter(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

@@ -6,20 +6,23 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {L1_NovaExecutionManager} from "../L1_NovaExecutionManager.sol";
 
-contract EvilExternalContract {
-    function tryToStealRelayerTokens(
-        address executionManager,
-        address token,
-        uint256 amount
-    ) external {
-        L1_NovaExecutionManager(executionManager).transferFromRelayer(token, amount);
-    }
-}
-
 contract MockStrategy {
-    EvilExternalContract immutable evilContract = new EvilExternalContract();
+    event ReentrancyFailed();
+    event StealRelayerTokensFailed();
+
+    EvilExternalContract immutable evilContract;
+    L1_NovaExecutionManager immutable executionManager;
 
     uint256 public counter = 1;
+
+    constructor(L1_NovaExecutionManager _executionManager, L1_NovaExecutionManager.StrategyRiskLevel _riskLevel) {
+        if (_riskLevel != L1_NovaExecutionManager.StrategyRiskLevel.UNKNOWN) {
+            _executionManager.registerSelfAsStrategy(_riskLevel);
+        }
+
+        executionManager = _executionManager;
+        evilContract = new EvilExternalContract(_executionManager);
+    }
 
     function thisFunctionWillNotRevert() external pure {}
 
@@ -28,30 +31,19 @@ contract MockStrategy {
     }
 
     function thisFunctionWillTransferFromRelayer(address token, uint256 amount) external {
-        L1_NovaExecutionManager(msg.sender).transferFromRelayer(token, amount);
+        executionManager.transferFromRelayer(token, amount);
     }
 
-    function thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
-        address executionManager,
-        address token,
-        uint256 amount
-    ) external {
-        L1_NovaExecutionManager(executionManager).transferFromRelayer(token, amount);
+    function thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(address token, uint256 amount) external {
+        if (evilContract.tryToStealRelayerTokens(token, amount)) {
+            emit StealRelayerTokensFailed();
+        }
     }
 
-    function thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(address token, uint256 amount)
-        external
-    {
-        evilContract.tryToStealRelayerTokens(msg.sender, token, amount);
-    }
-
-    function thisFunctionWillTryToReenterAndHardRevertIfFails() external {
-        L1_NovaExecutionManager em = L1_NovaExecutionManager(msg.sender);
-
-        try em.exec(0, address(0), "", address(0), 999999999999999999999) {} catch Error(string memory reason) {
+    function thisFunctionWillTryToReenter() external {
+        try executionManager.exec(0, address(0), "", address(0), 999999999999999999999) {} catch Error(string memory reason) {
             if (keccak256(abi.encodePacked(reason)) == keccak256("ALREADY_EXECUTING")) {
-                // If the call reverted due to reentrancy, signal this with a hard revert.
-                em.hardRevert();
+                emit ReentrancyFailed();
             }
         }
     }
@@ -61,6 +53,20 @@ contract MockStrategy {
     }
 
     function thisFunctionWillHardRevert() external view {
-        L1_NovaExecutionManager(msg.sender).hardRevert();
+        executionManager.hardRevert();
+    }
+}
+
+contract EvilExternalContract {
+    L1_NovaExecutionManager immutable executionManager;
+
+    constructor(L1_NovaExecutionManager _executionManager) {
+        executionManager = _executionManager;
+    }
+
+    function tryToStealRelayerTokens(address token, uint256 amount) external returns (bool stealingFailed) {
+        try executionManager.transferFromRelayer(token, amount) {} catch Error(string memory reason) {
+            stealingFailed = keccak256(abi.encodePacked(reason)) == keccak256("NOT_CURRENT_STRATEGY");
+        }
     }
 }

@@ -36,7 +36,7 @@ export async function increaseTimeAndMine(seconds: BigNumberish) {
 }
 
 /**
- *  Records the gas usage of a transaction, and checks against the most recent saved Jest snapshot.
+ * Records the gas usage of a transaction, and checks against the most recent saved Jest snapshot.
  * If not in CI mode it won't stop tests (just show a console log).
  * To update the Jest snapshot run `npm run gas-changed`
  */

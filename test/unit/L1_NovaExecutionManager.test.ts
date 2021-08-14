@@ -3,9 +3,11 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
   checkpointBalance,
+  deployStrategy,
   executeRequest,
   getFactory,
   snapshotGasCost,
+  StrategyRiskLevel,
 } from "../../utils/testUtils";
 import { tuneMissingGasEstimate } from "../../tasks/tune";
 
@@ -14,7 +16,6 @@ import {
   L1NovaExecutionManager__factory,
   MockStrategy,
   MockCrossDomainMessenger,
-  MockStrategy__factory,
   MockCrossDomainMessenger__factory,
   MockERC20,
   MockERC20__factory,
@@ -34,14 +35,16 @@ describe("L1_NovaExecutionManager", function () {
 
   /// Mocks
   let MockERC20: MockERC20;
-  let MockStrategy: MockStrategy;
   let MockCrossDomainMessenger: MockCrossDomainMessenger;
+
+  // Strategies
+  let UnknownStrategy: MockStrategy;
+  let SafeStrategy: MockStrategy;
+  let UnsafeStrategy: MockStrategy;
 
   describe("constructor/setup", function () {
     it("should properly deploy mocks", async function () {
       MockERC20 = await (await getFactory<MockERC20__factory>("MockERC20")).deploy();
-
-      MockStrategy = await (await getFactory<MockStrategy__factory>("MockStrategy")).deploy();
 
       MockCrossDomainMessenger = await (
         await getFactory<MockCrossDomainMessenger__factory>("MockCrossDomainMessenger")
@@ -61,6 +64,14 @@ describe("L1_NovaExecutionManager", function () {
 
       // Set the authority to a MockAuthority that always returns true.
       await L1_NovaExecutionManager.setAuthority(MockAuthority.address);
+    });
+
+    it("should properly deploy strategies", async function () {
+      UnknownStrategy = await deployStrategy(L1_NovaExecutionManager, StrategyRiskLevel.UNKNOWN);
+
+      SafeStrategy = await deployStrategy(L1_NovaExecutionManager, StrategyRiskLevel.SAFE);
+
+      UnsafeStrategy = await deployStrategy(L1_NovaExecutionManager, StrategyRiskLevel.UNSAFE);
     });
 
     it("should properly use constructor arguments", async function () {
@@ -86,8 +97,8 @@ describe("L1_NovaExecutionManager", function () {
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
         nonce: 420,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        strategy: SafeStrategy.address,
+        l1Calldata: SafeStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
 
         // It will overestimate before tuning.
         expectedGasOverestimateAmount: 99999999999999,
@@ -128,8 +139,8 @@ describe("L1_NovaExecutionManager", function () {
 
       await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert"),
+        strategy: UnsafeStrategy.address,
+        l1Calldata: UnsafeStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert"),
       }).should.be.revertedWith("HARD_REVERT");
     });
 
@@ -138,7 +149,7 @@ describe("L1_NovaExecutionManager", function () {
 
       await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
+        strategy: SafeStrategy.address,
         // Set a deadline 60 seconds in the past
         deadline: Math.floor(Date.now() / 1000) - 60,
       }).should.be.revertedWith("PAST_DEADLINE");
@@ -149,7 +160,7 @@ describe("L1_NovaExecutionManager", function () {
 
       await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
+        strategy: SafeStrategy.address,
         l2Recipient: ethers.constants.AddressZero,
       }).should.be.revertedWith("NEED_RECIPIENT");
     });
@@ -194,13 +205,13 @@ describe("L1_NovaExecutionManager", function () {
     it("should not allow reentrancy", async function () {
       const [relayer] = signers;
 
-      await executeRequest(L1_NovaExecutionManager, {
+      const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData(
-          "thisFunctionWillTryToReenterAndHardRevertIfFails"
-        ),
-      }).should.be.revertedWith("HARD_REVERT");
+        strategy: SafeStrategy.address,
+        l1Calldata: SafeStrategy.interface.encodeFunctionData("thisFunctionWillTryToReenter"),
+      });
+
+      await tx.should.emit(SafeStrategy, "ReentrancyFailed");
     });
 
     it("should properly execute a minimal exec", async function () {
@@ -208,9 +219,10 @@ describe("L1_NovaExecutionManager", function () {
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        strategy: SafeStrategy.address,
+        l1Calldata: SafeStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
       });
+      SafeStrategy;
 
       await snapshotGasCost(tx);
     });
@@ -218,17 +230,17 @@ describe("L1_NovaExecutionManager", function () {
     it("should properly execute a stateful exec", async function () {
       const [relayer] = signers;
 
-      await MockStrategy.counter().should.eventually.equal(1);
+      await SafeStrategy.counter().should.eventually.equal(1);
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillModifyState"),
+        strategy: SafeStrategy.address,
+        l1Calldata: SafeStrategy.interface.encodeFunctionData("thisFunctionWillModifyState"),
       });
 
       await snapshotGasCost(tx);
 
-      await MockStrategy.counter().should.eventually.equal(2);
+      await SafeStrategy.counter().should.eventually.equal(2);
     });
 
     it("should not revert due to a soft revert", async function () {
@@ -236,8 +248,8 @@ describe("L1_NovaExecutionManager", function () {
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillRevert"),
+        strategy: SafeStrategy.address,
+        l1Calldata: SafeStrategy.interface.encodeFunctionData("thisFunctionWillRevert"),
         shouldSoftRevert: true,
       });
 
@@ -257,21 +269,21 @@ describe("L1_NovaExecutionManager", function () {
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData(
+        strategy: UnsafeStrategy.address,
+        l1Calldata: UnsafeStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [MockERC20.address, weiAmount]
         ),
-        expectedGasOverestimateAmount: 15000, // 15000 more than expected will be consumed due to a gas refund.
+        expectedGasOverestimateAmount: 4800, // 4800 more than expected will be consumed due to a gas refund.
       });
 
       await snapshotGasCost(tx)
         // The correct amount of tokens should be transferred to the strategy.
         .should.emit(MockERC20, "Transfer")
-        .withArgs(user.address, MockStrategy.address, weiAmount);
+        .withArgs(user.address, UnsafeStrategy.address, weiAmount);
 
       // The strategy should get properly transferred the right amount of tokens.
-      await MockERC20.balanceOf(MockStrategy.address).should.eventually.equal(weiAmount);
+      await MockERC20.balanceOf(UnsafeStrategy.address).should.eventually.equal(weiAmount);
     });
 
     it("will hard revert if tokens were not approved", async function () {
@@ -279,8 +291,8 @@ describe("L1_NovaExecutionManager", function () {
 
       await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData(
+        strategy: UnsafeStrategy.address,
+        l1Calldata: UnsafeStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [MockERC20.address, ethers.utils.parseEther("9999999")]
         ),
@@ -296,8 +308,8 @@ describe("L1_NovaExecutionManager", function () {
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData(
+        strategy: UnsafeStrategy.address,
+        l1Calldata: UnsafeStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [NoReturnValueERC20.address, 0]
         ),
@@ -315,8 +327,8 @@ describe("L1_NovaExecutionManager", function () {
 
       await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData(
+        strategy: UnsafeStrategy.address,
+        l1Calldata: UnsafeStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [BadReturnValueERC20.address, 0]
         ),
@@ -332,8 +344,8 @@ describe("L1_NovaExecutionManager", function () {
 
       await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData(
+        strategy: UnsafeStrategy.address,
+        l1Calldata: UnsafeStrategy.interface.encodeFunctionData(
           "thisFunctionWillTransferFromRelayer",
           [ReturnFalseERC20.address, 0]
         ),
@@ -348,8 +360,7 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("will not allow the previous strategy to call if not executing", async function () {
-      await MockStrategy.thisFunctionWillTryToTransferFromRelayerOnAnArbitraryExecutionManager(
-        L1_NovaExecutionManager.address,
+      await UnsafeStrategy.thisFunctionWillTransferFromRelayer(
         MockERC20.address,
         1
       ).should.be.revertedWith("NO_ACTIVE_EXECUTION");
@@ -358,27 +369,20 @@ describe("L1_NovaExecutionManager", function () {
     it("will not allow a random contract to call during execution", async function () {
       const [relayer] = signers;
 
-      const [calcUserIncrease] = await checkpointBalance(MockERC20, relayer.address);
-
       // Approve the right amount of input tokens.
       const weiAmount = ethers.utils.parseEther("420");
       await MockERC20.approve(L1_NovaExecutionManager.address, weiAmount);
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData(
+        strategy: UnsafeStrategy.address,
+        l1Calldata: UnsafeStrategy.interface.encodeFunctionData(
           "thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens",
           [MockERC20.address, weiAmount]
         ),
-        shouldSoftRevert: true,
       });
 
-      // The transfer attempt should fail.
-      await snapshotGasCost(tx).should.not.emit(MockERC20, "Transfer");
-
-      // Balance should not change.
-      await calcUserIncrease().should.eventually.equal(0);
+      await tx.should.emit(UnsafeStrategy, "StealRelayerTokensFailed");
     });
   });
 });
