@@ -1,0 +1,15 @@
+checkAsserts: true
+seqLen: 3
+
+coverage: false # Coverage slows us down, not using.
+corpusDir: null # Coverage slows us down, not using.
+
+testLimit: 999999999999999 # Run as long as possible, the timeout will decide when to stop.
+shrinkLimit: 9999999999999 # Run as long as possible, the timeout will decide when to stop.
+timeout: 1200 # Fuzz for 20 minutes.
+
+cryticArgs: # If we add more dependencies they will need to be added as symlinks here!
+  [
+    "--solc-remaps",
+    "@openzeppelin/=node_modules/@openzeppelin/ @eth-optimism/=node_modules/@eth-optimism/ @rari-capital/=node_modules/@rari-capital/",
+  ]

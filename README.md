@@ -22,7 +22,7 @@ npm run unit-tests
 
 ## Unit Tests With Coverage
 
-After running tests with coverage, an lcov report will be exported to `coverage/index.html`.
+After running tests with coverage, an lcov report will be exported to `coverage/index.html`. 
 
 If you are on MacOS you can quickly open the report with `npm run open-coverage-report`.
 
@@ -32,7 +32,7 @@ npm run coverage
 
 ## Update Gas Snapshots
 
-If you make a contribution that changes the gas usage of the contracts, run this command before committing.
+If you make a contribution that changes the gas usage of the contracts, run this command before committing. 
 
 ```bash
 npm run gas-changed
@@ -46,10 +46,41 @@ npm run gas-changed
 npm run integration-tests
 ```
 
-## Kovan Integration Tests
+## Kovan Integration Tests 
 
 You must set the `PRIVATE_KEY` and `KOVAN_RPC_URL` environment variables before running integration tests on Kovan.
 
 ```bash
 npm run kovan-integration-tests
 ```
+
+## Fuzz With Echidna
+
+[You must install Echidna before fuzzing.](https://github.com/crytic/echidna#installation)
+
+```bash
+npm run fuzz deep {{CONTRACT_NAME}}
+```
+
+Replace `{{CONTRACT_NAME}}` with a contract that is fuzzed in `contracts/echidna`. A full list can be found here:
+
+https://github.com/Rari-Capital/nova/blob/master/.github/workflows/fuzz.yml#L13-L14
+
+There are 3 fuzz "modes" setup for this project:
+
+- `deep` enters coverage guided inputs until it is halted manually.
+
+  - It uses coverage guided fuzzing, **which makes it quite slow**.
+  - It is the most comprehensive mode (if run for long enough).
+
+- `long` enters random inputs for **5 hours** before halting.
+
+  - It does not use coverage guided fuzzing.
+  - Is less comprehensive than `deep`.
+
+- `quick` enters random inputs for **20 minutes** before halting.
+
+  - It does not use coverage guided fuzzing.
+  - Is less comprehensive than `long`.
+
+To use any of these modes simply run the command above but replace `deep` with the mode you wish to use (`long`,`quick`, or `deep`).

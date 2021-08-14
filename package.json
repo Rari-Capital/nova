@@ -14,7 +14,9 @@
     "coverage": "hardhat coverage",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
 
-    "clean": "hardhat clean && rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm ./coverage"
+    "fuzz": "./fuzz.sh",
+
+    "clean": "hardhat clean && rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm ./coverage ./crytic-export ./contracts/echidna/echidna_corpus ./contracts/echidna/contracts"
   },
   "author": "t11s",
   "license": "AGPL-3.0-only",

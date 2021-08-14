@@ -85,3 +85,5 @@ typechain-ovm
 
 .DS_Store
 gasReporterOutput.json
+**/echidna_corpus
+**/crytic-export
