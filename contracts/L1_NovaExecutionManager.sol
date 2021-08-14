@@ -74,7 +74,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     event Exec(bytes32 indexed execHash, address relayer, bool reverted, uint256 gasUsed);
 
     /*///////////////////////////////////////////////////////////////
-                     GAS ESTIMATION CONFIGURATION
+                       GAS ESTIMATION CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The amount of gas to assume each byte of calldata consumes.
@@ -106,7 +106,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     }
 
     /*///////////////////////////////////////////////////////////////
-                    STRATEGY REGISTRATION STORAGE
+                      STRATEGY RISK LEVEL STORAGE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Risk classifications for strategies.
