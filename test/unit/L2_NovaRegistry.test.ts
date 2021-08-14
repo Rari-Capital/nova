@@ -699,20 +699,11 @@ describe("L2_NovaRegistry", function () {
 
       await snapshotGasCost(tx);
 
-      // We need to simulate using Solidity's unsigned ints.
-      const BNtip = BigNumber.from(tip);
-
       // Ensure the balance of the reward recipient increased properly.
-      await calcRecipientIncrease().should.eventually.equal(
-        gasUsed * gasPrice + BNtip.div(2).toNumber()
-      );
+      await calcRecipientIncrease().should.eventually.equal(gasUsed * gasPrice);
 
       // Ensure the balance of the user increased properly.
-      await calcUserIncrease().should.eventually.equal(
-        (gasLimit - gasUsed) * gasPrice +
-          // Solidity rounds down so user may get slightly more as it uses the difference from the total.
-          BNtip.sub(BNtip.div(2)).toNumber()
-      );
+      await calcUserIncrease().should.eventually.equal((gasLimit - gasUsed) * gasPrice + tip);
     });
 
     it("allows completing an uncled request before it dies", async function () {

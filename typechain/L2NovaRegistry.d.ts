@@ -26,7 +26,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     "L1_NovaExecutionManagerAddress()": FunctionFragment;
     "MAX_INPUT_TOKENS()": FunctionFragment;
     "MIN_UNLOCK_DELAY_SECONDS()": FunctionFragment;
-    "PENALTY_TIP_DIVISOR()": FunctionFragment;
     "areTokensRemoved(bytes32)": FunctionFragment;
     "areTokensUnlocked(bytes32)": FunctionFragment;
     "authority()": FunctionFragment;
@@ -73,10 +72,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "MIN_UNLOCK_DELAY_SECONDS",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "PENALTY_TIP_DIVISOR",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -217,10 +212,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "MIN_UNLOCK_DELAY_SECONDS",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "PENALTY_TIP_DIVISOR",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -412,8 +403,6 @@ export class L2NovaRegistry extends BaseContract {
 
     MIN_UNLOCK_DELAY_SECONDS(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    PENALTY_TIP_DIVISOR(overrides?: CallOverrides): Promise<[BigNumber]>;
-
     areTokensRemoved(
       execHash: BytesLike,
       overrides?: CallOverrides
@@ -439,7 +428,7 @@ export class L2NovaRegistry extends BaseContract {
     ): Promise<ContractTransaction>;
 
     connectExecutionManager(
-      _L1_NovaExecutionManagerAddress: string,
+      newExecutionManagerAddress: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -587,8 +576,6 @@ export class L2NovaRegistry extends BaseContract {
 
   MIN_UNLOCK_DELAY_SECONDS(overrides?: CallOverrides): Promise<BigNumber>;
 
-  PENALTY_TIP_DIVISOR(overrides?: CallOverrides): Promise<BigNumber>;
-
   areTokensRemoved(
     execHash: BytesLike,
     overrides?: CallOverrides
@@ -614,7 +601,7 @@ export class L2NovaRegistry extends BaseContract {
   ): Promise<ContractTransaction>;
 
   connectExecutionManager(
-    _L1_NovaExecutionManagerAddress: string,
+    newExecutionManagerAddress: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -754,8 +741,6 @@ export class L2NovaRegistry extends BaseContract {
 
     MIN_UNLOCK_DELAY_SECONDS(overrides?: CallOverrides): Promise<BigNumber>;
 
-    PENALTY_TIP_DIVISOR(overrides?: CallOverrides): Promise<BigNumber>;
-
     areTokensRemoved(
       execHash: BytesLike,
       overrides?: CallOverrides
@@ -781,7 +766,7 @@ export class L2NovaRegistry extends BaseContract {
     ): Promise<void>;
 
     connectExecutionManager(
-      _L1_NovaExecutionManagerAddress: string,
+      newExecutionManagerAddress: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -923,8 +908,8 @@ export class L2NovaRegistry extends BaseContract {
     ): TypedEventFilter<[string], { execHash: string }>;
 
     ConnectExecutionManager(
-      _L1_NovaExecutionManagerAddress?: null
-    ): TypedEventFilter<[string], { _L1_NovaExecutionManagerAddress: string }>;
+      newExecutionManagerAddress?: null
+    ): TypedEventFilter<[string], { newExecutionManagerAddress: string }>;
 
     ExecCompleted(
       execHash?: BytesLike | null,
@@ -998,8 +983,6 @@ export class L2NovaRegistry extends BaseContract {
 
     MIN_UNLOCK_DELAY_SECONDS(overrides?: CallOverrides): Promise<BigNumber>;
 
-    PENALTY_TIP_DIVISOR(overrides?: CallOverrides): Promise<BigNumber>;
-
     areTokensRemoved(
       execHash: BytesLike,
       overrides?: CallOverrides
@@ -1018,7 +1001,7 @@ export class L2NovaRegistry extends BaseContract {
     ): Promise<BigNumber>;
 
     connectExecutionManager(
-      _L1_NovaExecutionManagerAddress: string,
+      newExecutionManagerAddress: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1171,10 +1154,6 @@ export class L2NovaRegistry extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    PENALTY_TIP_DIVISOR(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     areTokensRemoved(
       execHash: BytesLike,
       overrides?: CallOverrides
@@ -1193,7 +1172,7 @@ export class L2NovaRegistry extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     connectExecutionManager(
-      _L1_NovaExecutionManagerAddress: string,
+      newExecutionManagerAddress: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
