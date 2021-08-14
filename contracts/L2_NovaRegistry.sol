@@ -229,7 +229,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     }
 
     /// @notice Calls `requestExec` with all relevant parameters along with calling `unlockTokens` with the `autoUnlockDelay` argument.
-    /// @dev See `requestExec` and `unlockTokens` for more information.
+    /// @notice See `requestExec` and `unlockTokens` for more information.
     function requestExecWithTimeout(
         address strategy,
         bytes calldata l1Calldata,
