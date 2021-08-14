@@ -6,6 +6,7 @@ import {
   deployAndLogVerificationInfo,
   executeRequest,
   getOVMFactory,
+  StrategyRiskLevel,
   waitForL1ToL2Relay,
 } from "../../utils/testUtils";
 import { tuneMissingGasEstimate } from "../../tasks/tune";
@@ -16,6 +17,7 @@ import {
   L1NovaExecutionManager__factory,
   L2NovaRegistry,
   L2NovaRegistry__factory,
+  MockAuthority__factory,
   MockStrategy,
   MockStrategy__factory,
 } from "../../typechain";
@@ -43,33 +45,27 @@ describe("Integration", function () {
     },
   });
 
-  // Wallets for each layer:
+  // Wallets:
   const key = hre.network.config.accounts[0];
   const l1Wallet = new ethers.Wallet(key, watcher.l1.provider);
   const l2Wallet = new ethers.Wallet(key, watcher.l2.provider);
 
-  // Nova specific contracts:
+  // Nova Contracts:
   let L1_NovaExecutionManager: L1NovaExecutionManager;
   let L2_NovaRegistry: L2NovaRegistry;
 
-  // OVM contracts:
+  // OVM Contracts:
   let OVM_ETH: ERC20;
 
-  // Mock contracts:
-  let MockStrategy: MockStrategy;
+  // Strategies:
+  let Strategy: MockStrategy;
 
   describe("setup", function () {
-    it("should properly deploy mocks", async function () {
+    it("should properly deploy the registry", async function () {
       OVM_ETH = getContractFactory("OVM_ETH")
         .connect(l2Wallet)
         .attach("0x4200000000000000000000000000000000000006");
 
-      MockStrategy = await deployAndLogVerificationInfo(
-        getOVMFactory<MockStrategy__factory>("MockStrategy", false, "mocks/").connect(l1Wallet)
-      );
-    });
-
-    it("should properly deploy the registry", async function () {
       L2_NovaRegistry = await deployAndLogVerificationInfo(
         getOVMFactory<L2NovaRegistry__factory>("L2_NovaRegistry", true).connect(l2Wallet),
         OVM_ETH.address,
@@ -93,12 +89,29 @@ describe("Integration", function () {
         .reverted;
     });
 
+    it("should allow changing the execution manager's authority", async function () {
+      const MockAuthority = await deployAndLogVerificationInfo(
+        getOVMFactory<MockAuthority__factory>("MockAuthority", false, "mocks/").connect(l1Wallet)
+      );
+
+      // Set the authority to a MockAuthority that always returns true.
+      await L1_NovaExecutionManager.setAuthority(MockAuthority.address).should.not.be.reverted;
+    });
+
+    it("should properly deploy a strategy", async function () {
+      Strategy = await deployAndLogVerificationInfo(
+        getOVMFactory<MockStrategy__factory>("MockStrategy", false, "mocks/").connect(l1Wallet),
+        L1_NovaExecutionManager.address,
+        StrategyRiskLevel.SAFE
+      );
+    });
+
     it("should allow tuning the missing gas estimate", async function () {
       const { tx } = await executeRequest(L1_NovaExecutionManager.connect(l1Wallet), {
         relayer: l1Wallet.address,
         nonce: 420,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
+        strategy: Strategy.address,
+        l1Calldata: Strategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
 
         // It will overestimate before tuning.
         expectedGasOverestimateAmount: 99999999999999,
@@ -109,17 +122,21 @@ describe("Integration", function () {
   });
 
   describe("full request lifecycle", function () {
+    const gasLimit = 300_000;
+    const gasPrice = gweiToWei(50);
+    const functionFragment = "thisFunctionWillNotRevert";
+
     it("should allow creating a simple request", async function () {
       await OVM_ETH.connect(l2Wallet).approve(
         L2_NovaRegistry.address,
-        BigNumber.from(300_000).mul(gweiToWei(50))
+        BigNumber.from(gasLimit).mul(gasPrice)
       ).should.not.be.reverted;
 
       await L2_NovaRegistry.connect(l2Wallet).requestExec(
-        MockStrategy.address,
-        MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
-        300_000,
-        gweiToWei(50),
+        Strategy.address,
+        Strategy.interface.encodeFunctionData(functionFragment),
+        gasLimit,
+        gasPrice,
         0,
         []
       ).should.not.be.reverted;
@@ -129,9 +146,9 @@ describe("Integration", function () {
       const { tx } = await executeRequest(L1_NovaExecutionManager.connect(l1Wallet), {
         relayer: l1Wallet.address,
         nonce: 1,
-        strategy: MockStrategy.address,
-        l1Calldata: MockStrategy.interface.encodeFunctionData("thisFunctionWillNotRevert"),
-        gasPrice: gweiToWei(50),
+        strategy: Strategy.address,
+        l1Calldata: Strategy.interface.encodeFunctionData(functionFragment),
+        gasPrice,
       });
 
       await waitForL1ToL2Relay(tx, watcher);

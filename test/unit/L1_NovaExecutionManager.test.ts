@@ -31,13 +31,14 @@ describe("L1_NovaExecutionManager", function () {
     signers = await ethers.getSigners();
   });
 
+  // Nova Contracts:
   let L1_NovaExecutionManager: L1NovaExecutionManager;
 
-  /// Mocks
+  /// Mocks:
   let MockERC20: MockERC20;
   let MockCrossDomainMessenger: MockCrossDomainMessenger;
 
-  // Strategies
+  // Strategies:
   let UnknownStrategy: MockStrategy;
   let SafeStrategy: MockStrategy;
   let UnsafeStrategy: MockStrategy;
