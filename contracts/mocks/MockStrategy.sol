@@ -24,6 +24,10 @@ contract MockStrategy {
         evilContract = new EvilExternalContract(_executionManager);
     }
 
+    function registerSelfAsStrategy(L1_NovaExecutionManager.StrategyRiskLevel _riskLevel) external {
+        executionManager.registerSelfAsStrategy(_riskLevel);
+    }
+
     function thisFunctionWillNotRevert() external pure {}
 
     function thisFunctionWillModifyState() external {

@@ -22,6 +22,7 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 interface MockStrategyInterface extends ethers.utils.Interface {
   functions: {
     "counter()": FunctionFragment;
+    "registerSelfAsStrategy(uint8)": FunctionFragment;
     "thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(address,uint256)": FunctionFragment;
     "thisFunctionWillHardRevert()": FunctionFragment;
     "thisFunctionWillModifyState()": FunctionFragment;
@@ -32,6 +33,10 @@ interface MockStrategyInterface extends ethers.utils.Interface {
   };
 
   encodeFunctionData(functionFragment: "counter", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "registerSelfAsStrategy",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens",
     values: [string, BigNumberish]
@@ -62,6 +67,10 @@ interface MockStrategyInterface extends ethers.utils.Interface {
   ): string;
 
   decodeFunctionResult(functionFragment: "counter", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "registerSelfAsStrategy",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens",
     data: BytesLike
@@ -146,6 +155,11 @@ export class MockStrategy extends BaseContract {
   functions: {
     counter(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    registerSelfAsStrategy(
+      _riskLevel: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(
       token: string,
       amount: BigNumberish,
@@ -175,6 +189,11 @@ export class MockStrategy extends BaseContract {
 
   counter(overrides?: CallOverrides): Promise<BigNumber>;
 
+  registerSelfAsStrategy(
+    _riskLevel: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(
     token: string,
     amount: BigNumberish,
@@ -203,6 +222,11 @@ export class MockStrategy extends BaseContract {
 
   callStatic: {
     counter(overrides?: CallOverrides): Promise<BigNumber>;
+
+    registerSelfAsStrategy(
+      _riskLevel: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(
       token: string,
@@ -236,6 +260,11 @@ export class MockStrategy extends BaseContract {
   estimateGas: {
     counter(overrides?: CallOverrides): Promise<BigNumber>;
 
+    registerSelfAsStrategy(
+      _riskLevel: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(
       token: string,
       amount: BigNumberish,
@@ -265,6 +294,11 @@ export class MockStrategy extends BaseContract {
 
   populateTransaction: {
     counter(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    registerSelfAsStrategy(
+      _riskLevel: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(
       token: string,

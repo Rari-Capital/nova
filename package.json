@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Cross-layer execution firmware.",
   "scripts": {
-    "compile": "hardhat compile && hardhat compile --network optimism",
+    "compile": "TS_NODE_TRANSPILE_ONLY=1 hardhat compile && hardhat compile --network optimism",
 
     "unit-tests": "hardhat test",
     "integration-tests": "hardhat test --network optimism",

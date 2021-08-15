@@ -39,7 +39,6 @@ describe("L1_NovaExecutionManager", function () {
   let MockCrossDomainMessenger: MockCrossDomainMessenger;
 
   // Strategies:
-  let UnknownStrategy: MockStrategy;
   let SafeStrategy: MockStrategy;
   let UnsafeStrategy: MockStrategy;
 
@@ -68,8 +67,6 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("should properly deploy strategies", async function () {
-      UnknownStrategy = await deployStrategy(L1_NovaExecutionManager, StrategyRiskLevel.UNKNOWN);
-
       SafeStrategy = await deployStrategy(L1_NovaExecutionManager, StrategyRiskLevel.SAFE);
 
       UnsafeStrategy = await deployStrategy(L1_NovaExecutionManager, StrategyRiskLevel.UNSAFE);
@@ -126,10 +123,32 @@ describe("L1_NovaExecutionManager", function () {
     });
   });
 
-  describe("hardRevert", function () {
-    it("should revert with the proper message", async function () {
-      await L1_NovaExecutionManager.hardRevert().should.be.revertedWith(
-        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
+  describe("registerSelfAsStrategy", function () {
+    it("should not allow registering as UNKNOWN", async function () {
+      const strategy = await deployStrategy(L1_NovaExecutionManager);
+
+      await strategy
+        .registerSelfAsStrategy(StrategyRiskLevel.UNKNOWN)
+        .should.be.revertedWith("INVALID_RISK_LEVEL");
+    });
+
+    it("should not allow registering multiple times", async function () {
+      const strategy = await deployStrategy(L1_NovaExecutionManager);
+
+      await strategy.registerSelfAsStrategy(StrategyRiskLevel.SAFE);
+
+      await strategy
+        .registerSelfAsStrategy(StrategyRiskLevel.UNSAFE)
+        .should.be.revertedWith("ALREADY_REGISTERED");
+    });
+
+    it("should allow registering properly", async function () {
+      const strategy = await deployStrategy(L1_NovaExecutionManager);
+
+      await strategy.registerSelfAsStrategy(StrategyRiskLevel.UNSAFE);
+
+      await L1_NovaExecutionManager.getStrategyRiskLevel(strategy.address).should.eventually.equal(
+        StrategyRiskLevel.UNSAFE
       );
     });
   });
@@ -251,6 +270,19 @@ describe("L1_NovaExecutionManager", function () {
         relayer: relayer.address,
         strategy: SafeStrategy.address,
         l1Calldata: SafeStrategy.interface.encodeFunctionData("thisFunctionWillRevert"),
+        shouldSoftRevert: true,
+      });
+
+      await snapshotGasCost(tx);
+    });
+
+    it("should not revert due to a hard revert triggered by a safe strategy", async function () {
+      const [relayer] = signers;
+
+      const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
+        strategy: SafeStrategy.address,
+        l1Calldata: SafeStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert"),
         shouldSoftRevert: true,
       });
 
@@ -384,6 +416,14 @@ describe("L1_NovaExecutionManager", function () {
       });
 
       await tx.should.emit(UnsafeStrategy, "StealRelayerTokensFailed");
+    });
+  });
+
+  describe("hardRevert", function () {
+    it("should revert with the proper message", async function () {
+      await L1_NovaExecutionManager.hardRevert().should.be.revertedWith(
+        await L1_NovaExecutionManager.HARD_REVERT_TEXT()
+      );
     });
   });
 });
