@@ -55,17 +55,9 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted when `setCalldataByteGasEstimate` is called.
-    /// @param newCalldataByteGasEstimate The updated calldataByteGasEstimate.
-    event CalldataByeGasEstimateUpdated(uint256 newCalldataByteGasEstimate);
-
-    /// @notice Emitted when `setMissingGasEstimate` is called.
-    /// @param newMissingGasEstimate The updated missingGasEstimate.
-    event MissingGasEstimateUpdated(uint256 newMissingGasEstimate);
-
-    /// @notice Emitted when `setStrategyCallGasBuffer` is called.
-    /// @param newStrategyCallGasBuffer The updated strategyCallGasBuffer.
-    event StrategyCallGasBufferUpdated(uint256 newStrategyCallGasBuffer);
+    /// @notice Emitted when `updateGasConfig` is called.
+    /// @param newGasConfig The updated gasConfig.
+    event GasConfigUpdated(GasConfig newGasConfig);
 
     /// @notice Emitted when `registerSelfAsStrategy` is called.
     /// @param strategyRiskLevel The risk level the strategy registered itself as.
@@ -78,50 +70,34 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     event Exec(bytes32 indexed execHash, address relayer, bool reverted, uint256 gasUsed);
 
     /*///////////////////////////////////////////////////////////////
-                   GAS ESTIMATION/LIMIT CONFIGURATION
+                   GAS LIMIT/ESTIMATION CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The amount of gas to assume each byte of calldata consumes.
-    /// @dev Stored as a uint16 to pack with the other gas config variables.
-    /// @dev This needs to factor in raw calldata costs, along with the hidden
-    /// cost of abi decoding and copying the calldata into an Solidity function.
-    uint16 public calldataByteGasEstimate = 13;
-
-    /// @notice The amount of gas the system assumes it has not accounted for.
-    /// @dev Stored as a uint120 to pack with the other gas config variables.
-    /// @dev This needs to factor in the base transaction gas (currently 21000), along
-    /// with the gas cost of sending the cross domain message and emitting the Exec event.
-    uint120 public missingGasEstimate = 200000;
-
-    /// @notice Amount of gas to subtract from the strategy call's gas limit in exec beyond
-    /// initial gas used and missingGasEstimate to prevent exceeding the request's gas limit.
-    /// @dev Stored as a uint120 to pack with the other gas config variables.
-    /// @dev This needs to factor in the max amount of gas consumed after the strategy call, up
-    /// until the cross domain message is sent (as this is not accounted for in missingGasEstimate).
-    uint120 public strategyCallGasBuffer = 5000;
-
-    /// @notice Updates the calldataByteGasEstimate configuration value.
-    /// @param newCalldataByteGasEstimate The updated value to use for calldataByteGasEstimate.
-    function setCalldataByteGasEstimate(uint16 newCalldataByteGasEstimate) external requiresAuth {
-        calldataByteGasEstimate = newCalldataByteGasEstimate;
-
-        emit CalldataByeGasEstimateUpdated(newCalldataByteGasEstimate);
+    /// @dev Packed struct of gas limit/estimation configuration values used in exec.
+    /// @param calldataByteGasEstimate The amount of gas to assume each byte of calldata consumes.
+    /// @param missingGasEstimate The extra amount of gas the system consumes but cannot measure on-the-fly.
+    /// @param strategyCallGasBuffer The extra amount of gas to keep as a buffer when calling a strategy.
+    struct GasConfig {
+        // This needs to factor in raw calldata costs, along with the hidden
+        // cost of abi decoding and copying the calldata into an Solidity function.
+        uint64 calldataByteGasEstimate;
+        // This needs to factor in the base transaction gas (currently 21000), along
+        // with the gas cost of sending the cross domain message and emitting the Exec event.
+        uint96 missingGasEstimate;
+        // This needs to factor in the max amount of gas consumed after the strategy call, up
+        // until the cross domain message is sent (as this is not accounted for in missingGasEstimate).
+        uint96 strategyCallGasBuffer;
     }
 
-    /// @notice Updates the missingGasEstimate configuration value.
-    /// @param newMissingGasEstimate The updated value to use for missingGasEstimate.
-    function setMissingGasEstimate(uint120 newMissingGasEstimate) external requiresAuth {
-        missingGasEstimate = newMissingGasEstimate;
+    /// @notice Gas limit/estimation configuration values used in exec.
+    GasConfig public gasConfig = GasConfig(13, 200000, 5000);
 
-        emit MissingGasEstimateUpdated(newMissingGasEstimate);
-    }
+    /// @notice Updates the gasConfig.
+    /// @param newGasConfig The updated value to use for gasConfig.
+    function updateGasConfig(GasConfig calldata newGasConfig) external requiresAuth {
+        gasConfig = newGasConfig;
 
-    /// @notice Updates the calldataByteGasEstimate configuration value.
-    /// @param newStrategyCallGasBuffer The updated value to use for calldataByteGasEstimate.
-    function setStrategyCallGasBuffer(uint120 newStrategyCallGasBuffer) external requiresAuth {
-        strategyCallGasBuffer = newStrategyCallGasBuffer;
-
-        emit StrategyCallGasBufferUpdated(newStrategyCallGasBuffer);
+        emit GasConfigUpdated(newGasConfig);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -130,18 +106,18 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
 
     /// @notice Risk classifications for strategies.
     enum StrategyRiskLevel {
-        /// The strategy has not been assigned a risk level.
-        /// It has the equivalent abilities of a SAFE strategy,
-        /// but could upgrade itself to an UNSAFE strategy at any time.
+        // The strategy has not been assigned a risk level.
+        // It has the equivalent abilities of a SAFE strategy,
+        // but could upgrade itself to an UNSAFE strategy at any time.
         UNKNOWN,
-        /// The strategy has registered itself as a safe strategy,
-        /// meaning it cannot use transferFromRelayer or trigger a hard
-        /// revert. A SAFE strategy cannot upgrade itself to become UNSAFE.
+        // The strategy has registered itself as a safe strategy,
+        // meaning it cannot use transferFromRelayer or trigger a hard
+        // revert. A SAFE strategy cannot upgrade itself to become UNSAFE.
         SAFE,
-        /// The strategy has registered itself as an unsafe strategy,
-        /// meaning it has access to all the functionality the execution
-        /// manager provides like transferFromRelayer and the ability to hard
-        /// revert. An UNSAFE strategy cannot downgrade itself to become SAFE.
+        // The strategy has registered itself as an unsafe strategy,
+        // meaning it has access to all the functionality the execution
+        // manager provides like transferFromRelayer and the ability to hard
+        // revert. An UNSAFE strategy cannot downgrade itself to become SAFE.
         UNSAFE
     }
 
@@ -258,11 +234,11 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
             strategy.call{
                 gas: gasLimit -
                     // Post call gas:
-                    missingGasEstimate -
+                    gasConfig.missingGasEstimate -
                     // Safety buffer:
-                    strategyCallGasBuffer -
+                    gasConfig.strategyCallGasBuffer -
                     // Calldata gas:
-                    (msg.data.length * calldataByteGasEstimate) -
+                    (msg.data.length * gasConfig.calldataByteGasEstimate) -
                     // Gas used so far:
                     (startGas - gasleft())
             }(l1Calldata);
@@ -279,9 +255,9 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Estimate how much gas the relayer will have paid (not accounting for refunds).
         uint256 gasUsedEstimate =
             // Unaccounted gas (base tx cost + sendMessage):
-            missingGasEstimate +
+            gasConfig.missingGasEstimate +
                 // Calldata gas estimate:
-                (msg.data.length * calldataByteGasEstimate) +
+                (msg.data.length * gasConfig.calldataByteGasEstimate) +
                 // Gas used so far:
                 (startGas - gasleft());
 

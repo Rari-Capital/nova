@@ -28,23 +28,19 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     "HARD_REVERT_TEXT()": FunctionFragment;
     "L2_NOVA_REGISTRY_ADDRESS()": FunctionFragment;
     "authority()": FunctionFragment;
-    "calldataByteGasEstimate()": FunctionFragment;
     "currentExecHash()": FunctionFragment;
     "currentRelayer()": FunctionFragment;
     "currentlyExecutingStrategy()": FunctionFragment;
     "exec(uint256,address,bytes,uint256,address,uint256)": FunctionFragment;
+    "gasConfig()": FunctionFragment;
     "getStrategyRiskLevel(address)": FunctionFragment;
     "hardRevert()": FunctionFragment;
-    "missingGasEstimate()": FunctionFragment;
     "owner()": FunctionFragment;
     "registerSelfAsStrategy(uint8)": FunctionFragment;
     "setAuthority(address)": FunctionFragment;
-    "setCalldataByteGasEstimate(uint16)": FunctionFragment;
-    "setMissingGasEstimate(uint120)": FunctionFragment;
     "setOwner(address)": FunctionFragment;
-    "setStrategyCallGasBuffer(uint120)": FunctionFragment;
-    "strategyCallGasBuffer()": FunctionFragment;
     "transferFromRelayer(address,uint256)": FunctionFragment;
+    "updateGasConfig(tuple)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -73,10 +69,6 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "authority", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "calldataByteGasEstimate",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "currentExecHash",
     values?: undefined
   ): string;
@@ -99,16 +91,13 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
       BigNumberish
     ]
   ): string;
+  encodeFunctionData(functionFragment: "gasConfig", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getStrategyRiskLevel",
     values: [string]
   ): string;
   encodeFunctionData(
     functionFragment: "hardRevert",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "missingGasEstimate",
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
@@ -120,26 +109,20 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     functionFragment: "setAuthority",
     values: [string]
   ): string;
-  encodeFunctionData(
-    functionFragment: "setCalldataByteGasEstimate",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setMissingGasEstimate",
-    values: [BigNumberish]
-  ): string;
   encodeFunctionData(functionFragment: "setOwner", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "setStrategyCallGasBuffer",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "strategyCallGasBuffer",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "transferFromRelayer",
     values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "updateGasConfig",
+    values: [
+      {
+        calldataByteGasEstimate: BigNumberish;
+        missingGasEstimate: BigNumberish;
+        strategyCallGasBuffer: BigNumberish;
+      }
+    ]
   ): string;
 
   decodeFunctionResult(
@@ -168,10 +151,6 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "authority", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "calldataByteGasEstimate",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "currentExecHash",
     data: BytesLike
   ): Result;
@@ -184,15 +163,12 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "exec", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "gasConfig", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getStrategyRiskLevel",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "hardRevert", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "missingGasEstimate",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "registerSelfAsStrategy",
@@ -202,48 +178,28 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     functionFragment: "setAuthority",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "setCalldataByteGasEstimate",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "setMissingGasEstimate",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "setOwner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "setStrategyCallGasBuffer",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "strategyCallGasBuffer",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "transferFromRelayer",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateGasConfig",
     data: BytesLike
   ): Result;
 
   events: {
     "AuthorityUpdated(address)": EventFragment;
-    "CalldataByeGasEstimateUpdated(uint256)": EventFragment;
     "Exec(bytes32,address,bool,uint256)": EventFragment;
-    "MissingGasEstimateUpdated(uint256)": EventFragment;
+    "GasConfigUpdated(tuple)": EventFragment;
     "OwnerUpdated(address)": EventFragment;
-    "StrategyCallGasBufferUpdated(uint256)": EventFragment;
     "StrategyRegistered(uint8)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "AuthorityUpdated"): EventFragment;
-  getEvent(
-    nameOrSignatureOrTopic: "CalldataByeGasEstimateUpdated"
-  ): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Exec"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "MissingGasEstimateUpdated"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "GasConfigUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnerUpdated"): EventFragment;
-  getEvent(
-    nameOrSignatureOrTopic: "StrategyCallGasBufferUpdated"
-  ): EventFragment;
   getEvent(nameOrSignatureOrTopic: "StrategyRegistered"): EventFragment;
 }
 
@@ -307,8 +263,6 @@ export class L1NovaExecutionManager extends BaseContract {
 
     authority(overrides?: CallOverrides): Promise<[string]>;
 
-    calldataByteGasEstimate(overrides?: CallOverrides): Promise<[number]>;
-
     currentExecHash(overrides?: CallOverrides): Promise<[string]>;
 
     currentRelayer(overrides?: CallOverrides): Promise<[string]>;
@@ -325,14 +279,22 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    gasConfig(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber] & {
+        calldataByteGasEstimate: BigNumber;
+        missingGasEstimate: BigNumber;
+        strategyCallGasBuffer: BigNumber;
+      }
+    >;
+
     getStrategyRiskLevel(
       arg0: string,
       overrides?: CallOverrides
     ): Promise<[number]>;
 
     hardRevert(overrides?: CallOverrides): Promise<[void]>;
-
-    missingGasEstimate(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
@@ -346,31 +308,23 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    setCalldataByteGasEstimate(
-      newCalldataByteGasEstimate: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    setMissingGasEstimate(
-      newMissingGasEstimate: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     setOwner(
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    setStrategyCallGasBuffer(
-      newStrategyCallGasBuffer: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    strategyCallGasBuffer(overrides?: CallOverrides): Promise<[BigNumber]>;
-
     transferFromRelayer(
       token: string,
       amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    updateGasConfig(
+      newGasConfig: {
+        calldataByteGasEstimate: BigNumberish;
+        missingGasEstimate: BigNumberish;
+        strategyCallGasBuffer: BigNumberish;
+      },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
@@ -389,8 +343,6 @@ export class L1NovaExecutionManager extends BaseContract {
 
   authority(overrides?: CallOverrides): Promise<string>;
 
-  calldataByteGasEstimate(overrides?: CallOverrides): Promise<number>;
-
   currentExecHash(overrides?: CallOverrides): Promise<string>;
 
   currentRelayer(overrides?: CallOverrides): Promise<string>;
@@ -407,14 +359,22 @@ export class L1NovaExecutionManager extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  gasConfig(
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber, BigNumber] & {
+      calldataByteGasEstimate: BigNumber;
+      missingGasEstimate: BigNumber;
+      strategyCallGasBuffer: BigNumber;
+    }
+  >;
+
   getStrategyRiskLevel(
     arg0: string,
     overrides?: CallOverrides
   ): Promise<number>;
 
   hardRevert(overrides?: CallOverrides): Promise<void>;
-
-  missingGasEstimate(overrides?: CallOverrides): Promise<BigNumber>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
@@ -428,31 +388,23 @@ export class L1NovaExecutionManager extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  setCalldataByteGasEstimate(
-    newCalldataByteGasEstimate: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  setMissingGasEstimate(
-    newMissingGasEstimate: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   setOwner(
     newOwner: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  setStrategyCallGasBuffer(
-    newStrategyCallGasBuffer: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  strategyCallGasBuffer(overrides?: CallOverrides): Promise<BigNumber>;
-
   transferFromRelayer(
     token: string,
     amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  updateGasConfig(
+    newGasConfig: {
+      calldataByteGasEstimate: BigNumberish;
+      missingGasEstimate: BigNumberish;
+      strategyCallGasBuffer: BigNumberish;
+    },
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -473,8 +425,6 @@ export class L1NovaExecutionManager extends BaseContract {
 
     authority(overrides?: CallOverrides): Promise<string>;
 
-    calldataByteGasEstimate(overrides?: CallOverrides): Promise<number>;
-
     currentExecHash(overrides?: CallOverrides): Promise<string>;
 
     currentRelayer(overrides?: CallOverrides): Promise<string>;
@@ -491,14 +441,22 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    gasConfig(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber] & {
+        calldataByteGasEstimate: BigNumber;
+        missingGasEstimate: BigNumber;
+        strategyCallGasBuffer: BigNumber;
+      }
+    >;
+
     getStrategyRiskLevel(
       arg0: string,
       overrides?: CallOverrides
     ): Promise<number>;
 
     hardRevert(overrides?: CallOverrides): Promise<void>;
-
-    missingGasEstimate(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
@@ -512,28 +470,20 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    setCalldataByteGasEstimate(
-      newCalldataByteGasEstimate: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    setMissingGasEstimate(
-      newMissingGasEstimate: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     setOwner(newOwner: string, overrides?: CallOverrides): Promise<void>;
-
-    setStrategyCallGasBuffer(
-      newStrategyCallGasBuffer: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    strategyCallGasBuffer(overrides?: CallOverrides): Promise<BigNumber>;
 
     transferFromRelayer(
       token: string,
       amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    updateGasConfig(
+      newGasConfig: {
+        calldataByteGasEstimate: BigNumberish;
+        missingGasEstimate: BigNumberish;
+        strategyCallGasBuffer: BigNumberish;
+      },
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -542,10 +492,6 @@ export class L1NovaExecutionManager extends BaseContract {
     AuthorityUpdated(
       authority?: string | null
     ): TypedEventFilter<[string], { authority: string }>;
-
-    CalldataByeGasEstimateUpdated(
-      newCalldataByteGasEstimate?: null
-    ): TypedEventFilter<[BigNumber], { newCalldataByteGasEstimate: BigNumber }>;
 
     Exec(
       execHash?: BytesLike | null,
@@ -562,17 +508,28 @@ export class L1NovaExecutionManager extends BaseContract {
       }
     >;
 
-    MissingGasEstimateUpdated(
-      newMissingGasEstimate?: null
-    ): TypedEventFilter<[BigNumber], { newMissingGasEstimate: BigNumber }>;
+    GasConfigUpdated(
+      newGasConfig?: null
+    ): TypedEventFilter<
+      [
+        [BigNumber, BigNumber, BigNumber] & {
+          calldataByteGasEstimate: BigNumber;
+          missingGasEstimate: BigNumber;
+          strategyCallGasBuffer: BigNumber;
+        }
+      ],
+      {
+        newGasConfig: [BigNumber, BigNumber, BigNumber] & {
+          calldataByteGasEstimate: BigNumber;
+          missingGasEstimate: BigNumber;
+          strategyCallGasBuffer: BigNumber;
+        };
+      }
+    >;
 
     OwnerUpdated(
       owner?: string | null
     ): TypedEventFilter<[string], { owner: string }>;
-
-    StrategyCallGasBufferUpdated(
-      newStrategyCallGasBuffer?: null
-    ): TypedEventFilter<[BigNumber], { newStrategyCallGasBuffer: BigNumber }>;
 
     StrategyRegistered(
       strategyRiskLevel?: null
@@ -596,8 +553,6 @@ export class L1NovaExecutionManager extends BaseContract {
 
     authority(overrides?: CallOverrides): Promise<BigNumber>;
 
-    calldataByteGasEstimate(overrides?: CallOverrides): Promise<BigNumber>;
-
     currentExecHash(overrides?: CallOverrides): Promise<BigNumber>;
 
     currentRelayer(overrides?: CallOverrides): Promise<BigNumber>;
@@ -614,14 +569,14 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    gasConfig(overrides?: CallOverrides): Promise<BigNumber>;
+
     getStrategyRiskLevel(
       arg0: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     hardRevert(overrides?: CallOverrides): Promise<BigNumber>;
-
-    missingGasEstimate(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -635,31 +590,23 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    setCalldataByteGasEstimate(
-      newCalldataByteGasEstimate: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    setMissingGasEstimate(
-      newMissingGasEstimate: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     setOwner(
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    setStrategyCallGasBuffer(
-      newStrategyCallGasBuffer: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    strategyCallGasBuffer(overrides?: CallOverrides): Promise<BigNumber>;
-
     transferFromRelayer(
       token: string,
       amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    updateGasConfig(
+      newGasConfig: {
+        calldataByteGasEstimate: BigNumberish;
+        missingGasEstimate: BigNumberish;
+        strategyCallGasBuffer: BigNumberish;
+      },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
@@ -685,10 +632,6 @@ export class L1NovaExecutionManager extends BaseContract {
 
     authority(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    calldataByteGasEstimate(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     currentExecHash(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     currentRelayer(overrides?: CallOverrides): Promise<PopulatedTransaction>;
@@ -707,16 +650,14 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    gasConfig(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     getStrategyRiskLevel(
       arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     hardRevert(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    missingGasEstimate(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
@@ -730,33 +671,23 @@ export class L1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    setCalldataByteGasEstimate(
-      newCalldataByteGasEstimate: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    setMissingGasEstimate(
-      newMissingGasEstimate: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
     setOwner(
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    setStrategyCallGasBuffer(
-      newStrategyCallGasBuffer: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    strategyCallGasBuffer(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     transferFromRelayer(
       token: string,
       amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    updateGasConfig(
+      newGasConfig: {
+        calldataByteGasEstimate: BigNumberish;
+        missingGasEstimate: BigNumberish;
+        strategyCallGasBuffer: BigNumberish;
+      },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

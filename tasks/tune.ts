@@ -61,13 +61,15 @@ async function findOptimalMissingGasEstimate(
   // Since we accept a generic TransactionResponse we have to parse the logs manually.
   const execEvent = L1_NovaExecutionManager.interface.parseLog(logs[logs.length - 1]);
 
-  // We are assuming that the current missing gas estimate was the missing gas estimate when
-  // the transactions was executed. Don't try to use tune on really old transactions!
-  const currentMissingGasEstimate = (await L1_NovaExecutionManager.missingGasEstimate()).toNumber();
+  // We are assuming that the current gas config was the same when the
+  // tx was executed. Don't try to use tune on really old transactions!
+  const currentGasConfig = await L1_NovaExecutionManager.gasConfig();
 
+  const currentMissingGasEstimate = currentGasConfig.missingGasEstimate.toNumber();
   const underestimateAmount = gasUsed.toNumber() - execEvent.args.gasUsed.toNumber();
 
   return {
+    currentGasConfig,
     currentMissingGasEstimate,
     optimalMissingGasEstimate: currentMissingGasEstimate + underestimateAmount,
   };
@@ -80,7 +82,7 @@ export async function tuneMissingGasEstimate(
   L1_NovaExecutionManager: L1NovaExecutionManager,
   tx: Promise<TransactionResponse>
 ) {
-  const { currentMissingGasEstimate, optimalMissingGasEstimate } =
+  const { currentGasConfig, currentMissingGasEstimate, optimalMissingGasEstimate } =
     await findOptimalMissingGasEstimate(L1_NovaExecutionManager, tx);
 
   console.log();
@@ -99,9 +101,10 @@ export async function tuneMissingGasEstimate(
   const newMissingGasEstimate = optimalMissingGasEstimate + 500;
 
   // Update the missing gas estimate on-chain.
-  await L1_NovaExecutionManager.setMissingGasEstimate(newMissingGasEstimate)
-    .should.emit(L1_NovaExecutionManager, "MissingGasEstimateUpdated")
-    .withArgs(newMissingGasEstimate);
+  await L1_NovaExecutionManager.updateGasConfig({
+    ...currentGasConfig,
+    missingGasEstimate: newMissingGasEstimate,
+  });
 
   loader.stopAndPersist({
     symbol: chalk.magenta("✓"),

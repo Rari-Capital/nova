@@ -15,10 +15,47 @@ import {
   ContractReceipt,
   ContractTransaction,
 } from "ethers";
-import { Interface } from "ethers/lib/utils";
+import { Interface, ParamType } from "ethers/lib/utils";
 
 import { IERC20 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+
+/** Returns a valid value for a param type. */
+export function getValueForParamType(paramType: ParamType) {
+  const baseType = paramType.baseType;
+
+  if (baseType === "array") {
+    return [];
+  } else if (baseType === "tuple") {
+    let obj = {};
+    for (const subParam of paramType.components) {
+      obj[subParam.name] = getValueForParamType(subParam);
+    }
+    return obj;
+  } else if (baseType === "address") {
+    return "0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACE";
+  } else if (baseType === "bool") {
+    return true;
+  } else if (baseType.includes("bytes")) {
+    if (baseType === "bytes") {
+      return "0x00000000";
+    }
+    const numberOfBytes = parseInt(baseType.replace("bytes", ""));
+    return ethers.utils.hexZeroPad("0x00000000", numberOfBytes);
+  } else if (baseType.includes("uint")) {
+    if (baseType === "uint") {
+      return 1e18;
+    }
+    const numberSize = parseInt(baseType.replace("uint", ""));
+    return Math.min(100000000000, Math.floor(2 ** numberSize / 100));
+  } else if (baseType.includes("int")) {
+    if (baseType === "int") {
+      return 1e18;
+    }
+    const numberSize = parseInt(baseType.replace("int", ""));
+    return Math.min(100000000000, Math.floor(2 ** numberSize / 100));
+  }
+}
 
 /** Calls all stateful functions in a contract to check if they revert with unauthorized.  */
 export async function checkAllFunctionsForAuth(
@@ -29,43 +66,13 @@ export async function checkAllFunctionsForAuth(
   const statefulFragments = getAllStatefulFragments(contract.interface);
 
   for (const fragment of statefulFragments) {
-    if (ignoreNames && ignoreNames.includes(fragment.name)) {
+    if (ignoreNames?.includes(fragment.name)) {
       continue;
     }
 
-    const args = fragment.inputs.map((input) => {
-      const baseType = input.baseType;
-
-      if (baseType == "array") {
-        return [];
-      } else if (baseType === "address") {
-        return "0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACE";
-      } else if (baseType === "bool") {
-        return true;
-      } else if (baseType.includes("bytes")) {
-        if (baseType === "bytes") {
-          return "0x00000000";
-        }
-        const numberOfBytes = parseInt(baseType.replace("bytes", ""));
-        return ethers.utils.hexZeroPad("0x00000000", numberOfBytes);
-      } else if (baseType.includes("uint")) {
-        if (baseType === "uint") {
-          return 1e18;
-        }
-        const numberSize = parseInt(baseType.replace("uint", ""));
-        return Math.min(100000000000, Math.floor(2 ** numberSize / 100));
-      } else if (baseType.includes("int")) {
-        if (baseType === "int") {
-          return 1e18;
-        }
-        const numberSize = parseInt(baseType.replace("int", ""));
-        return Math.min(100000000000, Math.floor(2 ** numberSize / 100));
-      }
-    });
-
     await contract
       .connect(account)
-      [fragment.name](...args)
+      [fragment.name](...fragment.inputs.map(getValueForParamType))
       .should.be.revertedWith("UNAUTHORIZED");
   }
 }

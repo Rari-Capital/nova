@@ -113,40 +113,6 @@ describe("L1_NovaExecutionManager", function () {
 
       await tuneMissingGasEstimate(L1_NovaExecutionManager, tx);
     });
-
-    it("should allow updating the calldata byte gas estimate", async function () {
-      const originalValue = await L1_NovaExecutionManager.calldataByteGasEstimate();
-
-      // Test updating the calldata byte gas estimate.
-      await L1_NovaExecutionManager.setCalldataByteGasEstimate(originalValue + 1)
-        .should.emit(L1_NovaExecutionManager, "CalldataByeGasEstimateUpdated")
-        .withArgs(originalValue + 1);
-      await L1_NovaExecutionManager.calldataByteGasEstimate().should.eventually.equal(
-        originalValue + 1
-      );
-
-      // Restore it to its original value.
-      await L1_NovaExecutionManager.setCalldataByteGasEstimate(originalValue)
-        .should.emit(L1_NovaExecutionManager, "CalldataByeGasEstimateUpdated")
-        .withArgs(originalValue);
-    });
-
-    it("should allow updating the strategy call gas buffer", async function () {
-      const originalValue = await L1_NovaExecutionManager.strategyCallGasBuffer();
-
-      // Test updating the strategy call gas buffer.
-      await L1_NovaExecutionManager.setStrategyCallGasBuffer(originalValue.add(1))
-        .should.emit(L1_NovaExecutionManager, "StrategyCallGasBufferUpdated")
-        .withArgs(originalValue.add(1));
-      await L1_NovaExecutionManager.strategyCallGasBuffer().should.eventually.equal(
-        originalValue.add(1)
-      );
-
-      // Restore it to its original value.
-      await L1_NovaExecutionManager.setStrategyCallGasBuffer(originalValue)
-        .should.emit(L1_NovaExecutionManager, "StrategyCallGasBufferUpdated")
-        .withArgs(originalValue);
-    });
   });
 
   describe("registerSelfAsStrategy", function () {
