@@ -12,6 +12,7 @@ import {
   BaseContract,
   ContractTransaction,
   Overrides,
+  PayableOverrides,
   CallOverrides,
 } from "ethers";
 import { BytesLike } from "@ethersproject/bytes";
@@ -22,7 +23,6 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 interface L2NovaRegistryInterface extends ethers.utils.Interface {
   functions: {
     "CROSS_DOMAIN_MESSENGER()": FunctionFragment;
-    "ETH()": FunctionFragment;
     "L1_NovaExecutionManagerAddress()": FunctionFragment;
     "MAX_INPUT_TOKENS()": FunctionFragment;
     "MIN_UNLOCK_DELAY_SECONDS()": FunctionFragment;
@@ -61,7 +61,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     functionFragment: "CROSS_DOMAIN_MESSENGER",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: "ETH", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "L1_NovaExecutionManagerAddress",
     values?: undefined
@@ -201,7 +200,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     functionFragment: "CROSS_DOMAIN_MESSENGER",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "ETH", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "L1_NovaExecutionManagerAddress",
     data: BytesLike
@@ -393,8 +391,6 @@ export class L2NovaRegistry extends BaseContract {
   functions: {
     CROSS_DOMAIN_MESSENGER(overrides?: CallOverrides): Promise<[string]>;
 
-    ETH(overrides?: CallOverrides): Promise<[string]>;
-
     L1_NovaExecutionManagerAddress(
       overrides?: CallOverrides
     ): Promise<[string]>;
@@ -516,7 +512,7 @@ export class L2NovaRegistry extends BaseContract {
       gasPrice: BigNumberish,
       tip: BigNumberish,
       inputTokens: { l2Token: string; amount: BigNumberish }[],
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     requestExecWithTimeout(
@@ -549,7 +545,7 @@ export class L2NovaRegistry extends BaseContract {
     speedUpRequest(
       execHash: BytesLike,
       gasPrice: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     systemNonce(overrides?: CallOverrides): Promise<[BigNumber]>;
@@ -567,8 +563,6 @@ export class L2NovaRegistry extends BaseContract {
   };
 
   CROSS_DOMAIN_MESSENGER(overrides?: CallOverrides): Promise<string>;
-
-  ETH(overrides?: CallOverrides): Promise<string>;
 
   L1_NovaExecutionManagerAddress(overrides?: CallOverrides): Promise<string>;
 
@@ -681,7 +675,7 @@ export class L2NovaRegistry extends BaseContract {
     gasPrice: BigNumberish,
     tip: BigNumberish,
     inputTokens: { l2Token: string; amount: BigNumberish }[],
-    overrides?: Overrides & { from?: string | Promise<string> }
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   requestExecWithTimeout(
@@ -714,7 +708,7 @@ export class L2NovaRegistry extends BaseContract {
   speedUpRequest(
     execHash: BytesLike,
     gasPrice: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   systemNonce(overrides?: CallOverrides): Promise<BigNumber>;
@@ -732,8 +726,6 @@ export class L2NovaRegistry extends BaseContract {
 
   callStatic: {
     CROSS_DOMAIN_MESSENGER(overrides?: CallOverrides): Promise<string>;
-
-    ETH(overrides?: CallOverrides): Promise<string>;
 
     L1_NovaExecutionManagerAddress(overrides?: CallOverrides): Promise<string>;
 
@@ -973,8 +965,6 @@ export class L2NovaRegistry extends BaseContract {
   estimateGas: {
     CROSS_DOMAIN_MESSENGER(overrides?: CallOverrides): Promise<BigNumber>;
 
-    ETH(overrides?: CallOverrides): Promise<BigNumber>;
-
     L1_NovaExecutionManagerAddress(
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -1087,7 +1077,7 @@ export class L2NovaRegistry extends BaseContract {
       gasPrice: BigNumberish,
       tip: BigNumberish,
       inputTokens: { l2Token: string; amount: BigNumberish }[],
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     requestExecWithTimeout(
@@ -1120,7 +1110,7 @@ export class L2NovaRegistry extends BaseContract {
     speedUpRequest(
       execHash: BytesLike,
       gasPrice: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     systemNonce(overrides?: CallOverrides): Promise<BigNumber>;
@@ -1141,8 +1131,6 @@ export class L2NovaRegistry extends BaseContract {
     CROSS_DOMAIN_MESSENGER(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
-
-    ETH(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     L1_NovaExecutionManagerAddress(
       overrides?: CallOverrides
@@ -1258,7 +1246,7 @@ export class L2NovaRegistry extends BaseContract {
       gasPrice: BigNumberish,
       tip: BigNumberish,
       inputTokens: { l2Token: string; amount: BigNumberish }[],
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     requestExecWithTimeout(
@@ -1291,7 +1279,7 @@ export class L2NovaRegistry extends BaseContract {
     speedUpRequest(
       execHash: BytesLike,
       gasPrice: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     systemNonce(overrides?: CallOverrides): Promise<PopulatedTransaction>;

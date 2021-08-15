@@ -10,9 +10,11 @@ import {Auth} from "@rari-capital/solmate/src/auth/Auth.sol";
 import {ReentrancyGuard} from "@rari-capital/solmate/src/utils/ReentrancyGuard.sol";
 
 import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
+import {SafeTransferLib} from "./libraries/SafeTransferLib.sol";
 import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDomainEnabled.sol";
 
 contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
+    using SafeTransferLib for address;
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -26,14 +28,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice The minimum delay between when `unlockTokens` and `withdrawTokens` can be called.
     uint256 public constant MIN_UNLOCK_DELAY_SECONDS = 300;
 
-    /// @notice The ERC20 ETH users must use to pay for the L1 gas usage of request.
-    IERC20 public immutable ETH;
-
-    /// @param _ETH The ERC20 ETH users must use to pay for the L1 gas usage of request.
     /// @param _xDomainMessenger The L2 xDomainMessenger contract to trust for receiving messages.
-    constructor(address _ETH, iOVM_CrossDomainMessenger _xDomainMessenger) CrossDomainEnabled(_xDomainMessenger) {
-        ETH = IERC20(_ETH);
-    }
+    constructor(iOVM_CrossDomainMessenger _xDomainMessenger) CrossDomainEnabled(_xDomainMessenger) {}
 
     /*///////////////////////////////////////////////////////////////
                     EXECUTION MANAGER ADDRESS STORAGE
@@ -186,7 +182,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Request `strategy` to be executed with `l1Calldata`.
-    /// @notice The caller must approve `(gasPrice * gasLimit) + tip` of `ETH` before calling.
+    /// @notice The caller must attach `(gasPrice * gasLimit) + tip` of ETH to their call.
     /// @param strategy The address of the "strategy" contract on L1 a relayer should call with `calldata`.
     /// @param l1Calldata The abi encoded calldata a relayer should call the `strategy` with on L1.
     /// @param gasLimit The gas limit a relayer should use on L1.
@@ -201,9 +197,12 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         uint256 gasPrice,
         uint256 tip,
         InputToken[] calldata inputTokens
-    ) public nonReentrant requiresAuth returns (bytes32 execHash) {
+    ) public payable nonReentrant requiresAuth returns (bytes32 execHash) {
         // Do not allow more than MAX_INPUT_TOKENS input tokens as it could use too much gas.
         require(inputTokens.length <= MAX_INPUT_TOKENS, "TOO_MANY_INPUTS");
+
+        // Ensure enough ETH was sent along with the call to cover gas and the tip.
+        require(msg.value >= gasLimit.mul(gasPrice).add(tip), "NOT_ENOUGH_ETH");
 
         // Increment the global nonce.
         systemNonce += 1;
@@ -228,9 +227,6 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         getRequestNonce[execHash] = systemNonce;
 
         emit RequestExec(execHash, strategy);
-
-        // Transfer in ETH to pay for max gas usage + tip.
-        ETH.safeTransferFrom(msg.sender, address(this), gasLimit.mul(gasPrice).add(tip));
 
         // Transfer input tokens in that the request creator has approved.
         for (uint256 i = 0; i < inputTokens.length; i++) {
@@ -354,7 +350,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         emit WithdrawTokens(execHash);
 
         // Transfer the ETH which would have been used for (gas + tip) back to the creator.
-        ETH.safeTransfer(creator, getRequestGasPrice[execHash].mul(getRequestGasLimit[execHash]).add(getRequestTip[execHash]));
+        creator.safeTransferETH(getRequestGasPrice[execHash].mul(getRequestGasLimit[execHash]).add(getRequestTip[execHash]));
 
         // Transfer input tokens back to the creator.
         InputToken[] memory inputTokens = requestInputTokens[execHash];
@@ -369,7 +365,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
     /// @return newExecHash The unique identifier for the resubmitted request.
-    function speedUpRequest(bytes32 execHash, uint256 gasPrice) external requiresAuth returns (bytes32 newExecHash) {
+    function speedUpRequest(bytes32 execHash, uint256 gasPrice) external payable requiresAuth returns (bytes32 newExecHash) {
         // Ensure that msg.sender is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
 
@@ -399,6 +395,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         bytes memory previousCalldata = getRequestCalldata[execHash];
         uint256 previousGasLimit = getRequestGasLimit[execHash];
 
+        // Ensure enough ETH was sent along with the call to cover the increased gas price.
+        require(msg.value >= gasPrice.sub(previousGasPrice).mul(previousGasLimit), "NOT_ENOUGH_ETH");
+
         // Generate a new execHash for the resubmitted request.
         systemNonce += 1;
         newExecHash = NovaExecHashLib.compute({
@@ -426,9 +425,6 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         getRequestDeathTimestamp[execHash] = switchTimestamp;
 
         emit SpeedUpRequest(execHash, newExecHash, systemNonce, switchTimestamp);
-
-        // Transfer in additional ETH to pay for the new gas limit.
-        ETH.safeTransferFrom(msg.sender, address(this), gasPrice.sub(previousGasPrice).mul(previousGasLimit));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -470,10 +466,10 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
 
         // Refund the creator any unused gas + the tip (if execution reverted).
-        ETH.safeTransfer(creator, gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0));
+        creator.safeTransferETH(gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0));
 
         // Pay the recipient the gas payment + the tip (if execution succeeded).
-        ETH.safeTransfer(rewardRecipient, gasPayment.add(reverted ? 0 : tip));
+        creator.safeTransferETH(gasPayment.add(reverted ? 0 : tip));
     }
 
     /*///////////////////////////////////////////////////////////////

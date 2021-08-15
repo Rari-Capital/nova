@@ -137,31 +137,6 @@ export async function snapshotGasCost(x: Promise<ContractTransaction>) {
 }
 
 /**
- * Checkpoints `user`'s ether `token` balance upon calling.
- * Returns two functions (calcIncrease and calcDecrease,
- * calling calcIncrease will return the  `user`'s new `token`
- * balance minus the starting balance. Calling calcDecrease
- * subtracts the final balance from the balance.
- * */
-export async function checkpointBalance(token: IERC20, user: string) {
-  const startingBalance = await token.balanceOf(user);
-
-  async function calcIncrease() {
-    const finalBalance = await token.balanceOf(user);
-
-    return finalBalance.sub(startingBalance);
-  }
-
-  async function calcDecrease() {
-    const finalBalance = await token.balanceOf(user);
-
-    return startingBalance.sub(finalBalance);
-  }
-
-  return [calcIncrease, calcDecrease];
-}
-
-/**
  * Waits for a cross domain message originating on L1 to be relayed on L2.
  */
 export async function waitForL1ToL2Relay(l1Tx: Promise<ContractTransaction>, watcher: any) {

@@ -1,8 +1,8 @@
 import hre, { ethers } from "hardhat";
 import { Watcher } from "@eth-optimism/watcher";
-import { getContractFactory } from "@eth-optimism/contracts";
 
 import {
+  createRequest,
   deployAndLogVerificationInfo,
   executeRequest,
   getOVMFactory,
@@ -12,7 +12,6 @@ import {
 import { tuneMissingGasEstimate } from "../../tasks/tune";
 
 import {
-  ERC20,
   L1NovaExecutionManager,
   L1NovaExecutionManager__factory,
   L2NovaRegistry,
@@ -54,21 +53,13 @@ describe("Integration", function () {
   let L1_NovaExecutionManager: L1NovaExecutionManager;
   let L2_NovaRegistry: L2NovaRegistry;
 
-  // OVM Contracts:
-  let OVM_ETH: ERC20;
-
   // Strategies:
   let Strategy: MockStrategy;
 
   describe("setup", function () {
     it("should properly deploy the registry", async function () {
-      OVM_ETH = getContractFactory("OVM_ETH")
-        .connect(l2Wallet)
-        .attach("0x4200000000000000000000000000000000000006");
-
       L2_NovaRegistry = await deployAndLogVerificationInfo(
         getOVMFactory<L2NovaRegistry__factory>("L2_NovaRegistry", true).connect(l2Wallet),
-        OVM_ETH.address,
         watcher.l2.messengerAddress
       );
     });
@@ -124,30 +115,26 @@ describe("Integration", function () {
   describe("full request lifecycle", function () {
     const gasLimit = 300_000;
     const gasPrice = gweiToWei(50);
+
     const functionFragment = "thisFunctionWillNotRevert";
 
     it("should allow creating a simple request", async function () {
-      await OVM_ETH.connect(l2Wallet).approve(
-        L2_NovaRegistry.address,
-        BigNumber.from(gasLimit).mul(gasPrice)
-      ).should.not.be.reverted;
-
-      await L2_NovaRegistry.connect(l2Wallet).requestExec(
-        Strategy.address,
-        Strategy.interface.encodeFunctionData(functionFragment),
+      await createRequest(L2_NovaRegistry, {
+        strategy: Strategy.address,
+        calldata: Strategy.interface.encodeFunctionData(functionFragment),
         gasLimit,
         gasPrice,
-        0,
-        []
-      ).should.not.be.reverted;
+        tip: 0,
+      });
     });
 
     it("should allow executing the request", async function () {
       const { tx } = await executeRequest(L1_NovaExecutionManager.connect(l1Wallet), {
-        relayer: l1Wallet.address,
         nonce: 1,
+        relayer: l1Wallet.address,
         strategy: Strategy.address,
         l1Calldata: Strategy.interface.encodeFunctionData(functionFragment),
+        gasLimit,
         gasPrice,
       });
 

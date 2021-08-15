@@ -1,12 +1,10 @@
 import { ethers } from "hardhat";
-import { BigNumber } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
   getFactory,
   snapshotGasCost,
   fakeExecutionManagerAddress,
-  checkpointBalance,
   createRequest,
   assertInputTokensMatch,
   fakeStrategyAddress,
@@ -37,22 +35,22 @@ describe("L2_NovaRegistry", function () {
   let L2_NovaRegistry: L2NovaRegistry;
 
   /// Mocks:
-  let MockETH: MockERC20;
   let MockCrossDomainMessenger: MockCrossDomainMessenger;
+  let MockERC20: MockERC20;
 
   describe("constructor/setup", function () {
     it("should properly deploy mocks", async function () {
-      MockETH = await (await getFactory<MockERC20__factory>("MockERC20")).deploy();
-
       MockCrossDomainMessenger = await (
         await getFactory<MockCrossDomainMessenger__factory>("MockCrossDomainMessenger")
       ).deploy();
+
+      MockERC20 = await (await getFactory<MockERC20__factory>("MockERC20")).deploy();
     });
 
     it("should properly deploy the registry", async function () {
       L2_NovaRegistry = await (
         await getFactory<L2NovaRegistry__factory>("L2_NovaRegistry")
-      ).deploy(MockETH.address, MockCrossDomainMessenger.address);
+      ).deploy(MockCrossDomainMessenger.address);
     });
 
     it("should not allow calling authed functions before permitted", async function () {
@@ -75,8 +73,6 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.CROSS_DOMAIN_MESSENGER().should.eventually.equal(
         MockCrossDomainMessenger.address
       );
-
-      await L2_NovaRegistry.ETH().should.eventually.equal(MockETH.address);
     });
 
     it("should allow connecting to an execution manager", async function () {
@@ -92,14 +88,9 @@ describe("L2_NovaRegistry", function () {
     it("allows making a simple request", async function () {
       const [user] = signers;
 
-      const [, calcBalanceDecrease] = await checkpointBalance(MockETH, user.address);
-
-      const { tx, execHash, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { tx, execHash, weiOwed } = await createRequest(L2_NovaRegistry, {});
 
       await snapshotGasCost(tx);
-
-      // Assert that it took the tokens we approved to it.
-      await calcBalanceDecrease().should.eventually.equal(weiOwed);
 
       // Assert that there are no input tokens attached.
       await L2_NovaRegistry.getRequestInputTokens(execHash).should.eventually.have.lengthOf(0);
@@ -108,16 +99,11 @@ describe("L2_NovaRegistry", function () {
     it("allows making a simple request with one input token", async function () {
       const [user] = signers;
 
-      const [, calcBalanceDecrease] = await checkpointBalance(MockETH, user.address);
-
-      const { tx, execHash, inputTokens, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {
-        inputTokens: [{ l2Token: MockETH.address, amount: 5 }],
+      const { tx, execHash, inputTokens, weiOwed } = await createRequest(L2_NovaRegistry, {
+        inputTokens: [{ l2Token: MockERC20.address, amount: 5 }],
       });
 
       await snapshotGasCost(tx);
-
-      // Assert that it took the tokens we approved to it.
-      await calcBalanceDecrease().should.eventually.equal(weiOwed);
 
       // Assert that it properly ingested input tokens.
       assertInputTokensMatch(inputTokens, await L2_NovaRegistry.getRequestInputTokens(execHash));
@@ -126,31 +112,26 @@ describe("L2_NovaRegistry", function () {
     it("allows a simple request with 2 input tokens", async function () {
       const [user] = signers;
 
-      const [, calcBalanceDecrease] = await checkpointBalance(MockETH, user.address);
-
-      const { tx, execHash, inputTokens, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {
+      const { tx, execHash, inputTokens, weiOwed } = await createRequest(L2_NovaRegistry, {
         inputTokens: [
-          { l2Token: MockETH.address, amount: 1337 },
-          { l2Token: MockETH.address, amount: 6969 },
+          { l2Token: MockERC20.address, amount: 1337 },
+          { l2Token: MockERC20.address, amount: 6969 },
         ],
       });
 
       await snapshotGasCost(tx);
-
-      // Assert that it took the tokens we approved to it.
-      await calcBalanceDecrease().should.eventually.equal(weiOwed);
 
       // Assert that it properly ingested input tokens.
       assertInputTokensMatch(inputTokens, await L2_NovaRegistry.getRequestInputTokens(execHash));
     });
 
     it("does not allow making a request with more than the max input tokens", async function () {
-      await createRequest(MockETH, L2_NovaRegistry, {
+      await createRequest(L2_NovaRegistry, {
         inputTokens: Array(
           // length == MAX_INPUT_TOKENS + 1
           (await L2_NovaRegistry.MAX_INPUT_TOKENS()).add(1).toNumber()
         ).fill({
-          l2Token: MockETH.address,
+          l2Token: MockERC20.address,
           amount: 1,
         }),
       }).should.be.revertedWith("TOO_MANY_INPUTS");
@@ -209,7 +190,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does not allow unlocking requests with a small delay", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       await L2_NovaRegistry.unlockTokens(
         execHash,
@@ -219,7 +200,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does not allow unlocking requests already scheduled to unlock", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       await L2_NovaRegistry.unlockTokens(
         execHash,
@@ -233,7 +214,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does not allow unlocking requests with tokens removed", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
 
@@ -251,7 +232,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows unlocking a valid request", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       await snapshotGasCost(
         L2_NovaRegistry.unlockTokens(execHash, await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS())
@@ -259,8 +240,8 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows unlocking a valid request with input tokens", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {
-        inputTokens: [{ l2Token: MockETH.address, amount: 1337 }],
+      const { execHash } = await createRequest(L2_NovaRegistry, {
+        inputTokens: [{ l2Token: MockERC20.address, amount: 1337 }],
       });
 
       await snapshotGasCost(
@@ -277,7 +258,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does not allow withdrawing from a request before the unlock delay", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       // Unlock tokens for the request.
       await L2_NovaRegistry.unlockTokens(
@@ -291,7 +272,7 @@ describe("L2_NovaRegistry", function () {
     it("allows withdrawing tokens from a simple request", async function () {
       const [user] = signers;
 
-      const { execHash, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, weiOwed } = await createRequest(L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
 
@@ -301,21 +282,14 @@ describe("L2_NovaRegistry", function () {
       // Forward time to be after the delay.
       await increaseTimeAndMine(unlockDelay);
 
-      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
-
       await snapshotGasCost(L2_NovaRegistry.withdrawTokens(execHash));
-
-      // Balance should properly increase.
-      await calcUserIncrease().should.eventually.equal(weiOwed);
     });
 
     it("allows withdrawing from a request with input tokens", async function () {
-      const [user] = signers;
-
-      const { execHash, weiOwed } = await createRequest(MockETH, L2_NovaRegistry, {
+      const { execHash } = await createRequest(L2_NovaRegistry, {
         inputTokens: [
-          { l2Token: MockETH.address, amount: 1337 },
-          { l2Token: MockETH.address, amount: 6969 },
+          { l2Token: MockERC20.address, amount: 1337 },
+          { l2Token: MockERC20.address, amount: 6969 },
         ],
       });
 
@@ -327,16 +301,11 @@ describe("L2_NovaRegistry", function () {
       // Forward time to be after the delay.
       await increaseTimeAndMine(unlockDelay);
 
-      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
-
       await snapshotGasCost(L2_NovaRegistry.withdrawTokens(execHash));
-
-      // Balance should properly increase.
-      await calcUserIncrease().should.eventually.equal(weiOwed);
     });
 
     it("does not allow withdrawing after tokens removed", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
 
@@ -360,13 +329,13 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does not allow relocking a request that is not scheduled to unlock", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("NO_UNLOCK_SCHEDULED");
     });
 
     it("does not allow relocking tokens on a request with tokens removed", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
 
@@ -383,7 +352,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows relocking tokens", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
 
@@ -406,7 +375,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does not allow speeding up requests with tokens removed", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
 
@@ -424,7 +393,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does not allow slowing down a request", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       await L2_NovaRegistry.speedUpRequest(
         execHash,
@@ -434,7 +403,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does now allow speeding up a request scheduled to unlock soon", async function () {
-      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
 
       // Unlock tokens for the request.
       await L2_NovaRegistry.unlockTokens(
@@ -448,7 +417,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows speeding up a request scheduled to unlock after switch", async function () {
-      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
 
       // This unlock is scheduled far after the min delay
       // meaning the speedUpRequest switch will happen after
@@ -458,39 +427,34 @@ describe("L2_NovaRegistry", function () {
         (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).mul(2)
       );
 
-      await MockETH.approve(
-        L2_NovaRegistry.address,
-        // We're increasing gas price by 1x
-        gasLimit
-      );
+      const { tx } = await speedUpRequest(L2_NovaRegistry, {
+        execHash,
+      });
 
-      await snapshotGasCost(L2_NovaRegistry.speedUpRequest(execHash, gasPrice + 1));
+      await snapshotGasCost(tx);
     });
 
     it("allows speeding up a simple request", async function () {
-      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
 
-      const { tx } = await speedUpRequest(MockETH, L2_NovaRegistry, {
+      const { tx } = await speedUpRequest(L2_NovaRegistry, {
         execHash,
-        gasPrice,
       });
 
       await snapshotGasCost(tx);
     });
 
     it("should not allow speeding up a request multiple times", async function () {
-      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
 
       // Speed up the request once.
-      await speedUpRequest(MockETH, L2_NovaRegistry, {
+      await speedUpRequest(L2_NovaRegistry, {
         execHash,
-        gasPrice,
       });
 
       // Speeding up the request a second time should revert.
-      await speedUpRequest(MockETH, L2_NovaRegistry, {
+      await speedUpRequest(L2_NovaRegistry, {
         execHash,
-        gasPrice,
       }).should.be.revertedWith("ALREADY_SPED_UP");
     });
   });
@@ -533,7 +497,7 @@ describe("L2_NovaRegistry", function () {
     it("does not allow completing a request with tokens removed", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
 
@@ -556,11 +520,10 @@ describe("L2_NovaRegistry", function () {
     it("does not allow completing a resubmitted request with an alive uncle", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
-      const { resubmittedExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
+      const { resubmittedExecHash } = await speedUpRequest(L2_NovaRegistry, {
         execHash,
-        gasPrice,
       });
 
       await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
@@ -572,18 +535,11 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows completing a simple request", async function () {
-      const [user, rewardRecipient] = signers;
+      const [, rewardRecipient] = signers;
 
-      const { execHash, gasPrice, gasLimit, tip } = await createRequest(
-        MockETH,
-        L2_NovaRegistry,
-        {}
-      );
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
-      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
-      const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
-
-      const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+      const { tx } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
         execHash: execHash,
         rewardRecipient: rewardRecipient.address,
         reverted: false,
@@ -591,18 +547,12 @@ describe("L2_NovaRegistry", function () {
       });
 
       await snapshotGasCost(tx);
-
-      // Ensure the balance of the user increased properly.
-      await calcUserIncrease().should.eventually.equal((gasLimit - gasUsed) * gasPrice);
-
-      // Ensure the balance of the reward recipient increased properly.
-      await calcRecipientIncrease().should.eventually.equal(gasUsed * gasPrice + tip);
     });
 
     it("does not allow completing an already completed request", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const executeRequest = () =>
         completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
@@ -622,14 +572,7 @@ describe("L2_NovaRegistry", function () {
     it("allows completing a request that overflows gas usage", async function () {
       const [user, rewardRecipient] = signers;
 
-      const { execHash, gasLimit, gasPrice, tip } = await createRequest(
-        MockETH,
-        L2_NovaRegistry,
-        {}
-      );
-
-      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
-      const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
+      const { execHash, gasLimit, gasPrice, tip } = await createRequest(L2_NovaRegistry, {});
 
       const { tx } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
         execHash: execHash,
@@ -639,29 +582,17 @@ describe("L2_NovaRegistry", function () {
       });
 
       await snapshotGasCost(tx);
-
-      // Ensure the balance of the user remained the same.
-      await calcUserIncrease().should.eventually.equal(0);
-
-      // Ensure the balance of the reward recipient increased properly.
-      await calcRecipientIncrease().should.eventually.equal(
-        // We use gasLimit instead of gasUsed here because gasUsed is over the limit.
-        gasLimit * gasPrice + tip
-      );
     });
 
     it("allows completing a request with input tokens", async function () {
       const [user, rewardRecipient] = signers;
 
-      const { execHash, gasLimit, gasPrice, tip } = await createRequest(MockETH, L2_NovaRegistry, {
+      const { execHash, gasLimit, gasPrice, tip } = await createRequest(L2_NovaRegistry, {
         inputTokens: [
-          { l2Token: MockETH.address, amount: 1337 },
-          { l2Token: MockETH.address, amount: 6969 },
+          { l2Token: MockERC20.address, amount: 1337 },
+          { l2Token: MockERC20.address, amount: 6969 },
         ],
       });
-
-      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
-      const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
       const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
         execHash: execHash,
@@ -671,29 +602,17 @@ describe("L2_NovaRegistry", function () {
       });
 
       await snapshotGasCost(tx);
-
-      // Ensure the balance of the user increased properly.
-      await calcUserIncrease().should.eventually.equal((gasLimit - gasUsed) * gasPrice);
-
-      // Ensure the balance of the reward recipient increased properly.
-      await calcRecipientIncrease().should.eventually.equal(
-        // Input tokens are claimed using `claimInputTokens`, not sent right after.
-        gasUsed * gasPrice + tip
-      );
     });
 
     it("allows completing a reverted request with input tokens", async function () {
       const [user, rewardRecipient] = signers;
 
-      const { execHash, gasLimit, gasPrice, tip } = await createRequest(MockETH, L2_NovaRegistry, {
+      const { execHash, gasLimit, gasPrice, tip } = await createRequest(L2_NovaRegistry, {
         inputTokens: [
-          { l2Token: MockETH.address, amount: 1337 },
-          { l2Token: MockETH.address, amount: 6969 },
+          { l2Token: MockERC20.address, amount: 1337 },
+          { l2Token: MockERC20.address, amount: 6969 },
         ],
       });
-
-      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
-      const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
       const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
         execHash: execHash,
@@ -703,30 +622,16 @@ describe("L2_NovaRegistry", function () {
       });
 
       await snapshotGasCost(tx);
-
-      // Ensure the balance of the reward recipient increased properly.
-      await calcRecipientIncrease().should.eventually.equal(gasUsed * gasPrice);
-
-      // Ensure the balance of the user increased properly.
-      await calcUserIncrease().should.eventually.equal((gasLimit - gasUsed) * gasPrice + tip);
     });
 
     it("allows completing an uncled request before it dies", async function () {
       const [user, rewardRecipient] = signers;
 
-      const { execHash, gasPrice, gasLimit, tip } = await createRequest(
-        MockETH,
-        L2_NovaRegistry,
-        {}
-      );
+      const { execHash, gasPrice, gasLimit, tip } = await createRequest(L2_NovaRegistry, {});
 
-      const { uncleExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
+      const { uncleExecHash } = await speedUpRequest(L2_NovaRegistry, {
         execHash,
-        gasPrice,
       });
-
-      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
-      const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
       const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
         execHash: uncleExecHash,
@@ -736,22 +641,15 @@ describe("L2_NovaRegistry", function () {
       });
 
       await snapshotGasCost(tx);
-
-      // Ensure the balance of the user increased properly.
-      await calcUserIncrease().should.eventually.equal((gasLimit - gasUsed) * gasPrice);
-
-      // Ensure the balance of the reward recipient increased properly.
-      await calcRecipientIncrease().should.eventually.equal(gasUsed * gasPrice + tip);
     });
 
     it("does not allow completing an uncled request after it dies", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
 
-      const { uncleExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
+      const { uncleExecHash } = await speedUpRequest(L2_NovaRegistry, {
         execHash,
-        gasPrice,
       });
 
       // Forward time to be after the delay.
@@ -767,16 +665,11 @@ describe("L2_NovaRegistry", function () {
     it("does not allow completing a resubmitted request with an uncle that has no tokens", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
-      const { resubmittedExecHash, uncleExecHash } = await speedUpRequest(
-        MockETH,
-        L2_NovaRegistry,
-        {
-          execHash,
-          gasPrice,
-        }
-      );
+      const { resubmittedExecHash, uncleExecHash } = await speedUpRequest(L2_NovaRegistry, {
+        execHash,
+      });
 
       // Execute the uncle
       await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
@@ -801,22 +694,14 @@ describe("L2_NovaRegistry", function () {
     it("allows completing a resubmitted request", async function () {
       const [user, rewardRecipient] = signers;
 
-      const { execHash, gasPrice, gasLimit, tip } = await createRequest(
-        MockETH,
-        L2_NovaRegistry,
-        {}
-      );
+      const { execHash, gasLimit, tip } = await createRequest(L2_NovaRegistry, {});
 
-      const { resubmittedExecHash, newGasPrice } = await speedUpRequest(MockETH, L2_NovaRegistry, {
+      const { resubmittedExecHash, newGasPrice } = await speedUpRequest(L2_NovaRegistry, {
         execHash,
-        gasPrice,
       });
 
       // Forward time to be after the delay.
       await increaseTimeAndMine(await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS());
-
-      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
-      const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
 
       const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
         execHash: resubmittedExecHash,
@@ -826,12 +711,6 @@ describe("L2_NovaRegistry", function () {
       });
 
       await snapshotGasCost(tx);
-
-      // Ensure the balance of the user increased properly.
-      await calcUserIncrease().should.eventually.equal((gasLimit - gasUsed) * newGasPrice);
-
-      // Ensure the balance of the reward recipient increased properly.
-      await calcRecipientIncrease().should.eventually.equal(gasUsed * newGasPrice + tip);
     });
   });
 
@@ -843,7 +722,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("does not allow claiming a request not executed yet", async function () {
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       await L2_NovaRegistry.claimInputTokens(execHash).should.be.revertedWith("NO_RECIPIENT");
     });
@@ -851,10 +730,10 @@ describe("L2_NovaRegistry", function () {
     it("allows claiming input tokens for an executed request", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, inputTokens } = await createRequest(MockETH, L2_NovaRegistry, {
+      const { execHash, inputTokens } = await createRequest(L2_NovaRegistry, {
         inputTokens: [
-          { l2Token: MockETH.address, amount: 1337 },
-          { l2Token: MockETH.address, amount: 6969 },
+          { l2Token: MockERC20.address, amount: 1337 },
+          { l2Token: MockERC20.address, amount: 6969 },
         ],
       });
 
@@ -865,23 +744,16 @@ describe("L2_NovaRegistry", function () {
         gasUsed: 50000,
       });
 
-      const [calcRecipientIncrease] = await checkpointBalance(MockETH, rewardRecipient.address);
-
       await snapshotGasCost(L2_NovaRegistry.claimInputTokens(execHash));
-
-      // Ensure the balance of the reward recipient increased properly.
-      await calcRecipientIncrease().should.eventually.equal(
-        inputTokens.reduce((a, inputToken) => a + inputToken.amount, 0)
-      );
     });
 
     it("allows claiming input tokens for a reverted request", async function () {
       const [user, rewardRecipient] = signers;
 
-      const { execHash, inputTokens } = await createRequest(MockETH, L2_NovaRegistry, {
+      const { execHash } = await createRequest(L2_NovaRegistry, {
         inputTokens: [
-          { l2Token: MockETH.address, amount: 1337 },
-          { l2Token: MockETH.address, amount: 6969 },
+          { l2Token: MockERC20.address, amount: 1337 },
+          { l2Token: MockERC20.address, amount: 6969 },
         ],
       });
 
@@ -892,21 +764,14 @@ describe("L2_NovaRegistry", function () {
         gasUsed: 50000,
       });
 
-      const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
-
       await snapshotGasCost(L2_NovaRegistry.claimInputTokens(execHash));
-
-      // Ensure the balance of the user increased properly.
-      await calcUserIncrease().should.eventually.equal(
-        inputTokens.reduce((a, inputToken) => a + inputToken.amount, 0)
-      );
     });
 
     it("does not allow claiming a request that is already claimed", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash } = await createRequest(MockETH, L2_NovaRegistry, {
-        inputTokens: [{ l2Token: MockETH.address, amount: 420 }],
+      const { execHash } = await createRequest(L2_NovaRegistry, {
+        inputTokens: [{ l2Token: MockERC20.address, amount: 420 }],
       });
 
       await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
