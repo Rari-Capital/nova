@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
+  checkAllFunctionsForAuth,
   deployStrategy,
   executeRequest,
   getFactory,
@@ -54,6 +55,12 @@ describe("L1_NovaExecutionManager", function () {
       L1_NovaExecutionManager = await (
         await getFactory<L1NovaExecutionManager__factory>("L1_NovaExecutionManager")
       ).deploy(ethers.constants.AddressZero, MockCrossDomainMessenger.address, 0);
+    });
+
+    it("should not allow calling authed functions before permitted", async function () {
+      const [, nonDeployer] = signers;
+
+      await checkAllFunctionsForAuth(L1_NovaExecutionManager, nonDeployer);
     });
 
     it("should allow changing the execution manager's authority", async function () {

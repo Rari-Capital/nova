@@ -14,6 +14,7 @@ import {
   increaseTimeAndMine,
   completeRequest,
   speedUpRequest,
+  checkAllFunctionsForAuth,
 } from "../../utils/testUtils";
 
 import {
@@ -51,6 +52,12 @@ describe("L2_NovaRegistry", function () {
       L2_NovaRegistry = await (
         await getFactory<L2NovaRegistry__factory>("L2_NovaRegistry")
       ).deploy(MockETH.address, MockCrossDomainMessenger.address);
+    });
+
+    it("should not allow calling authed functions before permitted", async function () {
+      const [, nonDeployer] = signers;
+
+      await checkAllFunctionsForAuth(L2_NovaRegistry, nonDeployer, ["execCompleted"]);
     });
 
     it("should allow changing the registry's authority", async function () {
