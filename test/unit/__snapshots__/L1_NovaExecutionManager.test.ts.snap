@@ -1,11 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`L1_NovaExecutionManager exec/execWithRecipient should not revert due to a soft revert 1`] = `45697`;
+exports[`L1_NovaExecutionManager exec/execWithRecipient should not revert due to a hard revert triggered by a safe strategy 1`] = `48764`;
 
-exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a minimal exec 1`] = `44847`;
+exports[`L1_NovaExecutionManager exec/execWithRecipient should not revert due to a soft revert 1`] = `45719`;
+
+exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a minimal exec 1`] = `44892`;
 
 exports[`L1_NovaExecutionManager exec/execWithRecipient should properly execute a stateful exec 1`] = `49928`;
 
 exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `93911`;
+
+exports[`L1_NovaExecutionManager transferFromRelayer will not allow a random contract to call during execution 1`] = `57085`;
 
 exports[`L1_NovaExecutionManager transferFromRelayer will properly handle a transferFrom with no return value 1`] = `58363`;

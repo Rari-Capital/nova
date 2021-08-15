@@ -415,7 +415,7 @@ describe("L1_NovaExecutionManager", function () {
         ),
       });
 
-      await tx.should.emit(UnsafeStrategy, "StealRelayerTokensFailed");
+      await snapshotGasCost(tx).should.emit(UnsafeStrategy, "StealRelayerTokensFailed");
     });
   });
 
