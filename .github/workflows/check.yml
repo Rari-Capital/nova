@@ -1,0 +1,48 @@
+name: Check
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  slither:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Cache node_modules
+        id: node-cache
+        uses: actions/cache@v2
+        with:
+          path: "**/node_modules"
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-cache.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: Install pip3
+        run: |
+          python -m pip install --upgrade pip
+      - name: Install slither
+        run: |
+          pip3 install slither-analyzer
+
+      - name: Run Slither
+        run: slither .
+
+      - name: Print Variable Order
+        run: slither . --print variable-order
