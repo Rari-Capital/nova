@@ -107,18 +107,24 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
     /// @notice Maps execHashes to the creator of each request.
     mapping(bytes32 => address) public getRequestCreator;
+
     /// @notice Maps execHashes to the address of the strategy associated with the request.
     mapping(bytes32 => address) public getRequestStrategy;
+
     /// @notice Maps execHashes to the calldata associated with the request.
     mapping(bytes32 => bytes) public getRequestCalldata;
+
     /// @notice Maps execHashes to the gas limit a relayer should use to execute the request.
     mapping(bytes32 => uint256) public getRequestGasLimit;
+
     /// @notice Maps execHashes to the gas price a relayer must use to execute the request.
     mapping(bytes32 => uint256) public getRequestGasPrice;
+
     /// @notice Maps execHashes to the additional tip in wei relayers will receive for executing them.
     mapping(bytes32 => uint256) public getRequestTip;
+
     /// @notice Maps execHashes to the nonce of each request.
-    /// @notice This is just for convenience, does not need to be on-chain.
+    /// @dev This is just for convenience, does not need to be on-chain.
     mapping(bytes32 => uint256) public getRequestNonce;
 
     /// @notice A token/amount pair that a relayer will need on L1 to execute the request (and will be returned to them on L2).
@@ -196,13 +202,13 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         uint256 tip,
         InputToken[] calldata inputTokens
     ) public nonReentrant requiresAuth returns (bytes32 execHash) {
-        // Do not allow more than MAX_INPUT_TOKENS input tokens.
+        // Do not allow more than MAX_INPUT_TOKENS input tokens as it could use too much gas.
         require(inputTokens.length <= MAX_INPUT_TOKENS, "TOO_MANY_INPUTS");
 
-        // Increment global nonce.
+        // Increment the global nonce.
         systemNonce += 1;
 
-        // Compute execHash for this request.
+        // Compute the execHash for this request.
         execHash = NovaExecHashLib.compute({
             nonce: systemNonce,
             strategy: strategy,
@@ -226,7 +232,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // Transfer in ETH to pay for max gas usage + tip.
         ETH.safeTransferFrom(msg.sender, address(this), gasLimit.mul(gasPrice).add(tip));
 
-        // Transfer input tokens in that msg.sender has approved.
+        // Transfer input tokens in that the request creator has approved.
         for (uint256 i = 0; i < inputTokens.length; i++) {
             inputTokens[i].l2Token.safeTransferFrom(msg.sender, address(this), inputTokens[i].amount);
 
@@ -264,6 +270,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
         // Ensure input tokens for this request are ready to be sent to a recipient.
         require(inputTokenRecipientData.recipient != address(0), "NO_RECIPIENT");
+
         // Ensure that the tokens have not already been claimed.
         require(!inputTokenRecipientData.isClaimed, "ALREADY_CLAIMED");
 
@@ -287,14 +294,17 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // Ensure the request has not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
-        // Make sure that an unlock is not already scheduled.
+
+        // Ensure an unlock is not already scheduled.
         require(getRequestUnlockTimestamp[execHash] == 0, "UNLOCK_ALREADY_SCHEDULED");
-        // Make sure the caller is the creator of the request.
+
+        // Ensure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
-        // Make sure the delay is greater than the minimum.
+
+        // Ensure the delay is greater than the minimum.
         require(unlockDelaySeconds >= MIN_UNLOCK_DELAY_SECONDS, "DELAY_TOO_SMALL");
 
-        // Set the unlock timestamp to: block.timestamp + unlockDelaySeconds.
+        // Set the unlock timestamp to block.timestamp + unlockDelaySeconds.
         uint256 unlockTimestamp = block.timestamp.add(unlockDelaySeconds);
         getRequestUnlockTimestamp[execHash] = unlockTimestamp;
 
@@ -308,7 +318,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
 
-        // Make sure the caller is the creator of the request.
+        // Ensure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
 
         // Ensure the request is actually scheduled to unlock. We don't allow relocking if
@@ -329,6 +339,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // Ensure that the tokens are unlocked.
         (bool tokensUnlocked, ) = areTokensUnlocked(execHash);
         require(tokensUnlocked, "NOT_UNLOCKED");
+
         // Ensure that the tokens have not already been removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
@@ -337,7 +348,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         address creator = getRequestCreator[execHash];
 
         // Store that the request has had its input tokens removed.
-        getRequestInputTokenRecipientData[execHash] = InputTokenRecipientData(creator, true);
+        // isClaimed is set to true so the creator cannot call claimInputTokens to claim their tokens twice!
+        getRequestInputTokenRecipientData[execHash] = InputTokenRecipientData({recipient: creator, isClaimed: true});
 
         emit WithdrawTokens(execHash);
 
@@ -360,9 +372,11 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     function speedUpRequest(bytes32 execHash, uint256 gasPrice) external requiresAuth returns (bytes32 newExecHash) {
         // Ensure that msg.sender is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
+
         // Ensure tokens have not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
+
         // Ensure the request has not already been sped up.
         require(getRequestDeathTimestamp[execHash] == 0, "ALREADY_SPED_UP");
 
@@ -376,7 +390,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         uint256 switchTimestamp = MIN_UNLOCK_DELAY_SECONDS.add(block.timestamp);
 
         // Ensure that if there is a token unlock scheduled it would be after the switch.
-        // Tokens cannot be withdrawn after the switch which is why it's safe if they unlock after.
+        // Tokens cannot be withdrawn after the switch, which is why it's safe if they unlock after.
         uint256 tokenUnlockTimestamp = getRequestUnlockTimestamp[execHash];
         require(tokenUnlockTimestamp == 0 || tokenUnlockTimestamp > switchTimestamp, "UNLOCK_BEFORE_SWITCH");
 
@@ -433,8 +447,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         bool reverted,
         uint256 gasUsed
     ) external onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
-        // Ensure that this request exists.
+        // Ensure that this request exists, since areTokensRemoved does not!
         require(getRequestCreator[execHash] != address(0), "NOT_CREATED");
+
         // Ensure tokens have not already been removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
@@ -446,6 +461,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         address creator = getRequestCreator[execHash];
 
         // Give the proper input token recipient the ability to claim the tokens.
+        // isClaimed is implicitly kept as false, so the recipient can claim the tokens with claimInputTokens.
         getRequestInputTokenRecipientData[execHash].recipient = reverted ? creator : rewardRecipient;
 
         // The amount of ETH to pay for the gas used (capped at the gas limit).
@@ -455,6 +471,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
         // Refund the creator any unused gas + the tip (if execution reverted).
         ETH.safeTransfer(creator, gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0));
+
         // Pay the recipient the gas payment + the tip (if execution succeeded).
         ETH.safeTransfer(rewardRecipient, gasPayment.add(reverted ? 0 : tip));
     }
