@@ -207,7 +207,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         require(inputTokens.length <= MAX_INPUT_TOKENS, "TOO_MANY_INPUTS");
 
         // Ensure enough ETH was sent along with the call to cover gas and the tip.
-        require(msg.value >= gasLimit.mul(gasPrice).add(tip), "NOT_ENOUGH_ETH");
+        require(msg.value == gasLimit.mul(gasPrice).add(tip), "BAD_ETH_VALUE");
 
         // Increment the global nonce.
         systemNonce += 1;
@@ -406,7 +406,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         uint256 previousGasLimit = getRequestGasLimit[execHash];
 
         // Ensure enough ETH was sent along with the call to cover the increased gas price.
-        require(msg.value >= gasPrice.sub(previousGasPrice).mul(previousGasLimit), "NOT_ENOUGH_ETH");
+        require(msg.value == gasPrice.sub(previousGasPrice).mul(previousGasLimit), "BAD_ETH_VALUE");
 
         // Generate a new execHash for the resubmitted request.
         systemNonce += 1;

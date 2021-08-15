@@ -148,6 +148,10 @@ describe("L2_NovaRegistry", function () {
         }),
       }).should.be.revertedWith("TOO_MANY_INPUTS");
     });
+
+    it("does not allow underpaying", async function () {
+      await createRequest(L2_NovaRegistry, { value: 1 }).should.be.revertedWith("BAD_ETH_VALUE");
+    });
   });
 
   describe("requestExecWithTimeout", function () {
@@ -448,6 +452,15 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.speedUpRequest(execHash, gasPrice + 1).should.be.revertedWith(
         "UNLOCK_BEFORE_SWITCH"
       );
+    });
+
+    it("does not allow underpaying", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      await speedUpRequest(L2_NovaRegistry, {
+        execHash,
+        value: 1,
+      }).should.be.revertedWith("BAD_ETH_VALUE");
     });
 
     it("allows speeding up a request scheduled to unlock after switch", async function () {

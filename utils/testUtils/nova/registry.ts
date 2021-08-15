@@ -55,6 +55,7 @@ export async function createRequest(
     gasLimit?: number;
     gasPrice?: number;
     tip?: number;
+    value?: number;
     inputTokens?: {
       l2Token: string;
       amount: number;
@@ -82,7 +83,7 @@ export async function createRequest(
   }
 
   const tx = L2_NovaRegistry.requestExec(strategy, calldata, gasLimit, gasPrice, tip, inputTokens, {
-    value: weiOwed,
+    value: config.value ?? weiOwed,
   });
 
   await (await tx).wait();
@@ -120,6 +121,7 @@ export async function speedUpRequest(
   config: {
     execHash: string;
     gasDelta?: number;
+    value?: number;
   }
 ) {
   // Init default values if not provided.
@@ -133,7 +135,7 @@ export async function speedUpRequest(
   const newGasPrice = gasPrice + gasDelta;
 
   const tx = L2_NovaRegistry.speedUpRequest(execHash, gasPrice + gasDelta, {
-    value: gasDelta * gasLimit,
+    value: config.value ?? gasDelta * gasLimit,
   });
   await tx;
 
