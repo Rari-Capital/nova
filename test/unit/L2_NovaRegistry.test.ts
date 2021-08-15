@@ -33,9 +33,10 @@ describe("L2_NovaRegistry", function () {
     signers = await ethers.getSigners();
   });
 
+  // Nova Contracts:
   let L2_NovaRegistry: L2NovaRegistry;
 
-  /// Mocks
+  /// Mocks:
   let MockETH: MockERC20;
   let MockCrossDomainMessenger: MockCrossDomainMessenger;
 
@@ -467,7 +468,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows speeding up a simple request", async function () {
-      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       const { tx } = await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
@@ -478,7 +479,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("should not allow speeding up a request multiple times", async function () {
-      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       // Speed up the request once.
       await speedUpRequest(MockETH, L2_NovaRegistry, {
@@ -555,7 +556,7 @@ describe("L2_NovaRegistry", function () {
     it("does not allow completing a resubmitted request with an alive uncle", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       const { resubmittedExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
@@ -746,7 +747,7 @@ describe("L2_NovaRegistry", function () {
     it("does not allow completing an uncled request after it dies", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       const { uncleExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
@@ -766,7 +767,7 @@ describe("L2_NovaRegistry", function () {
     it("does not allow completing a resubmitted request with an uncle that has no tokens", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, gasPrice, gasLimit } = await createRequest(MockETH, L2_NovaRegistry, {});
+      const { execHash, gasPrice } = await createRequest(MockETH, L2_NovaRegistry, {});
 
       const { resubmittedExecHash, uncleExecHash } = await speedUpRequest(
         MockETH,
