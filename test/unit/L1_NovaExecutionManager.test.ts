@@ -39,6 +39,7 @@ describe("L1_NovaExecutionManager", function () {
   let MockCrossDomainMessenger: MockCrossDomainMessenger;
 
   // Strategies:
+  let UnknownStrategy: MockStrategy;
   let SafeStrategy: MockStrategy;
   let UnsafeStrategy: MockStrategy;
 
@@ -73,6 +74,8 @@ describe("L1_NovaExecutionManager", function () {
     });
 
     it("should properly deploy strategies", async function () {
+      UnknownStrategy = await deployStrategy(L1_NovaExecutionManager, StrategyRiskLevel.UNKNOWN);
+
       SafeStrategy = await deployStrategy(L1_NovaExecutionManager, StrategyRiskLevel.SAFE);
 
       UnsafeStrategy = await deployStrategy(L1_NovaExecutionManager, StrategyRiskLevel.UNSAFE);
@@ -282,7 +285,7 @@ describe("L1_NovaExecutionManager", function () {
       await snapshotGasCost(tx);
     });
 
-    it("should not revert due to a hard revert triggered by a safe strategy", async function () {
+    it("should not revert due to a hard revert triggered by a SAFE strategy", async function () {
       const [relayer] = signers;
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
@@ -294,17 +297,28 @@ describe("L1_NovaExecutionManager", function () {
 
       await snapshotGasCost(tx);
     });
+
+    it("should not revert due to a hard revert triggered by an UNKNOWN strategy", async function () {
+      const [relayer] = signers;
+
+      const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
+        strategy: UnknownStrategy.address,
+        l1Calldata: UnknownStrategy.interface.encodeFunctionData("thisFunctionWillHardRevert"),
+        shouldSoftRevert: true,
+      });
+
+      await snapshotGasCost(tx);
+    });
   });
 
   describe("transferFromRelayer", function () {
     it("should transfer an arbitrary token to a strategy when requested", async function () {
-      const [user] = signers;
+      const [relayer] = signers;
 
       // Approve the right amount of input tokens.
       const weiAmount = ethers.utils.parseEther("1337");
       await MockERC20.approve(L1_NovaExecutionManager.address, weiAmount);
-
-      const [relayer] = signers;
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
@@ -319,7 +333,7 @@ describe("L1_NovaExecutionManager", function () {
       await snapshotGasCost(tx)
         // The correct amount of tokens should be transferred to the strategy.
         .should.emit(MockERC20, "Transfer")
-        .withArgs(user.address, UnsafeStrategy.address, weiAmount);
+        .withArgs(relayer.address, UnsafeStrategy.address, weiAmount);
 
       // The strategy should get properly transferred the right amount of tokens.
       await MockERC20.balanceOf(UnsafeStrategy.address).should.eventually.equal(weiAmount);
@@ -408,20 +422,52 @@ describe("L1_NovaExecutionManager", function () {
     it("will not allow a random contract to call during execution", async function () {
       const [relayer] = signers;
 
-      // Approve the right amount of input tokens.
-      const weiAmount = ethers.utils.parseEther("420");
-      await MockERC20.approve(L1_NovaExecutionManager.address, weiAmount);
-
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
         strategy: UnsafeStrategy.address,
         l1Calldata: UnsafeStrategy.interface.encodeFunctionData(
           "thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens",
-          [MockERC20.address, weiAmount]
+          [MockERC20.address, 0]
         ),
       });
 
       await snapshotGasCost(tx).should.emit(UnsafeStrategy, "StealRelayerTokensFailed");
+    });
+
+    it("will not allow a SAFE strategy to call", async function () {
+      const [relayer] = signers;
+
+      const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
+        strategy: SafeStrategy.address,
+        l1Calldata: SafeStrategy.interface.encodeFunctionData(
+          "thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel",
+          [MockERC20.address, 0]
+        ),
+      });
+
+      await snapshotGasCost(tx).should.emit(
+        SafeStrategy,
+        "TransferFromRelayerFailedWithUnsupportedRiskLevel"
+      );
+    });
+
+    it("will not allow an UNKNOWN strategy to call", async function () {
+      const [relayer] = signers;
+
+      const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
+        strategy: UnknownStrategy.address,
+        l1Calldata: UnknownStrategy.interface.encodeFunctionData(
+          "thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel",
+          [MockERC20.address, 0]
+        ),
+      });
+
+      await snapshotGasCost(tx).should.emit(
+        UnknownStrategy,
+        "TransferFromRelayerFailedWithUnsupportedRiskLevel"
+      );
     });
   });
 

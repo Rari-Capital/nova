@@ -21,16 +21,16 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface EvilExternalContractInterface extends ethers.utils.Interface {
   functions: {
-    "tryToStealRelayerTokens(address,uint256)": FunctionFragment;
+    "tryToStealRelayerTokensAndReturnTrueIfFailed(address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "tryToStealRelayerTokens",
+    functionFragment: "tryToStealRelayerTokensAndReturnTrueIfFailed",
     values: [string, BigNumberish]
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "tryToStealRelayerTokens",
+    functionFragment: "tryToStealRelayerTokensAndReturnTrueIfFailed",
     data: BytesLike
   ): Result;
 
@@ -81,21 +81,21 @@ export class EvilExternalContract extends BaseContract {
   interface: EvilExternalContractInterface;
 
   functions: {
-    tryToStealRelayerTokens(
+    tryToStealRelayerTokensAndReturnTrueIfFailed(
       token: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
-  tryToStealRelayerTokens(
+  tryToStealRelayerTokensAndReturnTrueIfFailed(
     token: string,
     amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    tryToStealRelayerTokens(
+    tryToStealRelayerTokensAndReturnTrueIfFailed(
       token: string,
       amount: BigNumberish,
       overrides?: CallOverrides
@@ -105,7 +105,7 @@ export class EvilExternalContract extends BaseContract {
   filters: {};
 
   estimateGas: {
-    tryToStealRelayerTokens(
+    tryToStealRelayerTokensAndReturnTrueIfFailed(
       token: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -113,7 +113,7 @@ export class EvilExternalContract extends BaseContract {
   };
 
   populateTransaction: {
-    tryToStealRelayerTokens(
+    tryToStealRelayerTokensAndReturnTrueIfFailed(
       token: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }

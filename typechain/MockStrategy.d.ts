@@ -29,6 +29,7 @@ interface MockStrategyInterface extends ethers.utils.Interface {
     "thisFunctionWillNotRevert()": FunctionFragment;
     "thisFunctionWillRevert()": FunctionFragment;
     "thisFunctionWillTransferFromRelayer(address,uint256)": FunctionFragment;
+    "thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel(address,uint256)": FunctionFragment;
     "thisFunctionWillTryToReenter()": FunctionFragment;
   };
 
@@ -59,6 +60,10 @@ interface MockStrategyInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "thisFunctionWillTransferFromRelayer",
+    values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
@@ -96,6 +101,10 @@ interface MockStrategyInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "thisFunctionWillTryToReenter",
     data: BytesLike
   ): Result;
@@ -103,10 +112,14 @@ interface MockStrategyInterface extends ethers.utils.Interface {
   events: {
     "ReentrancyFailed()": EventFragment;
     "StealRelayerTokensFailed()": EventFragment;
+    "TransferFromRelayerFailedWithUnsupportedRiskLevel()": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "ReentrancyFailed"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "StealRelayerTokensFailed"): EventFragment;
+  getEvent(
+    nameOrSignatureOrTopic: "TransferFromRelayerFailedWithUnsupportedRiskLevel"
+  ): EventFragment;
 }
 
 export class MockStrategy extends BaseContract {
@@ -182,6 +195,12 @@ export class MockStrategy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel(
+      token: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     thisFunctionWillTryToReenter(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -211,6 +230,12 @@ export class MockStrategy extends BaseContract {
   thisFunctionWillRevert(overrides?: CallOverrides): Promise<void>;
 
   thisFunctionWillTransferFromRelayer(
+    token: string,
+    amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel(
     token: string,
     amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -248,6 +273,12 @@ export class MockStrategy extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel(
+      token: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     thisFunctionWillTryToReenter(overrides?: CallOverrides): Promise<void>;
   };
 
@@ -255,6 +286,11 @@ export class MockStrategy extends BaseContract {
     ReentrancyFailed(): TypedEventFilter<[], {}>;
 
     StealRelayerTokensFailed(): TypedEventFilter<[], {}>;
+
+    TransferFromRelayerFailedWithUnsupportedRiskLevel(): TypedEventFilter<
+      [],
+      {}
+    >;
   };
 
   estimateGas: {
@@ -282,6 +318,12 @@ export class MockStrategy extends BaseContract {
     thisFunctionWillRevert(overrides?: CallOverrides): Promise<BigNumber>;
 
     thisFunctionWillTransferFromRelayer(
+      token: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel(
       token: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -323,6 +365,12 @@ export class MockStrategy extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     thisFunctionWillTransferFromRelayer(
+      token: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel(
       token: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }

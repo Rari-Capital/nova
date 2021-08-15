@@ -9,6 +9,7 @@ import {L1_NovaExecutionManager} from "../L1_NovaExecutionManager.sol";
 contract MockStrategy {
     event ReentrancyFailed();
     event StealRelayerTokensFailed();
+    event TransferFromRelayerFailedWithUnsupportedRiskLevel();
 
     EvilExternalContract immutable evilContract;
     L1_NovaExecutionManager immutable executionManager;
@@ -38,8 +39,16 @@ contract MockStrategy {
         executionManager.transferFromRelayer(token, amount);
     }
 
+    function thisFunctionWillTransferFromRelayerAndExpectUnsupportedRiskLevel(address token, uint256 amount) external {
+        try executionManager.transferFromRelayer(token, amount) {} catch Error(string memory reason) {
+            if (keccak256(abi.encodePacked(reason)) == keccak256("UNSUPPORTED_RISK_LEVEL")) {
+                emit TransferFromRelayerFailedWithUnsupportedRiskLevel();
+            }
+        }
+    }
+
     function thisFunctionWillEmulateAMaliciousExternalContractTryingToStealRelayerTokens(address token, uint256 amount) external {
-        if (evilContract.tryToStealRelayerTokens(token, amount)) {
+        if (evilContract.tryToStealRelayerTokensAndReturnTrueIfFailed(token, amount)) {
             emit StealRelayerTokensFailed();
         }
     }
@@ -68,7 +77,7 @@ contract EvilExternalContract {
         executionManager = _executionManager;
     }
 
-    function tryToStealRelayerTokens(address token, uint256 amount) external returns (bool stealingFailed) {
+    function tryToStealRelayerTokensAndReturnTrueIfFailed(address token, uint256 amount) external returns (bool stealingFailed) {
         try executionManager.transferFromRelayer(token, amount) {} catch Error(string memory reason) {
             stealingFailed = keccak256(abi.encodePacked(reason)) == keccak256("NOT_CURRENT_STRATEGY");
         }
