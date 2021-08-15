@@ -42,6 +42,7 @@ jobs:
           pip3 install slither-analyzer
 
       - name: Run Slither
+        continue-on-error: true
         run: slither .
 
       - name: Print Variable Order
