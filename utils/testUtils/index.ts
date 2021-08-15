@@ -110,10 +110,10 @@ export async function increaseTimeAndMine(seconds: BigNumberish) {
  * If not in CI mode it won't stop tests (just show a console log).
  * To update the Jest snapshot run `npm run gas-changed`
  */
-export async function snapshotGasCost(x: Promise<ContractTransaction>) {
+export async function snapshotGasCost(tx: Promise<ContractTransaction>) {
   // Only check gas estimates if we're not in coverage mode, as gas estimates are messed up in coverage mode.
   if (!process.env.HARDHAT_COVERAGE_MODE_ENABLED) {
-    let receipt: ContractReceipt = await (await x).wait();
+    let receipt: ContractReceipt = await (await tx).wait();
     try {
       receipt.gasUsed.toNumber().should.toMatchSnapshot();
     } catch (e) {
@@ -133,7 +133,7 @@ export async function snapshotGasCost(x: Promise<ContractTransaction>) {
     }
   }
 
-  return x;
+  return tx;
 }
 
 /**
@@ -210,6 +210,63 @@ export async function deployAndLogVerificationInfo<T extends ContractFactory>(
   }
 
   return deployed;
+}
+
+/**
+ * Checkpoints `user`'s `token` balance upon calling.
+ * Returns two functions (calcIncrease and calcDecrease,
+ * calling calcIncrease will return the `user`'s new `token`
+ * balance minus the starting balance. Calling calcDecrease
+ * subtracts the final balance from the balance.
+ * */
+export async function checkpointERC20Balance(token: IERC20, user: string) {
+  const startingBalance = await token.balanceOf(user);
+
+  async function calcIncrease() {
+    const finalBalance = await token.balanceOf(user);
+
+    return finalBalance.sub(startingBalance);
+  }
+
+  async function calcDecrease() {
+    const finalBalance = await token.balanceOf(user);
+
+    return startingBalance.sub(finalBalance);
+  }
+
+  return [calcIncrease, calcDecrease];
+}
+
+/**
+ * Checkpoints `user`'s ETH balance upon calling.
+ * Returns two functions (calcIncrease and calcDecrease,
+ * calling calcIncrease will return the `user`'s new ETH
+ * balance minus the starting balance. Calling calcDecrease
+ * subtracts the final balance from the balance.
+ * */
+export async function checkpointETHBalance(user: string) {
+  const startingBalance = await ethers.provider.getBalance(user);
+
+  async function calcIncrease() {
+    const finalBalance = await ethers.provider.getBalance(user);
+
+    return finalBalance.sub(startingBalance);
+  }
+
+  async function calcDecrease() {
+    const finalBalance = await ethers.provider.getBalance(user);
+
+    return startingBalance.sub(finalBalance);
+  }
+
+  return [calcIncrease, calcDecrease];
+}
+
+export async function getETHPaidForTx(tx: Promise<ContractTransaction>) {
+  const awaitedTx = await tx;
+  const { gasUsed } = await awaitedTx.wait();
+
+  return awaitedTx.gasPrice.mul(gasUsed);
 }
 
 export * from "./nova";

@@ -13,6 +13,9 @@ import {
   completeRequest,
   speedUpRequest,
   checkAllFunctionsForAuth,
+  checkpointERC20Balance,
+  checkpointETHBalance,
+  getETHPaidForTx,
 } from "../../utils/testUtils";
 
 import {
@@ -24,6 +27,7 @@ import {
   MockERC20__factory,
   L2NovaRegistry,
 } from "../../typechain";
+import { BigNumber } from "@ethersproject/bignumber";
 
 describe("L2_NovaRegistry", function () {
   let signers: SignerWithAddress[];
@@ -86,9 +90,7 @@ describe("L2_NovaRegistry", function () {
 
   describe("requestExec", function () {
     it("allows making a simple request", async function () {
-      const [user] = signers;
-
-      const { tx, execHash, weiOwed } = await createRequest(L2_NovaRegistry, {});
+      const { tx, execHash } = await createRequest(L2_NovaRegistry, {});
 
       await snapshotGasCost(tx);
 
@@ -99,11 +101,16 @@ describe("L2_NovaRegistry", function () {
     it("allows making a simple request with one input token", async function () {
       const [user] = signers;
 
+      const [, calcBalanceDecrease] = await checkpointERC20Balance(MockERC20, user.address);
+
       const { tx, execHash, inputTokens, weiOwed } = await createRequest(L2_NovaRegistry, {
         inputTokens: [{ l2Token: MockERC20.address, amount: 5 }],
       });
 
       await snapshotGasCost(tx);
+
+      // Assert that it took the tokens we approved to it.
+      await calcBalanceDecrease().should.eventually.equal(5);
 
       // Assert that it properly ingested input tokens.
       assertInputTokensMatch(inputTokens, await L2_NovaRegistry.getRequestInputTokens(execHash));
@@ -112,7 +119,9 @@ describe("L2_NovaRegistry", function () {
     it("allows a simple request with 2 input tokens", async function () {
       const [user] = signers;
 
-      const { tx, execHash, inputTokens, weiOwed } = await createRequest(L2_NovaRegistry, {
+      const [, calcBalanceDecrease] = await checkpointERC20Balance(MockERC20, user.address);
+
+      const { tx, execHash, inputTokens } = await createRequest(L2_NovaRegistry, {
         inputTokens: [
           { l2Token: MockERC20.address, amount: 1337 },
           { l2Token: MockERC20.address, amount: 6969 },
@@ -120,6 +129,9 @@ describe("L2_NovaRegistry", function () {
       });
 
       await snapshotGasCost(tx);
+
+      // Assert that it took the tokens we approved to it.
+      await calcBalanceDecrease().should.eventually.equal(1337 + 6969);
 
       // Assert that it properly ingested input tokens.
       assertInputTokensMatch(inputTokens, await L2_NovaRegistry.getRequestInputTokens(execHash));
@@ -282,11 +294,21 @@ describe("L2_NovaRegistry", function () {
       // Forward time to be after the delay.
       await increaseTimeAndMine(unlockDelay);
 
-      await snapshotGasCost(L2_NovaRegistry.withdrawTokens(execHash));
+      const [calcUserIncrease] = await checkpointETHBalance(user.address);
+
+      // Withdraw tokens from the request.
+      const ethPaid = await getETHPaidForTx(
+        snapshotGasCost(L2_NovaRegistry.withdrawTokens(execHash))
+      );
+
+      // Balance should properly increase.
+      await calcUserIncrease().should.eventually.equal(weiOwed.sub(ethPaid));
     });
 
     it("allows withdrawing from a request with input tokens", async function () {
-      const { execHash } = await createRequest(L2_NovaRegistry, {
+      const [user] = signers;
+
+      const { execHash, weiOwed } = await createRequest(L2_NovaRegistry, {
         inputTokens: [
           { l2Token: MockERC20.address, amount: 1337 },
           { l2Token: MockERC20.address, amount: 6969 },
@@ -301,7 +323,19 @@ describe("L2_NovaRegistry", function () {
       // Forward time to be after the delay.
       await increaseTimeAndMine(unlockDelay);
 
-      await snapshotGasCost(L2_NovaRegistry.withdrawTokens(execHash));
+      const [calcUserETHIncrease] = await checkpointETHBalance(user.address);
+      const [calcUserERC20Increase] = await checkpointERC20Balance(MockERC20, user.address);
+
+      // Withdraw tokens from the request.
+      const ethPaid = await getETHPaidForTx(
+        snapshotGasCost(L2_NovaRegistry.withdrawTokens(execHash))
+      );
+
+      // Balance of ETH should properly increase.
+      await calcUserETHIncrease().should.eventually.equal(weiOwed.sub(ethPaid));
+
+      // Balance of ERC20 should properly increase.
+      await calcUserERC20Increase().should.eventually.equal(1337 + 6969);
     });
 
     it("does not allow withdrawing after tokens removed", async function () {
@@ -417,7 +451,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows speeding up a request scheduled to unlock after switch", async function () {
-      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       // This unlock is scheduled far after the min delay
       // meaning the speedUpRequest switch will happen after
@@ -435,7 +469,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows speeding up a simple request", async function () {
-      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const { tx } = await speedUpRequest(L2_NovaRegistry, {
         execHash,
@@ -445,7 +479,7 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("should not allow speeding up a request multiple times", async function () {
-      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       // Speed up the request once.
       await speedUpRequest(L2_NovaRegistry, {
@@ -535,18 +569,29 @@ describe("L2_NovaRegistry", function () {
     });
 
     it("allows completing a simple request", async function () {
-      const [, rewardRecipient] = signers;
+      const [user, rewardRecipient] = signers;
 
-      const { execHash } = await createRequest(L2_NovaRegistry, {});
+      const { execHash, gasPrice, gasLimit, tip } = await createRequest(L2_NovaRegistry, {});
 
-      const { tx } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
-        execHash: execHash,
+      const [calcUserIncrease] = await checkpointETHBalance(user.address);
+      const [calcRecipientIncrease] = await checkpointETHBalance(rewardRecipient.address);
+
+      const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash,
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
       });
 
-      await snapshotGasCost(tx);
+      const ethPaid = await getETHPaidForTx(snapshotGasCost(tx));
+
+      // Ensure the balance of the user increased properly.
+      await calcUserIncrease().should.eventually.equal(
+        (gasLimit - gasUsed) * gasPrice - ethPaid.toNumber()
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await calcRecipientIncrease().should.eventually.equal(gasUsed * gasPrice + tip);
     });
 
     it("does not allow completing an already completed request", async function () {
@@ -574,14 +619,26 @@ describe("L2_NovaRegistry", function () {
 
       const { execHash, gasLimit, gasPrice, tip } = await createRequest(L2_NovaRegistry, {});
 
+      const [calcUserIncrease] = await checkpointETHBalance(user.address);
+      const [calcRecipientIncrease] = await checkpointETHBalance(rewardRecipient.address);
+
       const { tx } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
-        execHash: execHash,
+        execHash,
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: gasLimit * 10000,
       });
 
-      await snapshotGasCost(tx);
+      const ethPaid = await getETHPaidForTx(snapshotGasCost(tx));
+
+      // Ensure the balance of the user remained the same (besides gas paid to complete the request).
+      await calcUserIncrease().should.eventually.equal(0 - ethPaid.toNumber());
+
+      // Ensure the balance of the reward recipient increased properly.
+      await calcRecipientIncrease().should.eventually.equal(
+        // We use gasLimit instead of gasUsed here because gasUsed is over the limit.
+        gasLimit * gasPrice + tip
+      );
     });
 
     it("allows completing a request with input tokens", async function () {
@@ -594,14 +651,25 @@ describe("L2_NovaRegistry", function () {
         ],
       });
 
+      const [calcUserIncrease] = await checkpointETHBalance(user.address);
+      const [calcRecipientIncrease] = await checkpointETHBalance(rewardRecipient.address);
+
       const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
-        execHash: execHash,
+        execHash,
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
       });
 
-      await snapshotGasCost(tx);
+      const ethPaid = await getETHPaidForTx(snapshotGasCost(tx));
+
+      // Ensure the balance of the user increased properly.
+      await calcUserIncrease().should.eventually.equal(
+        (gasLimit - gasUsed) * gasPrice - ethPaid.toNumber()
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await calcRecipientIncrease().should.eventually.equal(gasUsed * gasPrice + tip);
     });
 
     it("allows completing a reverted request with input tokens", async function () {
@@ -614,6 +682,9 @@ describe("L2_NovaRegistry", function () {
         ],
       });
 
+      const [calcUserIncrease] = await checkpointETHBalance(user.address);
+      const [calcRecipientIncrease] = await checkpointETHBalance(rewardRecipient.address);
+
       const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
         execHash: execHash,
         rewardRecipient: rewardRecipient.address,
@@ -621,7 +692,15 @@ describe("L2_NovaRegistry", function () {
         gasUsed: 50000,
       });
 
-      await snapshotGasCost(tx);
+      const ethPaid = await getETHPaidForTx(snapshotGasCost(tx));
+
+      // Ensure the balance of the user increased properly.
+      await calcUserIncrease().should.eventually.equal(
+        (gasLimit - gasUsed) * gasPrice + tip - ethPaid.toNumber()
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await calcRecipientIncrease().should.eventually.equal(gasUsed * gasPrice);
     });
 
     it("allows completing an uncled request before it dies", async function () {
@@ -633,6 +712,9 @@ describe("L2_NovaRegistry", function () {
         execHash,
       });
 
+      const [calcUserIncrease] = await checkpointETHBalance(user.address);
+      const [calcRecipientIncrease] = await checkpointETHBalance(rewardRecipient.address);
+
       const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
         execHash: uncleExecHash,
         rewardRecipient: rewardRecipient.address,
@@ -640,13 +722,21 @@ describe("L2_NovaRegistry", function () {
         gasUsed: 50000,
       });
 
-      await snapshotGasCost(tx);
+      const ethPaid = await getETHPaidForTx(snapshotGasCost(tx));
+
+      // Ensure the balance of the user increased properly.
+      await calcUserIncrease().should.eventually.equal(
+        (gasLimit - gasUsed) * gasPrice - ethPaid.toNumber()
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await calcRecipientIncrease().should.eventually.equal(gasUsed * gasPrice + tip);
     });
 
     it("does not allow completing an uncled request after it dies", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const { uncleExecHash } = await speedUpRequest(L2_NovaRegistry, {
         execHash,
@@ -703,6 +793,9 @@ describe("L2_NovaRegistry", function () {
       // Forward time to be after the delay.
       await increaseTimeAndMine(await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS());
 
+      const [calcUserIncrease] = await checkpointETHBalance(user.address);
+      const [calcRecipientIncrease] = await checkpointETHBalance(rewardRecipient.address);
+
       const { tx, gasUsed } = await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
         execHash: resubmittedExecHash,
         rewardRecipient: rewardRecipient.address,
@@ -710,7 +803,16 @@ describe("L2_NovaRegistry", function () {
         gasUsed: 50000,
       });
 
-      await snapshotGasCost(tx);
+      const ethPaid = await getETHPaidForTx(snapshotGasCost(tx));
+
+      // Ensure the balance of the user increased properly.
+      await calcUserIncrease().should.eventually.equal(
+        // Have to use BigNumbers here or else equal will complain that the number is too big.
+        BigNumber.from(gasLimit).sub(gasUsed).mul(newGasPrice).sub(ethPaid.toNumber())
+      );
+
+      // Ensure the balance of the reward recipient increased properly.
+      await calcRecipientIncrease().should.eventually.equal(gasUsed * newGasPrice + tip);
     });
   });
 
@@ -730,7 +832,7 @@ describe("L2_NovaRegistry", function () {
     it("allows claiming input tokens for an executed request", async function () {
       const [, rewardRecipient] = signers;
 
-      const { execHash, inputTokens } = await createRequest(L2_NovaRegistry, {
+      const { execHash } = await createRequest(L2_NovaRegistry, {
         inputTokens: [
           { l2Token: MockERC20.address, amount: 1337 },
           { l2Token: MockERC20.address, amount: 6969 },
@@ -744,7 +846,15 @@ describe("L2_NovaRegistry", function () {
         gasUsed: 50000,
       });
 
+      const [calcRecipientERC20Increase] = await checkpointERC20Balance(
+        MockERC20,
+        rewardRecipient.address
+      );
+
       await snapshotGasCost(L2_NovaRegistry.claimInputTokens(execHash));
+
+      // Ensure the balance of the reward recipient increased properly.
+      calcRecipientERC20Increase().should.eventually.equal(1337 + 6969);
     });
 
     it("allows claiming input tokens for a reverted request", async function () {
@@ -764,7 +874,12 @@ describe("L2_NovaRegistry", function () {
         gasUsed: 50000,
       });
 
+      const [calcUserERC20Increase] = await checkpointERC20Balance(MockERC20, user.address);
+
       await snapshotGasCost(L2_NovaRegistry.claimInputTokens(execHash));
+
+      // Ensure the balance of the user increased properly.
+      calcUserERC20Increase().should.eventually.equal(1337 + 6969);
     });
 
     it("does not allow claiming a request that is already claimed", async function () {

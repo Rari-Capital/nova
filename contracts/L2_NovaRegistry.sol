@@ -469,7 +469,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         creator.safeTransferETH(gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0));
 
         // Pay the recipient the gas payment + the tip (if execution succeeded).
-        creator.safeTransferETH(gasPayment.add(reverted ? 0 : tip));
+        rewardRecipient.safeTransferETH(gasPayment.add(reverted ? 0 : tip));
     }
 
     /*///////////////////////////////////////////////////////////////
