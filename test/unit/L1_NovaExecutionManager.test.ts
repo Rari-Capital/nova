@@ -2,7 +2,6 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
-  checkpointBalance,
   deployStrategy,
   executeRequest,
   getFactory,
