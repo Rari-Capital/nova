@@ -23,8 +23,9 @@ interface EchidnaL1NovaExecutionManagerInterface
   extends ethers.utils.Interface {
   functions: {
     "exec_should_not_affect_currentExecHash(uint256,address,bytes,uint256,address,uint256)": FunctionFragment;
-    "should_always_allow_updating_the_calldata_byte_gas_estimate(uint128)": FunctionFragment;
-    "should_always_allow_updating_the_missing_gas_estimate(uint128)": FunctionFragment;
+    "should_always_allow_updating_the_calldata_byte_gas_estimate(uint16)": FunctionFragment;
+    "should_always_allow_updating_the_missing_gas_estimate(uint120)": FunctionFragment;
+    "should_always_allow_updating_the_strategy_call_gas_buffer(uint120)": FunctionFragment;
     "transferFromRelayer_should_always_be_not_executable(address,uint256)": FunctionFragment;
   };
 
@@ -48,6 +49,10 @@ interface EchidnaL1NovaExecutionManagerInterface
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "should_always_allow_updating_the_strategy_call_gas_buffer",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "transferFromRelayer_should_always_be_not_executable",
     values: [string, BigNumberish]
   ): string;
@@ -62,6 +67,10 @@ interface EchidnaL1NovaExecutionManagerInterface
   ): Result;
   decodeFunctionResult(
     functionFragment: "should_always_allow_updating_the_missing_gas_estimate",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "should_always_allow_updating_the_strategy_call_gas_buffer",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -136,6 +145,11 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    should_always_allow_updating_the_strategy_call_gas_buffer(
+      newStrategyCallGasBuffer: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     transferFromRelayer_should_always_be_not_executable(
       token: string,
       amount: BigNumberish,
@@ -163,6 +177,11 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  should_always_allow_updating_the_strategy_call_gas_buffer(
+    newStrategyCallGasBuffer: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   transferFromRelayer_should_always_be_not_executable(
     token: string,
     amount: BigNumberish,
@@ -187,6 +206,11 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
 
     should_always_allow_updating_the_missing_gas_estimate(
       newMissingGasEstimate: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    should_always_allow_updating_the_strategy_call_gas_buffer(
+      newStrategyCallGasBuffer: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -220,6 +244,11 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    should_always_allow_updating_the_strategy_call_gas_buffer(
+      newStrategyCallGasBuffer: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     transferFromRelayer_should_always_be_not_executable(
       token: string,
       amount: BigNumberish,
@@ -245,6 +274,11 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
 
     should_always_allow_updating_the_missing_gas_estimate(
       newMissingGasEstimate: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    should_always_allow_updating_the_strategy_call_gas_buffer(
+      newStrategyCallGasBuffer: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

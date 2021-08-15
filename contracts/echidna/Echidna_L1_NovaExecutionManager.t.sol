@@ -18,16 +18,22 @@ contract Echidna_L1_NovaExecutionManager {
         executionManager = new L1_NovaExecutionManager(L2_NovaRegistryAddress, _mockCrossDomainMessenger, 0);
     }
 
-    function should_always_allow_updating_the_missing_gas_estimate(uint128 newMissingGasEstimate) external {
+    function should_always_allow_updating_the_calldata_byte_gas_estimate(uint16 newCalldataByteGasEstimate) external {
+        executionManager.setCalldataByteGasEstimate(newCalldataByteGasEstimate);
+
+        assert(executionManager.calldataByteGasEstimate() == newCalldataByteGasEstimate);
+    }
+
+    function should_always_allow_updating_the_missing_gas_estimate(uint120 newMissingGasEstimate) external {
         executionManager.setMissingGasEstimate(newMissingGasEstimate);
 
         assert(executionManager.missingGasEstimate() == newMissingGasEstimate);
     }
 
-    function should_always_allow_updating_the_calldata_byte_gas_estimate(uint128 newCalldataByteGasEstimate) external {
-        executionManager.setCalldataByteGasEstimate(newCalldataByteGasEstimate);
+    function should_always_allow_updating_the_strategy_call_gas_buffer(uint120 newStrategyCallGasBuffer) external {
+        executionManager.setStrategyCallGasBuffer(newStrategyCallGasBuffer);
 
-        assert(executionManager.calldataByteGasEstimate() == newCalldataByteGasEstimate);
+        assert(executionManager.strategyCallGasBuffer() == newStrategyCallGasBuffer);
     }
 
     function transferFromRelayer_should_always_be_not_executable(address token, uint256 amount) external {
