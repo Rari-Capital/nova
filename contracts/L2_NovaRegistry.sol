@@ -160,7 +160,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
                               UNLOCK STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Maps execHashes to a timestamp representing when the request will have its tokens unlocked, meaning the creator can withdraw their bounties/inputs.
+    /// @notice Maps execHashes to a timestamp representing when the request will
+    /// have its tokens unlocked, meaning the creator can withdraw their bounties/inputs.
     /// @notice Will be 0 if no unlock has been scheduled.
     mapping(bytes32 => uint256) public getRequestUnlockTimestamp;
 
@@ -168,12 +169,15 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
                               UNCLE STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Maps execHashes which represent resubmitted requests (via speedUpRequest) to their corresponding "uncled" request's execHash.
-    /// @notice An uncled request is a request that has had its tokens removed via `speedUpRequest` in favor of a resubmitted request generated in the transaction.
+    /// @notice Maps execHashes which represent resubmitted requests created
+    /// via speedUpRequest to their corresponding "uncled" request's execHash.
+    /// @notice An uncled request is a request that has had its tokens removed via
+    /// `speedUpRequest` in favor of a resubmitted request generated in the transaction.
     /// @notice Will be bytes32("") if `speedUpRequest` has not been called with the `execHash`.
     mapping(bytes32 => bytes32) public getRequestUncle;
 
-    /// @notice Maps execHashes to a timestamp representing when the request will be disabled and replaced by a re-submitted request with a higher gas price (via `speedUpRequest`).
+    /// @notice Maps execHashes to a timestamp representing when the request will be disabled
+    /// and replaced by a re-submitted request with a higher gas price (via `speedUpRequest`).
     /// @notice Will be 0 if `speedUpRequest` has not been called with the `execHash`.
     mapping(bytes32 => uint256) public getRequestDeathTimestamp;
 
@@ -188,7 +192,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @param gasLimit The gas limit a relayer should use on L1.
     /// @param gasPrice The gas price (in wei) a relayer should use on L1.
     /// @param tip The additional wei to pay as a tip for any relayer that executes this request.
-    /// @param inputTokens An array of MAX_INPUT_TOKENS or less token/amount pairs that a relayer will need on L1 to execute the request (and will be returned to them on L2).
+    /// @param inputTokens An array of MAX_INPUT_TOKENS or less token/amount pairs that
+    /// a relayer will need on L1 to execute the request (and will be returned to them on L2).
     /// @return execHash The "execHash" (unique identifier) for this request.
     function requestExec(
         address strategy,
@@ -232,7 +237,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         for (uint256 i = 0; i < inputTokens.length; i++) {
             inputTokens[i].l2Token.safeTransferFrom(msg.sender, address(this), inputTokens[i].amount);
 
-            // Copy over this index to the requestInputTokens mapping (we can't just put a calldata/memory array directly into storage so we have to go index by index).
+            // Copy over this index to the requestInputTokens mapping.
+            // We can't just put a calldata/memory array directly into storage so we have to go index by index.
             requestInputTokens[execHash].push(inputTokens[i]);
         }
     }
@@ -256,7 +262,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     }
 
     /// @notice Claims input tokens earned from executing a request.
-    /// @notice Request creators must also call this function if their request reverted (as input tokens are not sent to relayers if the request reverts).
+    /// @notice Request creators must also call this function if their request
+    /// reverted (as input tokens are not sent to relayers if the request reverts).
     /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient
     /// (either the l2Recipient given in `execCompleted` or the request creator if the request reverted).
     /// @param execHash The hash of the executed request.
@@ -282,10 +289,12 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         }
     }
 
-    /// @notice Unlocks a request's tokens with a delay. Once the delay has passed, anyone may call `withdrawTokens` on behalf of the creator to send the bounties/input tokens back.
+    /// @notice Unlocks a request's tokens with a delay. Once the delay has passed, anyone may
+    /// call `withdrawTokens` on behalf of the creator to send the bounties/input tokens back.
+    /// @notice `unlockDelaySeconds` must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
     /// @notice msg.sender must be the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to unlock.
-    /// @param unlockDelaySeconds The delay in seconds until the creator can withdraw their tokens. Must be greater than or equal to `MIN_UNLOCK_DELAY_SECONDS`.
+    /// @param unlockDelaySeconds The delay (in seconds) until the creator can withdraw their tokens.
     function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public requiresAuth {
         // Ensure the request has not already had its tokens removed.
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
@@ -328,7 +337,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     }
 
     /// @notice Withdraws tokens (input/gas/bounties) from an unlocked request.
-    /// @notice The creator of the request associated with `execHash` must call `unlockTokens` and wait the `unlockDelaySeconds` they specified before calling `withdrawTokens`.
+    /// @notice The creator of the request associated with `execHash` must call `unlockTokens`
+    /// and wait the `unlockDelaySeconds` they specified before calling `withdrawTokens`.
     /// @notice Anyone may call this function, but the tokens will still go the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to withdraw from.
     function withdrawTokens(bytes32 execHash) external nonReentrant requiresAuth {
