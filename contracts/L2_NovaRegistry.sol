@@ -201,8 +201,15 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
         // Increment global nonce.
         systemNonce += 1;
+
         // Compute execHash for this request.
-        execHash = NovaExecHashLib.compute({nonce: systemNonce, strategy: strategy, l1Calldata: l1Calldata, gasPrice: gasPrice});
+        execHash = NovaExecHashLib.compute({
+            nonce: systemNonce,
+            strategy: strategy,
+            l1Calldata: l1Calldata,
+            gasPrice: gasPrice,
+            gasLimit: gasLimit
+        });
 
         // Store all critical request data.
         getRequestCreator[execHash] = msg.sender;
@@ -384,6 +391,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
             nonce: systemNonce,
             strategy: previousStrategy,
             l1Calldata: previousCalldata,
+            gasLimit: previousGasLimit,
             gasPrice: gasPrice
         });
 

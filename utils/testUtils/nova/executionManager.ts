@@ -23,6 +23,7 @@ export async function executeRequest(
     nonce?: number;
     strategy: string;
     l1Calldata?: BytesLike;
+    gasLimit?: number;
     l2Recipient?: string;
     deadline?: number;
     shouldSoftRevert?: boolean;
@@ -34,6 +35,7 @@ export async function executeRequest(
   // Init default values if not provided.
   config.nonce = config.nonce ?? globalNonce++;
   config.l1Calldata = config.l1Calldata ?? "0x00";
+  config.gasLimit = config.gasLimit ?? 300_000;
   config.l2Recipient = config.l2Recipient ?? config.relayer;
   config.deadline = config.deadline ?? 9999999999999;
   config.shouldSoftRevert = config.shouldSoftRevert ?? false;
@@ -43,6 +45,7 @@ export async function executeRequest(
     nonce,
     strategy,
     l1Calldata,
+    gasLimit,
     l2Recipient,
     deadline,
     shouldSoftRevert,
@@ -55,10 +58,11 @@ export async function executeRequest(
     nonce,
     strategy,
     l1Calldata,
+    gasLimit,
     l2Recipient,
     deadline,
 
-    config.gasPrice
+    gasPrice
       ? {
           gasPrice,
         }
@@ -76,6 +80,7 @@ export async function executeRequest(
     strategy,
     calldata: l1Calldata.toString(),
     gasPrice: awaitedTx.gasPrice.toNumber(),
+    gasLimit,
   });
 
   // Did it properly compute the request's execHash.

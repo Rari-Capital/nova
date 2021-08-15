@@ -181,6 +181,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         uint256 nonce,
         address strategy,
         bytes calldata l1Calldata,
+        uint256 gasLimit,
         address l2Recipient,
         uint256 deadline
     ) external {
@@ -220,7 +221,13 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
 
         // Compute the execHash.
         bytes32 execHash =
-            NovaExecHashLib.compute({nonce: nonce, strategy: strategy, l1Calldata: l1Calldata, gasPrice: tx.gasprice});
+            NovaExecHashLib.compute({
+                nonce: nonce,
+                strategy: strategy,
+                l1Calldata: l1Calldata,
+                gasLimit: gasLimit,
+                gasPrice: tx.gasprice
+            });
 
         // Initialize execution context.
         currentExecHash = execHash;

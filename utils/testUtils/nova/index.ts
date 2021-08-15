@@ -7,15 +7,17 @@ export function computeExecHash({
   strategy,
   calldata,
   gasPrice,
+  gasLimit,
 }: {
   nonce: number;
   strategy: string;
   calldata: string;
   gasPrice: number | BigNumber;
+  gasLimit: number;
 }) {
   return ethers.utils.solidityKeccak256(
-    ["uint256", "address", "bytes", "uint256"],
-    [nonce, strategy, calldata, gasPrice]
+    ["uint256", "address", "bytes", "uint256", "uint256"],
+    [nonce, strategy, calldata, gasPrice, gasLimit]
   );
 }
 

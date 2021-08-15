@@ -109,6 +109,7 @@ export async function createRequest(
     strategy,
     calldata,
     gasPrice,
+    gasLimit,
   });
 
   return {
@@ -133,14 +134,15 @@ export async function speedUpRequest(
   config: {
     execHash: string;
     gasPrice: number;
-    gasLimit: number;
     gasDelta?: number;
   }
 ) {
   // Init default values if not provided.
   config.gasDelta = config.gasDelta ?? gweiToWei(10);
 
-  const { execHash, gasPrice, gasLimit, gasDelta } = config;
+  const { execHash, gasPrice, gasDelta } = config;
+
+  const gasLimit = (await L2_NovaRegistry.getRequestGasLimit(execHash)).toNumber();
 
   const newGasPrice = gasPrice + gasDelta;
 
@@ -163,6 +165,7 @@ export async function speedUpRequest(
     strategy: uncleStrategy,
     calldata: uncleCalldata,
     gasPrice: gasPrice + gasDelta,
+    gasLimit,
   });
 
   return { tx, resubmittedExecHash, uncleExecHash: execHash, newGasPrice, ...config };

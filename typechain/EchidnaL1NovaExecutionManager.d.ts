@@ -22,7 +22,7 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 interface EchidnaL1NovaExecutionManagerInterface
   extends ethers.utils.Interface {
   functions: {
-    "exec_should_not_affect_currentExecHash(uint256,address,bytes,address,uint256)": FunctionFragment;
+    "exec_should_not_affect_currentExecHash(uint256,address,bytes,uint256,address,uint256)": FunctionFragment;
     "should_always_allow_updating_the_calldata_byte_gas_estimate(uint128)": FunctionFragment;
     "should_always_allow_updating_the_missing_gas_estimate(uint128)": FunctionFragment;
     "transferFromRelayer_should_always_be_not_executable(address,uint256)": FunctionFragment;
@@ -30,7 +30,14 @@ interface EchidnaL1NovaExecutionManagerInterface
 
   encodeFunctionData(
     functionFragment: "exec_should_not_affect_currentExecHash",
-    values: [BigNumberish, string, BytesLike, string, BigNumberish]
+    values: [
+      BigNumberish,
+      string,
+      BytesLike,
+      BigNumberish,
+      string,
+      BigNumberish
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "should_always_allow_updating_the_calldata_byte_gas_estimate",
@@ -113,6 +120,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
+      gasLimit: BigNumberish,
       recipient: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -139,6 +147,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
     nonce: BigNumberish,
     strategy: string,
     l1Calldata: BytesLike,
+    gasLimit: BigNumberish,
     recipient: string,
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -165,6 +174,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
+      gasLimit: BigNumberish,
       recipient: string,
       deadline: BigNumberish,
       overrides?: CallOverrides
@@ -194,6 +204,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
+      gasLimit: BigNumberish,
       recipient: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -221,6 +232,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
+      gasLimit: BigNumberish,
       recipient: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }

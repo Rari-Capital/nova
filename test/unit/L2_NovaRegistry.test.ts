@@ -178,6 +178,7 @@ describe("L2_NovaRegistry", function () {
           strategy: fakeStrategyAddress,
           calldata: "0x00",
           gasPrice: 0,
+          gasLimit: 0,
         })
       ).should.eventually.equal(
         (await ethers.provider.getBlock("latest")).timestamp + unlockDelaySeconds.toNumber()
@@ -471,7 +472,6 @@ describe("L2_NovaRegistry", function () {
       const { tx } = await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
         gasPrice,
-        gasLimit,
       });
 
       await snapshotGasCost(tx);
@@ -484,14 +484,12 @@ describe("L2_NovaRegistry", function () {
       await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
         gasPrice,
-        gasLimit,
       });
 
       // Speeding up the request a second time should revert.
       await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
         gasPrice,
-        gasLimit,
       }).should.be.revertedWith("ALREADY_SPED_UP");
     });
   });
@@ -562,7 +560,6 @@ describe("L2_NovaRegistry", function () {
       const { resubmittedExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
         gasPrice,
-        gasLimit,
       });
 
       await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
@@ -725,7 +722,6 @@ describe("L2_NovaRegistry", function () {
       const { uncleExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
         gasPrice,
-        gasLimit,
       });
 
       const [calcUserIncrease] = await checkpointBalance(MockETH, user.address);
@@ -755,7 +751,6 @@ describe("L2_NovaRegistry", function () {
       const { uncleExecHash } = await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
         gasPrice,
-        gasLimit,
       });
 
       // Forward time to be after the delay.
@@ -779,7 +774,6 @@ describe("L2_NovaRegistry", function () {
         {
           execHash,
           gasPrice,
-          gasLimit,
         }
       );
 
@@ -815,7 +809,6 @@ describe("L2_NovaRegistry", function () {
       const { resubmittedExecHash, newGasPrice } = await speedUpRequest(MockETH, L2_NovaRegistry, {
         execHash,
         gasPrice,
-        gasLimit,
       });
 
       // Forward time to be after the delay.

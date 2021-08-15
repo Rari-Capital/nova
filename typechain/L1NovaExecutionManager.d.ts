@@ -32,7 +32,7 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     "currentExecHash()": FunctionFragment;
     "currentRelayer()": FunctionFragment;
     "currentlyExecutingStrategy()": FunctionFragment;
-    "exec(uint256,address,bytes,address,uint256)": FunctionFragment;
+    "exec(uint256,address,bytes,uint256,address,uint256)": FunctionFragment;
     "getStrategyRiskLevel(address)": FunctionFragment;
     "hardRevert()": FunctionFragment;
     "missingGasEstimate()": FunctionFragment;
@@ -88,7 +88,14 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "exec",
-    values: [BigNumberish, string, BytesLike, string, BigNumberish]
+    values: [
+      BigNumberish,
+      string,
+      BytesLike,
+      BigNumberish,
+      string,
+      BigNumberish
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "getStrategyRiskLevel",
@@ -290,6 +297,7 @@ export class L1NovaExecutionManager extends BaseContract {
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
+      gasLimit: BigNumberish,
       l2Recipient: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -364,6 +372,7 @@ export class L1NovaExecutionManager extends BaseContract {
     nonce: BigNumberish,
     strategy: string,
     l1Calldata: BytesLike,
+    gasLimit: BigNumberish,
     l2Recipient: string,
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -440,6 +449,7 @@ export class L1NovaExecutionManager extends BaseContract {
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
+      gasLimit: BigNumberish,
       l2Recipient: string,
       deadline: BigNumberish,
       overrides?: CallOverrides
@@ -551,6 +561,7 @@ export class L1NovaExecutionManager extends BaseContract {
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
+      gasLimit: BigNumberish,
       l2Recipient: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -636,6 +647,7 @@ export class L1NovaExecutionManager extends BaseContract {
       nonce: BigNumberish,
       strategy: string,
       l1Calldata: BytesLike,
+      gasLimit: BigNumberish,
       l2Recipient: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }

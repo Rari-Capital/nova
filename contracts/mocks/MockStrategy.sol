@@ -54,7 +54,7 @@ contract MockStrategy {
     }
 
     function thisFunctionWillTryToReenter() external {
-        try executionManager.exec(0, address(0), "", address(0), 999999999999999999999) {} catch Error(string memory reason) {
+        try executionManager.exec(0, address(0), new bytes(0), 0, address(0), 1e18) {} catch Error(string memory reason) {
             if (keccak256(abi.encodePacked(reason)) == keccak256("ALREADY_EXECUTING")) {
                 emit ReentrancyFailed();
             }
