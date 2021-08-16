@@ -134,8 +134,8 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @dev A strategy can only register once, and will have no way to change its risk level after registering.
     /// @param strategyRiskLevel The risk level the strategy is registering as. Strategies cannot register as UNKNOWN.
     function registerSelfAsStrategy(StrategyRiskLevel strategyRiskLevel) external requiresAuth {
-        // Ensure the strategy has not already registered itself, as if strategies could change their type arbitrarily
-        // they would be able to trick relayers into executing them believing they were safe and then use unsafe functionality.
+        // Ensure the strategy has not already registered itself, as if strategies could change their risk level arbitrarily
+        // they would be able to trick relayers into executing them believing they were safe, and then use unsafe functionality.
         require(getStrategyRiskLevel[msg.sender] == StrategyRiskLevel.UNKNOWN, "ALREADY_REGISTERED");
 
         // Strategies can't register as UNKNOWN because it would emit an unhelpful StrategyRegistered event and confuse relayers.
@@ -257,7 +257,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Reset currentExecHash to default so `transferFromRelayer` becomes uncallable again.
         currentExecHash = DEFAULT_EXECHASH;
 
-        // Estimate how much gas the relayer will have paid (not accounting for refunds).
+        // Estimate how much gas this tx will have consumed in total (not accounting for refunds).
         uint256 gasUsedEstimate =
             // Unaccounted gas (base tx cost + sendMessage):
             gasConfig.missingGasEstimate +
