@@ -24,7 +24,7 @@ exports[`L2_NovaRegistry requestExec allows making a simple request 1`] = `20838
 
 exports[`L2_NovaRegistry requestExec allows making a simple request with one input token 1`] = `300180`;
 
-exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `162657`;
+exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `202502`;
 
 exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `235780`;
 

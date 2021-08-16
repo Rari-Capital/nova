@@ -523,7 +523,7 @@ export class L2NovaRegistry extends BaseContract {
       tip: BigNumberish,
       inputTokens: { l2Token: string; amount: BigNumberish }[],
       autoUnlockDelaySeconds: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     requestInputTokens(
@@ -686,7 +686,7 @@ export class L2NovaRegistry extends BaseContract {
     tip: BigNumberish,
     inputTokens: { l2Token: string; amount: BigNumberish }[],
     autoUnlockDelaySeconds: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   requestInputTokens(
@@ -1088,7 +1088,7 @@ export class L2NovaRegistry extends BaseContract {
       tip: BigNumberish,
       inputTokens: { l2Token: string; amount: BigNumberish }[],
       autoUnlockDelaySeconds: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     requestInputTokens(
@@ -1257,7 +1257,7 @@ export class L2NovaRegistry extends BaseContract {
       tip: BigNumberish,
       inputTokens: { l2Token: string; amount: BigNumberish }[],
       autoUnlockDelaySeconds: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     requestInputTokens(

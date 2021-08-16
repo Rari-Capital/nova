@@ -156,27 +156,32 @@ describe("L2_NovaRegistry", function () {
 
   describe("requestExecWithTimeout", function () {
     it("should allow a simple request with minimum timeout", async function () {
+      const gasPrice = 5;
+      const gasLimit = 10;
+      const calldata = "0x00";
+      const strategy = fakeStrategyAddress;
       const unlockDelaySeconds = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
 
       await snapshotGasCost(
         L2_NovaRegistry.requestExecWithTimeout(
-          fakeStrategyAddress,
-          "0x00",
-          0,
-          0,
+          strategy,
+          calldata,
+          gasLimit,
+          gasPrice,
           0,
           [],
-          unlockDelaySeconds
+          unlockDelaySeconds,
+          { value: gasLimit * gasPrice }
         )
       );
 
       await L2_NovaRegistry.getRequestUnlockTimestamp(
         computeExecHash({
           nonce: await (await L2_NovaRegistry.systemNonce()).toNumber(),
-          strategy: fakeStrategyAddress,
-          calldata: "0x00",
-          gasPrice: 0,
-          gasLimit: 0,
+          strategy,
+          calldata,
+          gasLimit,
+          gasPrice,
         })
       ).should.eventually.equal(
         (await ethers.provider.getBlock("latest")).timestamp + unlockDelaySeconds.toNumber()

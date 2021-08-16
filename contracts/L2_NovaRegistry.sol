@@ -253,7 +253,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         uint256 tip,
         InputToken[] calldata inputTokens,
         uint256 autoUnlockDelaySeconds
-    ) external returns (bytes32 execHash) {
+    ) external payable returns (bytes32 execHash) {
         // Create a request and get its execHash.
         execHash = requestExec(strategy, l1Calldata, gasLimit, gasPrice, tip, inputTokens);
 
