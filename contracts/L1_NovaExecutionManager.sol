@@ -138,7 +138,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // they would be able to trick relayers into executing them believing they were safe and then use unsafe functionality.
         require(getStrategyRiskLevel[msg.sender] == StrategyRiskLevel.UNKNOWN, "ALREADY_REGISTERED");
 
-        // Strategies can't register as UNKNOWN as it could lead to StrategyRegistered being emitted multiples times which could confuse relayers.
+        // Strategies can't register as UNKNOWN because it would emit an unhelpful StrategyRegistered event and confuse relayers.
         require(strategyRiskLevel != StrategyRiskLevel.UNKNOWN, "INVALID_RISK_LEVEL");
 
         // Set the strategy's risk level.
@@ -298,11 +298,11 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @param amount The amount of `token` (scaled by its decimals) to transfer to the currently executing strategy.
     function transferFromRelayer(address token, uint256 amount) external requiresAuth {
         // Only the currently executing strategy is allowed to call this function.
-        // From here on msg.sender is used to access the strategy for gas efficiency.
+        // Since msg.sender is inexpensive, from here on it's used to access the strategy.
         require(msg.sender == currentlyExecutingStrategy, "NOT_CURRENT_STRATEGY");
 
-        // Ensure currentExecHash is not set to DEFAULT_EXECHASH as otherwise
-        // a malicious strategy could take tokens outside of an active execution.
+        // Ensure currentExecHash is not set to DEFAULT_EXECHASH as otherwise a
+        // malicious strategy could transfer tokens outside of an active execution.
         require(currentExecHash != DEFAULT_EXECHASH, "NO_ACTIVE_EXECUTION");
 
         // Ensure the strategy has registered itself as UNSAFE so relayers can
