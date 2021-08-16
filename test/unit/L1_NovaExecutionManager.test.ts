@@ -145,7 +145,7 @@ describe("L1_NovaExecutionManager", function () {
     });
   });
 
-  describe("exec/execWithRecipient", function () {
+  describe("exec", function () {
     it("should revert if a hard revert is triggered", async function () {
       const [relayer] = signers;
 
