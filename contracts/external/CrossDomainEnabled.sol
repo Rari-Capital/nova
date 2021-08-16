@@ -3,7 +3,7 @@ pragma solidity 0.7.6;
 
 import {iOVM_CrossDomainMessenger} from "@eth-optimism/contracts/iOVM/bridge/messaging/iOVM_CrossDomainMessenger.sol";
 
-/// @notice Helper contract for contracts performing cross-domain communications.
+/// @notice Mixin for contracts performing cross-domain communications.
 /// @author Modified from OptimismPBC (https://github.com/ethereum-optimism/optimism)
 abstract contract CrossDomainEnabled {
     /// @notice Messenger contract used to send and receive messages from the other domain.
