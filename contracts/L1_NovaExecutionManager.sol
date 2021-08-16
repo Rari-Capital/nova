@@ -191,11 +191,11 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Check that the deadline has not already passed.
         require(block.timestamp <= deadline, "PAST_DEADLINE");
 
+        // Substitute for Auth's `requiresAuth` modifier.
+        require(isAuthorized(msg.sender, msg.sig), "UNAUTHORIZED");
+
         // Prevent the strategy from performing a reentrancy attack.
         require(currentExecHash == DEFAULT_EXECHASH, "ALREADY_EXECUTING");
-
-        // Check authorization of the caller (equivalent to Auth's `requiresAuth` modifier).
-        require(isAuthorized(msg.sender, msg.sig), "UNAUTHORIZED");
 
         // We cannot allow providing address(0) for l2Recipient, as the registry
         // uses address(0) to indicate a request has not had its tokens removed yet.
