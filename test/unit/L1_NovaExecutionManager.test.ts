@@ -167,16 +167,6 @@ describe("L1_NovaExecutionManager", function () {
       }).should.be.revertedWith("PAST_DEADLINE");
     });
 
-    it("should not allow specifying a null recipient", async function () {
-      const [relayer] = signers;
-
-      await executeRequest(L1_NovaExecutionManager, {
-        relayer: relayer.address,
-        strategy: SafeStrategy.address,
-        l2Recipient: ethers.constants.AddressZero,
-      }).should.be.revertedWith("NEED_RECIPIENT");
-    });
-
     it("should not allow calling sendMessage", async function () {
       const [relayer] = signers;
 

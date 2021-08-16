@@ -569,6 +569,17 @@ describe("L2_NovaRegistry", function () {
       }).should.be.revertedWith("TOKENS_REMOVED");
     });
 
+    it("does not allow completing a request with a null rewardRecipient", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash,
+        rewardRecipient: ethers.constants.AddressZero,
+        reverted: false,
+        gasUsed: 50000,
+      }).should.be.revertedWith("INVALID_RECIPIENT");
+    });
+
     it("does not allow completing a resubmitted request with an alive uncle", async function () {
       const [, rewardRecipient] = signers;
 
