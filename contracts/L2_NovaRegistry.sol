@@ -15,8 +15,8 @@ import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDom
 
 contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     using SafeTransferLib for address;
-    using SafeERC20 for IERC20;
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     /*///////////////////////////////////////////////////////////////
                                 CONSTANTS
