@@ -17,7 +17,7 @@ Nova gives your **L2 contracts** the power to **read and write to L1** with **mi
     - [`SafeTransferLib`](/libraries/SafeTransferLib.sol): Library for safely transferring Ether. 
     - [`NovaExecHashLib`](/libraries/NovaExecHashLib.sol): Library for computing a Nova execHash.
     - [`SigLib`](/libraries/SigLib.sol): Library for extracing the signature of an abi-encoded function call.
-  - `external/`: Mixins and interfaces modified from external codebases.
+  - `external/`: Contracts and interfaces modified from external codebases.
     - [`CrossDomainEnabled`](/libraries/CrossDomainEnabled.sol): Mixin for contracts performing cross-domain communications.
 
 [![Diagram](https://lucid.app/publicSegments/view/70e70068-38f5-49db-9107-243a7a77e812/image.png)](https://lucid.app/documents/view/dca3b0ad-26ed-42f8-a871-1b03b40a2395)
