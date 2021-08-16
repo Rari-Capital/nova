@@ -4,41 +4,37 @@
 
 Nova gives your **L2 contracts** the power to **read and write to L1** with **minimal latency** and **no trust tradeoffs**.
 
-# Resources
+- [Documentation](https://docs.rari.capital/nova)
+- [Relayer Guide](/docs/relayers.md)
+- [Whitepaper]()
 
-- **[Documentation/Integration Guide](https://docs.rari.capital/nova)**
+## Architecture
 
-<!-- - [Technical specification/whitepaper](/docs/spec.md) -->
+- [`L1_NovaExecutionManager.sol`](/contracts/L1_NovaExecutionManager.sol): Entry point for relayers to execute requests.
+- [`L2_NovaRegistry.sol`](/contracts/L2_NovaRegistry.sol): Hub for contracts/users on L2 to create and manage requests.
+- `libraries/`: Utilities used to help implement the Nova protocol.
+  - [`SafeTransferLib`](/libraries/SafeTransferLib.sol): Library for safely transferring Ether.
+  - [`NovaExecHashLib`](/libraries/NovaExecHashLib.sol): Library for computing a Nova execHash.
+  - [`SigLib`](/libraries/SigLib.sol): Library for extracting the signature of an abi-encoded function call.
+- `external/`: Contracts and interfaces modified from external codebases.
+  - [`CrossDomainEnabled`](/libraries/CrossDomainEnabled.sol): Mixin for contracts performing cross-domain communication.
 
-# Contributing
+[![Diagram](https://lucid.app/publicSegments/view/70e70068-38f5-49db-9107-243a7a77e812/image.png)](https://lucid.app/documents/view/dca3b0ad-26ed-42f8-a871-1b03b40a2395)
 
-[![Overview](https://lucid.app/publicSegments/view/bcca1b62-7344-4c82-aa5c-3954daf46840/image.png)](https://lucid.app/lucidchart/dca3b0ad-26ed-42f8-a871-1b03b40a2395/view)
+## Testing
 
-## Unit Tests
+Below is a list of scripts used to test, fuzz, and measure the gas consumption of the Nova smart contracts.
+Many of these scripts are run automatically as part of our continuous integration suite.
+
+### Running Unit Tests
+
+To fail tests when their gas snapshots are incorrect (by default only a warning is printed), set the `CI` environment variable to `true`.
 
 ```bash
 npm run unit-tests
 ```
 
-## Unit Tests With Coverage
-
-After running tests with coverage, an lcov report will be exported to `coverage/index.html`. 
-
-If you are on MacOS you can quickly open the report with `npm run open-coverage-report`.
-
-```bash
-npm run coverage
-```
-
-## Update Gas Snapshots
-
-If you make a contribution that changes the gas usage of the contracts, run this command before committing. 
-
-```bash
-npm run gas-changed
-```
-
-## Integration Tests
+### Running Integration Tests
 
 [You must start up an instance of Optimism's "ops" repo before running integration tests.](https://github.com/ethereum-optimism/optimism/tree/develop/ops)
 
@@ -46,7 +42,23 @@ npm run gas-changed
 npm run integration-tests
 ```
 
-## Kovan Integration Tests 
+### Updating Gas Snapshots
+
+If you make a contribution that changes the gas usage of the contracts, you must run this command before committing.
+
+```bash
+npm run gas-changed
+```
+
+### Running Unit Tests With Coverage
+
+After running tests with coverage, an lcov report will be exported to `coverage/index.html`.
+
+```bash
+npm run coverage
+```
+
+### Running Integration Tests On Kovan
 
 You must set the `PRIVATE_KEY` and `KOVAN_RPC_URL` environment variables before running integration tests on Kovan.
 
@@ -54,7 +66,7 @@ You must set the `PRIVATE_KEY` and `KOVAN_RPC_URL` environment variables before 
 npm run kovan-integration-tests
 ```
 
-## Fuzz With Echidna
+### Fuzzing With Echidna
 
 [You must install Echidna before fuzzing.](https://github.com/crytic/echidna#installation)
 
