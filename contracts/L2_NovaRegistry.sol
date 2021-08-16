@@ -7,13 +7,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {Auth} from "@rari-capital/solmate/src/auth/Auth.sol";
-import {ReentrancyGuard} from "@rari-capital/solmate/src/utils/ReentrancyGuard.sol";
 
 import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
 import {SafeTransferLib} from "./libraries/SafeTransferLib.sol";
 import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDomainEnabled.sol";
 
-contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
+contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     using SafeTransferLib for address;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -202,7 +201,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         uint256 gasPrice,
         uint256 tip,
         InputToken[] calldata inputTokens
-    ) public payable nonReentrant requiresAuth returns (bytes32 execHash) {
+    ) public payable requiresAuth returns (bytes32 execHash) {
         // Do not allow more than MAX_INPUT_TOKENS input tokens as it could use too much gas.
         require(inputTokens.length <= MAX_INPUT_TOKENS, "TOO_MANY_INPUTS");
 
@@ -267,7 +266,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient
     /// (either the l2Recipient given in `execCompleted` or the request creator if the request reverted).
     /// @param execHash The hash of the executed request.
-    function claimInputTokens(bytes32 execHash) external nonReentrant requiresAuth {
+    function claimInputTokens(bytes32 execHash) external requiresAuth {
         // Get a pointer to the input token recipient data.
         InputTokenRecipientData storage inputTokenRecipientData = getRequestInputTokenRecipientData[execHash];
 
@@ -341,7 +340,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// and wait the `unlockDelaySeconds` they specified before calling `withdrawTokens`.
     /// @notice Anyone may call this function, but the tokens will still go the creator of the request associated with the `execHash`.
     /// @param execHash The unique hash of the request to withdraw from.
-    function withdrawTokens(bytes32 execHash) external nonReentrant requiresAuth {
+    function withdrawTokens(bytes32 execHash) external requiresAuth {
         // Ensure that the tokens are unlocked.
         (bool tokensUnlocked, ) = areTokensUnlocked(execHash);
         require(tokensUnlocked, "NOT_UNLOCKED");
