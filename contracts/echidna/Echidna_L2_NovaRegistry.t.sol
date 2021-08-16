@@ -39,7 +39,7 @@ contract Echidna_L2_NovaRegistry is HevmHelper {
             hevm.warp(block.timestamp + unlockDelay);
 
             try registry.withdrawTokens(execHash) {} catch {
-                assert(false);
+                assert(((gasLimit * gasPrice) + tip) == 0);
             }
         } catch {
             // This should only revert if the delay would cause overflow or is below the min.
