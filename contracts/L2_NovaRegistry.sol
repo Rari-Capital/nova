@@ -479,11 +479,11 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
 
-        // Refund the creator any unused gas + the tip (if execution reverted).
-        creator.safeTransferETH(gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0));
-
         // Pay the recipient the gas payment + the tip (if execution succeeded).
         rewardRecipient.safeTransferETH(gasPayment.add(reverted ? 0 : tip));
+
+        // Refund the creator any unused gas + the tip (if execution reverted).
+        creator.safeTransferETH(gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -547,11 +547,11 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         return (false, 0);
     }
 
-    /// @notice Checks if the request is scheduled to have its tokens unlocked.
+    /// @notice Checks if a request is scheduled to have its tokens unlocked.
     /// @param execHash The request to check.
     /// @return unlocked A boolean indicating if the request has had its tokens unlocked.
     /// @return changeTimestamp A timestamp indicating when the request might have its tokens unlocked.
-    /// Will be 0 if there is no unlock is scheduled or it has already unlocked.
+    /// Will be 0 if there is no unlock scheduled or the request has already unlocked.
     /// It will be a timestamp if an unlock has been scheduled but not completed.
     function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked, uint256 changeTimestamp) {
         uint256 tokenUnlockTimestamp = getRequestUnlockTimestamp[execHash];

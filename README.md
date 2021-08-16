@@ -7,6 +7,7 @@ Nova gives your **L2 contracts** the power to **read and write to L1** with **mi
 - [Documentation](https://docs.rari.capital/nova)
 - [Relayer Guide](/docs/relayers.md)
 - [Whitepaper]()
+- [Audit]()
 
 ## Architecture
 
