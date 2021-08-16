@@ -197,10 +197,6 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Prevent the strategy from performing a reentrancy attack.
         require(currentExecHash == DEFAULT_EXECHASH, "ALREADY_EXECUTING");
 
-        // We cannot allow providing address(0) for l2Recipient, as the registry
-        // uses address(0) to indicate a request has not had its tokens removed yet.
-        require(l2Recipient != address(0), "NEED_RECIPIENT");
-
         // We cannot allow calling the execution manager itself, as any malicious
         // relayer could exploit Auth inherited functions to change ownership, blacklist
         // other relayers, or freeze the contract entirely, without being properly authorized.

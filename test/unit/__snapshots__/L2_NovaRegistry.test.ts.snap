@@ -2,19 +2,19 @@
 
 exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for a reverted request 1`] = `66178`;
 
-exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for an executed request 1`] = `83266`;
+exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for an executed request 1`] = `83278`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a request that overflows gas usage 1`] = `81255`;
+exports[`L2_NovaRegistry execCompleted allows completing a request that overflows gas usage 1`] = `81290`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a request with input tokens 1`] = `87953`;
+exports[`L2_NovaRegistry execCompleted allows completing a request with input tokens 1`] = `87976`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a resubmitted request 1`] = `92336`;
+exports[`L2_NovaRegistry execCompleted allows completing a resubmitted request 1`] = `92359`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a reverted request with input tokens 1`] = `87935`;
+exports[`L2_NovaRegistry execCompleted allows completing a reverted request with input tokens 1`] = `87958`;
 
-exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = `87941`;
+exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = `87976`;
 
-exports[`L2_NovaRegistry execCompleted allows completing an uncled request before it dies 1`] = `85785`;
+exports[`L2_NovaRegistry execCompleted allows completing an uncled request before it dies 1`] = `85808`;
 
 exports[`L2_NovaRegistry relockTokens allows relocking tokens 1`] = `34534`;
 

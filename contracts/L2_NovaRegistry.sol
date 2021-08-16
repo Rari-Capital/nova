@@ -460,6 +460,10 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         (bool tokensRemoved, ) = areTokensRemoved(execHash);
         require(!tokensRemoved, "TOKENS_REMOVED");
 
+        // We cannot allow providing address(0) for rewardRecipient, as we use
+        // address(0) to indicate a request has not had its tokens removed yet.
+        require(rewardRecipient != address(0), "INVALID_RECIPIENT");
+
         // Get relevant request data.
         uint256 gasLimit = getRequestGasLimit[execHash];
         uint256 gasPrice = getRequestGasPrice[execHash];
