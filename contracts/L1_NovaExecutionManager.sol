@@ -46,7 +46,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @notice The address of the L1_NovaApprovalEscrow to access tokens from.
     /// @dev The transferFromRelayer function uses the escrow as a proxy identity for relayers to approve their tokens to, where
     /// only the execution manager can transfer them. If relayers approved tokens directly to the execution manager, another relayer
-    /// could steal them by calling exec with the token set as the strategy and transferFrom or pull (used by DAI/MKR) set as calldata.
+    /// could steal them by calling exec with the token set as the strategy and transferFrom or pull (used by DAI/MKR) used as calldata.
     L1_NovaApprovalEscrow public immutable L1_NOVA_APPROVAL_ESCROW;
 
     /// @param _L2_NOVA_REGISTRY_ADDRESS The address of the L2_NovaRegistry on L2 to send cross domain messages to.
@@ -89,7 +89,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
 
     /// @dev Packed struct of gas limit/estimation configuration values used in exec.
     /// @param calldataByteGasEstimate The amount of gas to assume each byte of calldata consumes.
-    /// @param missingGasEstimate The extra amount of gas the system consumes but cannot measure on-the-fly.
+    /// @param missingGasEstimate The extra amount of gas the system consumes but cannot measure on the fly.
     /// @param strategyCallGasBuffer The extra amount of gas to keep as a buffer when calling a strategy.
     struct GasConfig {
         // This needs to factor in raw calldata costs, along with the hidden
@@ -181,11 +181,11 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                             EXECUTION LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Executes a request and sends tip/inputs to a specific address.
+    /// @notice Executes a request and sends tips/gas/inputs to a specific address on L2.
     /// @param nonce The nonce of the request.
-    /// @param strategy The strategy requested in the request.
+    /// @param strategy The strategy specified in the request.
     /// @param l1Calldata The calldata associated with the request.
-    /// @param l2Recipient The address of the account on L2 to receive the tip/inputs.
+    /// @param l2Recipient An address who will receive the tips, gas and input tokens on L2.
     /// @param deadline Timestamp after which the transaction will immediately revert.
     function exec(
         uint256 nonce,
@@ -293,11 +293,12 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                           STRATEGY UTILITIES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Transfers tokens from the relayer (the account that called execute) has approved to the execution manager for the currently executing strategy.
+    /// @notice Transfers tokens the relayer (the address that called exec)
+    /// approved to the L1_NOVA_APPROVAL_ESCROW to currently executing strategy.
     /// @notice Can only be called by the currently executing strategy (if there is one at all).
     /// @notice The currently execution strategy must be registered as UNSAFE to use this function.
-    /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
-    /// @param token The ER20-compliant token to transfer to the currently executing strategy.
+    /// @notice Will hard revert if the correct amount of tokens are not approved to the escrow.
+    /// @param token The ER20 token to transfer to the currently executing strategy.
     /// @param amount The amount of the token to transfer to the currently executing strategy.
     function transferFromRelayer(address token, uint256 amount) external requiresAuth {
         // Only the currently executing strategy is allowed to call this function.
@@ -325,7 +326,8 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     }
 
     /// @notice Convenience function that triggers a hard revert.
-    /// @notice The execution manager will ignore hard reverts if they are triggered by a strategy not registered as UNSAFE.
+    /// @notice The execution manager will ignore hard reverts if
+    /// they are triggered by a strategy not registered as UNSAFE.
     function hardRevert() external pure {
         // Call revert with the hard revert text.
         revert(HARD_REVERT_TEXT);

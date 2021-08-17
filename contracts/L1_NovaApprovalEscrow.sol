@@ -1,10 +1,7 @@
-// @unsupported: ovm
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.7.6;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import {L1_NovaExecutionManager} from "./L1_NovaExecutionManager.sol";
 
 contract L1_NovaApprovalEscrow {
     /// @notice The address who is authorized to transfer tokens from the approval escrow.
@@ -17,7 +14,7 @@ contract L1_NovaApprovalEscrow {
     /// @param amount The amount of the token to transfer.
     /// @param sender The user who approved the token to the escrow.
     /// @param recipient The address to transfer the approved tokens to.
-    /// @return A bool indicating if the transfer did not revert or return false.
+    /// @return A bool indicating if the transfer succeeded or not.
     function transferApprovedToken(
         address token,
         uint256 amount,
