@@ -10,6 +10,7 @@ export type { EchidnaL1NovaExecutionManager } from "./EchidnaL1NovaExecutionMana
 export type { EchidnaL2NovaRegistry } from "./EchidnaL2NovaRegistry";
 export type { Hevm } from "./Hevm";
 export type { CrossDomainEnabled } from "./CrossDomainEnabled";
+export type { L1NovaApprovalEscrow } from "./L1NovaApprovalEscrow";
 export type { L1NovaExecutionManager } from "./L1NovaExecutionManager";
 export type { L2NovaRegistry } from "./L2NovaRegistry";
 export type { MockAuthority } from "./MockAuthority";
@@ -30,6 +31,7 @@ export { EchidnaL1NovaExecutionManager__factory } from "./factories/EchidnaL1Nov
 export { EchidnaL2NovaRegistry__factory } from "./factories/EchidnaL2NovaRegistry__factory";
 export { Hevm__factory } from "./factories/Hevm__factory";
 export { CrossDomainEnabled__factory } from "./factories/CrossDomainEnabled__factory";
+export { L1NovaApprovalEscrow__factory } from "./factories/L1NovaApprovalEscrow__factory";
 export { L1NovaExecutionManager__factory } from "./factories/L1NovaExecutionManager__factory";
 export { L2NovaRegistry__factory } from "./factories/L2NovaRegistry__factory";
 export { MockAuthority__factory } from "./factories/MockAuthority__factory";

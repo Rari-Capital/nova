@@ -21,7 +21,6 @@ import {
   MockStrategy__factory,
 } from "../../typechain";
 import { gweiToWei } from "../../utils";
-import { BigNumber } from "ethers";
 import { HttpNetworkConfig } from "hardhat/types";
 
 const isOptimisticKovan = hre.network.name === "optimisticKovan";
@@ -70,8 +69,8 @@ describe("Integration", function () {
           l1Wallet
         ),
         L2_NovaRegistry.address,
-        watcher.l1.messengerAddress,
-        1_500_000
+        1_500_000,
+        watcher.l1.messengerAddress
       );
     });
 

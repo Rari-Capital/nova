@@ -26,6 +26,7 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     "EXEC_COMPLETED_MESSAGE_GAS_LIMIT()": FunctionFragment;
     "HARD_REVERT_HASH()": FunctionFragment;
     "HARD_REVERT_TEXT()": FunctionFragment;
+    "L1_NOVA_APPROVAL_ESCROW()": FunctionFragment;
     "L2_NOVA_REGISTRY_ADDRESS()": FunctionFragment;
     "authority()": FunctionFragment;
     "currentExecHash()": FunctionFragment;
@@ -61,6 +62,10 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "HARD_REVERT_TEXT",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "L1_NOVA_APPROVAL_ESCROW",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -143,6 +148,10 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "HARD_REVERT_TEXT",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "L1_NOVA_APPROVAL_ESCROW",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -259,6 +268,8 @@ export class L1NovaExecutionManager extends BaseContract {
 
     HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<[string]>;
 
+    L1_NOVA_APPROVAL_ESCROW(overrides?: CallOverrides): Promise<[string]>;
+
     L2_NOVA_REGISTRY_ADDRESS(overrides?: CallOverrides): Promise<[string]>;
 
     authority(overrides?: CallOverrides): Promise<[string]>;
@@ -338,6 +349,8 @@ export class L1NovaExecutionManager extends BaseContract {
   HARD_REVERT_HASH(overrides?: CallOverrides): Promise<string>;
 
   HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<string>;
+
+  L1_NOVA_APPROVAL_ESCROW(overrides?: CallOverrides): Promise<string>;
 
   L2_NOVA_REGISTRY_ADDRESS(overrides?: CallOverrides): Promise<string>;
 
@@ -420,6 +433,8 @@ export class L1NovaExecutionManager extends BaseContract {
     HARD_REVERT_HASH(overrides?: CallOverrides): Promise<string>;
 
     HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<string>;
+
+    L1_NOVA_APPROVAL_ESCROW(overrides?: CallOverrides): Promise<string>;
 
     L2_NOVA_REGISTRY_ADDRESS(overrides?: CallOverrides): Promise<string>;
 
@@ -549,6 +564,8 @@ export class L1NovaExecutionManager extends BaseContract {
 
     HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<BigNumber>;
 
+    L1_NOVA_APPROVAL_ESCROW(overrides?: CallOverrides): Promise<BigNumber>;
+
     L2_NOVA_REGISTRY_ADDRESS(overrides?: CallOverrides): Promise<BigNumber>;
 
     authority(overrides?: CallOverrides): Promise<BigNumber>;
@@ -625,6 +642,10 @@ export class L1NovaExecutionManager extends BaseContract {
     HARD_REVERT_HASH(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    L1_NOVA_APPROVAL_ESCROW(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     L2_NOVA_REGISTRY_ADDRESS(
       overrides?: CallOverrides

@@ -6,15 +6,15 @@ pragma abicoder v2;
 import {Auth} from "@rari-capital/solmate/src/auth/Auth.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {SigLib} from "./libraries/SigLib.sol";
 import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
 import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDomainEnabled.sol";
 
 import {L2_NovaRegistry} from "./L2_NovaRegistry.sol";
+import {L1_NovaApprovalEscrow} from "./L1_NovaApprovalEscrow.sol";
 
 contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /*///////////////////////////////////////////////////////////////
-                        HARD REVERT CONSTANTS
+                               CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The revert message text used to trigger a hard revert.
@@ -25,8 +25,12 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @dev The exec function uses this hash the compare the revert reason of an execution with the hard revert text.
     bytes32 public constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
 
+    /// @notice The 'default' value for currentExecHash.
+    /// @dev Outside of an active exec call currentExecHash will always equal DEFAULT_EXECHASH.
+    bytes32 public constant DEFAULT_EXECHASH = 0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEF;
+
     /*///////////////////////////////////////////////////////////////
-                    CROSS DOMAIN MESSAGE CONSTANTS
+                              IMMUTABLES
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The address of the L2_NovaRegistry to send cross domain messages to.
@@ -39,16 +43,26 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// along with the actual L2 gas cost of calling the L2_NovaRegistry's execCompleted function.
     uint32 public immutable EXEC_COMPLETED_MESSAGE_GAS_LIMIT;
 
+    /// @notice The address of the L1_NovaApprovalEscrow to access tokens from.
+    /// @dev The transferFromRelayer function uses the escrow as a proxy identity for relayers to approve their tokens to, where
+    /// only the execution manager can transfer them. If relayers approved tokens directly to the execution manager, another relayer
+    /// could steal them by calling exec with the token set as the strategy and transferFrom or pull (used by DAI/MKR) set as calldata.
+    L1_NovaApprovalEscrow public immutable L1_NOVA_APPROVAL_ESCROW;
+
     /// @param _L2_NOVA_REGISTRY_ADDRESS The address of the L2_NovaRegistry on L2 to send cross domain messages to.
     /// @param _CROSS_DOMAIN_MESSENGER The L1 xDomainMessenger contract to use for sending cross domain messages.
     /// @param _EXEC_COMPLETED_MESSAGE_GAS_LIMIT The xDomainGasLimit to use for the cross domain call to execCompleted.
     constructor(
         address _L2_NOVA_REGISTRY_ADDRESS,
-        iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER,
-        uint32 _EXEC_COMPLETED_MESSAGE_GAS_LIMIT
+        uint32 _EXEC_COMPLETED_MESSAGE_GAS_LIMIT,
+        iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER
     ) CrossDomainEnabled(_CROSS_DOMAIN_MESSENGER) {
         L2_NOVA_REGISTRY_ADDRESS = _L2_NOVA_REGISTRY_ADDRESS;
         EXEC_COMPLETED_MESSAGE_GAS_LIMIT = _EXEC_COMPLETED_MESSAGE_GAS_LIMIT;
+
+        // Create an approval escrow which implicitly becomes
+        // owned by the execution manager in its constructor.
+        L1_NOVA_APPROVAL_ESCROW = new L1_NovaApprovalEscrow();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -151,11 +165,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                         EXECUTION CONTEXT STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The 'default' value for `currentExecHash`.
-    /// @dev Outside of an active `exec` call `currentExecHash` will always equal DEFAULT_EXECHASH.
-    bytes32 public constant DEFAULT_EXECHASH = 0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEF;
-
-    /// @notice The address who called `exec`.
+    /// @notice The address who called exec.
     /// @dev This will not be reset after each execution completes.
     address public currentRelayer;
 
@@ -163,7 +173,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @dev This will not be reset after each execution completes.
     address public currentlyExecutingStrategy;
 
-    /// @notice The execHash computed from the currently executing call to `exec`.
+    /// @notice The execHash computed from the currently executing call to exec.
     /// @dev This will be reset to DEFAULT_EXECHASH after each execution completes.
     bytes32 public currentExecHash = DEFAULT_EXECHASH;
 
@@ -191,29 +201,26 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Check that the deadline has not already passed.
         require(block.timestamp <= deadline, "PAST_DEADLINE");
 
-        // Substitute for Auth's `requiresAuth` modifier.
+        // Substitute for Auth's requiresAuth modifier.
         require(isAuthorized(msg.sender, msg.sig), "UNAUTHORIZED");
 
         // Prevent the strategy from performing a reentrancy attack.
         require(currentExecHash == DEFAULT_EXECHASH, "ALREADY_EXECUTING");
 
+        // We cannot allow calling cross domain messenger directly, as a
+        // malicious relayer could use it to trigger the registry's execCompleted
+        // function and claim bounties without actually executing the proper request(s).
+        require(strategy != address(CROSS_DOMAIN_MESSENGER), "UNSAFE_STRATEGY");
+
+        // We cannot allow calling the approval escrow directly, as a malicious
+        // relayer could call its transferTokenToStrategy function and access tokens
+        // from other relayers outside of a proper call to the transferFromRelayer function.
+        require(strategy != address(L1_NOVA_APPROVAL_ESCROW), "UNSAFE_STRATEGY");
+
         // We cannot allow calling the execution manager itself, as any malicious
         // relayer could exploit Auth inherited functions to change ownership, blacklist
         // other relayers, or freeze the contract entirely, without being properly authorized.
         require(strategy != address(this), "UNSAFE_STRATEGY");
-
-        // Extract the 4 byte function signature from l1Calldata.
-        // After Solidity 0.8.5 we can do this inline using slices.
-        bytes4 calldataSig = SigLib.fromCalldata(l1Calldata);
-
-        // We cannot allow calling IERC20.transferFrom directly, as a malicious
-        // relayer could steal tokens approved to the registry by other relayers.
-        require(calldataSig != IERC20.transferFrom.selector, "UNSAFE_CALLDATA");
-
-        // We cannot allow calling iOVM_CrossDomainMessenger.sendMessage directly,
-        // as a malicious relayer could use it to trigger the registry's execCompleted
-        // function and claim bounties without actually executing the proper request(s).
-        require(calldataSig != iOVM_CrossDomainMessenger.sendMessage.selector, "UNSAFE_CALLDATA");
 
         // Compute the execHash.
         bytes32 execHash =
@@ -250,7 +257,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
             "HARD_REVERT"
         );
 
-        // Reset currentExecHash to default so `transferFromRelayer` becomes uncallable again.
+        // Reset currentExecHash to default so transferFromRelayer becomes uncallable again.
         currentExecHash = DEFAULT_EXECHASH;
 
         // Estimate how much gas this tx will have consumed in total (not accounting for refunds).
@@ -291,7 +298,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @notice The currently execution strategy must be registered as UNSAFE to use this function.
     /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
     /// @param token The ER20-compliant token to transfer to the currently executing strategy.
-    /// @param amount The amount of `token` (scaled by its decimals) to transfer to the currently executing strategy.
+    /// @param amount The amount of the token to transfer to the currently executing strategy.
     function transferFromRelayer(address token, uint256 amount) external requiresAuth {
         // Only the currently executing strategy is allowed to call this function.
         // Since msg.sender is inexpensive, from here on it's used to access the strategy.
@@ -305,26 +312,16 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // avoid strategies that use transferFromRelayer if they want to be cautious.
         require(getStrategyRiskLevel[msg.sender] == StrategyRiskLevel.UNSAFE, "UNSUPPORTED_RISK_LEVEL");
 
-        // Transfer the token from the relayer the currently executing strategy.
-        (bool success, bytes memory returnData) =
-            address(token).call(
-                // Encode a call to transferFrom.
-                abi.encodeWithSelector(IERC20(token).transferFrom.selector, currentRelayer, msg.sender, amount)
-            );
-
-        // Hard revert if the transferFrom call reverted.
-        require(success, HARD_REVERT_TEXT);
-
-        // If it returned something, hard revert if it is not a positive bool.
-        if (returnData.length > 0) {
-            if (returnData.length == 32) {
-                // It returned a bool, hard revert if it is not a positive bool.
-                require(abi.decode(returnData, (bool)), HARD_REVERT_TEXT);
-            } else {
-                // It returned some data that was not a bool, let's hard revert.
-                revert(HARD_REVERT_TEXT);
-            }
-        }
+        require(
+            // Transfer tokens from the relayer to the strategy.
+            L1_NOVA_APPROVAL_ESCROW.transferApprovedToken({
+                token: token,
+                amount: amount,
+                sender: currentRelayer,
+                recipient: msg.sender
+            }),
+            HARD_REVERT_TEXT // Hard revert if the transfer fails.
+        );
     }
 
     /// @notice Convenience function that triggers a hard revert.

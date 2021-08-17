@@ -19,29 +19,34 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
-interface NoReturnValueERC20Interface extends ethers.utils.Interface {
+interface L1NovaApprovalEscrowInterface extends ethers.utils.Interface {
   functions: {
-    "transferFrom(address,address,uint256)": FunctionFragment;
+    "ESCROW_ADMIN()": FunctionFragment;
+    "transferApprovedToken(address,uint256,address,address)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "transferFrom",
-    values: [string, string, BigNumberish]
+    functionFragment: "ESCROW_ADMIN",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferApprovedToken",
+    values: [string, BigNumberish, string, string]
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "transferFrom",
+    functionFragment: "ESCROW_ADMIN",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferApprovedToken",
     data: BytesLike
   ): Result;
 
-  events: {
-    "Transfer(address,address,uint256)": EventFragment;
-  };
-
-  getEvent(nameOrSignatureOrTopic: "Transfer"): EventFragment;
+  events: {};
 }
 
-export class NoReturnValueERC20 extends BaseContract {
+export class L1NovaApprovalEscrow extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -82,58 +87,64 @@ export class NoReturnValueERC20 extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: NoReturnValueERC20Interface;
+  interface: L1NovaApprovalEscrowInterface;
 
   functions: {
-    transferFrom(
-      a1: string,
-      a2: string,
-      u1: BigNumberish,
+    ESCROW_ADMIN(overrides?: CallOverrides): Promise<[string]>;
+
+    transferApprovedToken(
+      token: string,
+      amount: BigNumberish,
+      sender: string,
+      recipient: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
-  transferFrom(
-    a1: string,
-    a2: string,
-    u1: BigNumberish,
+  ESCROW_ADMIN(overrides?: CallOverrides): Promise<string>;
+
+  transferApprovedToken(
+    token: string,
+    amount: BigNumberish,
+    sender: string,
+    recipient: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    transferFrom(
-      a1: string,
-      a2: string,
-      u1: BigNumberish,
+    ESCROW_ADMIN(overrides?: CallOverrides): Promise<string>;
+
+    transferApprovedToken(
+      token: string,
+      amount: BigNumberish,
+      sender: string,
+      recipient: string,
       overrides?: CallOverrides
-    ): Promise<void>;
+    ): Promise<boolean>;
   };
 
-  filters: {
-    Transfer(
-      from?: string | null,
-      to?: string | null,
-      value?: null
-    ): TypedEventFilter<
-      [string, string, BigNumber],
-      { from: string; to: string; value: BigNumber }
-    >;
-  };
+  filters: {};
 
   estimateGas: {
-    transferFrom(
-      a1: string,
-      a2: string,
-      u1: BigNumberish,
+    ESCROW_ADMIN(overrides?: CallOverrides): Promise<BigNumber>;
+
+    transferApprovedToken(
+      token: string,
+      amount: BigNumberish,
+      sender: string,
+      recipient: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    transferFrom(
-      a1: string,
-      a2: string,
-      u1: BigNumberish,
+    ESCROW_ADMIN(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    transferApprovedToken(
+      token: string,
+      amount: BigNumberish,
+      sender: string,
+      recipient: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

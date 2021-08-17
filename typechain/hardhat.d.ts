@@ -49,6 +49,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CrossDomainEnabled__factory>;
     getContractFactory(
+      name: "L1NovaApprovalEscrow",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.L1NovaApprovalEscrow__factory>;
+    getContractFactory(
       name: "L1NovaExecutionManager",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.L1NovaExecutionManager__factory>;

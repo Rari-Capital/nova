@@ -2,11 +2,15 @@
 pragma solidity 0.7.6;
 
 contract NoReturnValueERC20 {
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
     function transferFrom(
-        address,
-        address,
-        uint256
-    ) external pure {}
+        address a1,
+        address a2,
+        uint256 u1
+    ) external {
+        emit Transfer(a1, a2, u1);
+    }
 }
 
 contract BadReturnValueERC20 {
