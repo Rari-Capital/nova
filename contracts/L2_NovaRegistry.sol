@@ -389,7 +389,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         uint256 previousGasPrice = getRequestGasPrice[execHash];
 
         // Ensure that the new gas price is greater than the previous.
-        require(gasPrice > previousGasPrice, "LESS_THAN_PREVIOUS_GAS_PRICE");
+        require(gasPrice > previousGasPrice, "GAS_PRICE_MUST_BE_HIGHER");
 
         // Get the timestamp when the `execHash` would become uncled if this `speedUpRequest` call succeeds.
         uint256 switchTimestamp = MIN_UNLOCK_DELAY_SECONDS.add(block.timestamp);

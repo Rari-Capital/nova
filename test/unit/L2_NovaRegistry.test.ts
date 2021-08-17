@@ -442,7 +442,7 @@ describe("L2_NovaRegistry", function () {
         execHash,
         // 1 second less than the min delay
         (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).sub(1)
-      ).should.be.revertedWith("LESS_THAN_PREVIOUS_GAS_PRICE");
+      ).should.be.revertedWith("GAS_PRICE_MUST_BE_HIGHER");
     });
 
     it("does now allow speeding up a request scheduled to unlock soon", async function () {
