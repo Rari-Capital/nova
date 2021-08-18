@@ -42,11 +42,6 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// deployed on L2. We can only communicate with this address using cross domain messages.
     address public immutable L2_NOVA_REGISTRY_ADDRESS;
 
-    /// @notice The xDomainGasLimit to use for the cross domain call to execCompleted.
-    /// @dev This needs to factor in the overhead of relaying the message on L2 (currently ~800k),
-    /// along with the actual L2 gas cost of calling the L2_NovaRegistry's execCompleted function.
-    uint32 public immutable EXEC_COMPLETED_MESSAGE_GAS_LIMIT;
-
     /// @notice The address of the L1_NovaApprovalEscrow to access tokens from.
     /// @dev The transferFromRelayer function uses the escrow as a proxy identity for relayers to approve their tokens to, where
     /// only the execution manager can transfer them. If relayers approved tokens directly to the execution manager, another relayer
@@ -55,14 +50,11 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
 
     /// @param _L2_NOVA_REGISTRY_ADDRESS The address of the L2_NovaRegistry on L2 to send cross domain messages to.
     /// @param _CROSS_DOMAIN_MESSENGER The L1 xDomainMessenger contract to use for sending cross domain messages.
-    /// @param _EXEC_COMPLETED_MESSAGE_GAS_LIMIT The xDomainGasLimit to use for the cross domain call to execCompleted.
-    constructor(
-        address _L2_NOVA_REGISTRY_ADDRESS,
-        uint32 _EXEC_COMPLETED_MESSAGE_GAS_LIMIT,
-        iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER
-    ) CrossDomainEnabled(_CROSS_DOMAIN_MESSENGER) {
+
+    constructor(address _L2_NOVA_REGISTRY_ADDRESS, iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER)
+        CrossDomainEnabled(_CROSS_DOMAIN_MESSENGER)
+    {
         L2_NOVA_REGISTRY_ADDRESS = _L2_NOVA_REGISTRY_ADDRESS;
-        EXEC_COMPLETED_MESSAGE_GAS_LIMIT = _EXEC_COMPLETED_MESSAGE_GAS_LIMIT;
 
         // Create an approval escrow which implicitly becomes
         // owned by the execution manager in its constructor.
@@ -95,16 +87,20 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @param calldataByteGasEstimate The amount of gas to assume each byte of calldata consumes.
     /// @param missingGasEstimate The extra amount of gas the system consumes but cannot measure on the fly.
     /// @param strategyCallGasBuffer The extra amount of gas to keep as a buffer when calling a strategy.
+    /// @param execCompletedMessageGasLimit The L2 gas limit to use for the cross domain call to execCompleted.
     struct GasConfig {
         // This needs to factor in raw calldata costs, along with the hidden
         // cost of abi decoding and copying the calldata into an Solidity function.
-        uint64 calldataByteGasEstimate;
+        uint32 calldataByteGasEstimate;
         // This needs to factor in the base transaction gas (currently 21000), along
         // with the gas cost of sending the cross domain message and emitting the Exec event.
         uint96 missingGasEstimate;
         // This needs to factor in the max amount of gas consumed after the strategy call, up
         // until the cross domain message is sent (as this is not accounted for in missingGasEstimate).
         uint96 strategyCallGasBuffer;
+        // This needs to factor in the overhead of relaying the message on L2 (currently ~800k),
+        // along with the actual L2 gas cost of calling the L2_NovaRegistry's execCompleted function.
+        uint32 execCompletedMessageGasLimit;
     }
 
     /// @notice Gas limit/estimation configuration values used in exec.
@@ -112,7 +108,8 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         GasConfig({
             calldataByteGasEstimate: 13, // OpenGSN uses 13 to estimate gas per calldata byte too.
             missingGasEstimate: 200000, // Rough estimate for missing gas. Tune this in production.
-            strategyCallGasBuffer: 5000 // Overly cautious gas buffer. Can likely be safely reduced.
+            strategyCallGasBuffer: 5000, // Overly cautious gas buffer. Can likely be safely reduced.
+            execCompletedMessageGasLimit: 1500000 // If the limit is too low, relayers won't get paid.
         });
 
     /// @notice Updates the gasConfig.
@@ -277,7 +274,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                 // Estimated gas used in total:
                 gasUsedEstimate
             ),
-            EXEC_COMPLETED_MESSAGE_GAS_LIMIT
+            gasConfig.execCompletedMessageGasLimit
         );
 
         emit Exec(execHash, msg.sender, !success, gasUsedEstimate);

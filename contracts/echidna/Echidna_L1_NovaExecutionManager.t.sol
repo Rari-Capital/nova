@@ -15,13 +15,18 @@ contract Echidna_L1_NovaExecutionManager {
 
     constructor() {
         mockCrossDomainMessenger = new MockCrossDomainMessenger();
-        executionManager = new L1_NovaExecutionManager(L2_NOVA_REGISTRY_ADDRESS, 0, mockCrossDomainMessenger);
+        executionManager = new L1_NovaExecutionManager(L2_NOVA_REGISTRY_ADDRESS, mockCrossDomainMessenger);
     }
 
     function should_always_be_able_to_update_gas_config(L1_NovaExecutionManager.GasConfig calldata newGasConfig) external {
         executionManager.updateGasConfig(newGasConfig);
 
-        (uint64 calldataByteGasEstimate, uint96 missingGasEstimate, uint96 strategyCallGasBuffer) = executionManager.gasConfig();
+        (
+            uint32 calldataByteGasEstimate,
+            uint96 missingGasEstimate,
+            uint96 strategyCallGasBuffer,
+            uint32 execCompletedMessageGasLimit
+        ) = executionManager.gasConfig();
 
         assert(newGasConfig.calldataByteGasEstimate == calldataByteGasEstimate);
         assert(newGasConfig.missingGasEstimate == missingGasEstimate);

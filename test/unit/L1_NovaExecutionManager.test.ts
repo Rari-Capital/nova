@@ -55,7 +55,7 @@ describe("L1_NovaExecutionManager", function () {
     it("should properly deploy the execution manager", async function () {
       L1_NovaExecutionManager = await (
         await getFactory<L1NovaExecutionManager__factory>("L1_NovaExecutionManager")
-      ).deploy(ethers.constants.AddressZero, 0, MockCrossDomainMessenger.address);
+      ).deploy(ethers.constants.AddressZero, MockCrossDomainMessenger.address);
     });
 
     it("should not allow calling authed functions before permitted", async function () {

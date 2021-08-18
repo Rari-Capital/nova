@@ -69,7 +69,6 @@ describe("Integration", function () {
           l1Wallet
         ),
         L2_NovaRegistry.address,
-        1_500_000,
         watcher.l1.messengerAddress
       );
     });
