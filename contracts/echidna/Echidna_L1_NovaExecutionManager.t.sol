@@ -33,6 +33,7 @@ contract Echidna_L1_NovaExecutionManager {
             assert(false);
         } catch Error(string memory reason) {
             bytes32 hashedReason = keccak256(abi.encodePacked(reason));
+
             assert(hashedReason == keccak256("NO_ACTIVE_EXECUTION") || hashedReason == keccak256("NOT_CURRENT_STRATEGY"));
         }
     }
@@ -45,18 +46,10 @@ contract Echidna_L1_NovaExecutionManager {
         address recipient,
         uint256 deadline
     ) external {
-        try executionManager.exec(nonce, strategy, l1Calldata, gasLimit, recipient, deadline) {
-            assert(executionManager.currentExecHash() == executionManager.DEFAULT_EXECHASH());
-            assert(executionManager.currentRelayer() == address(this));
-            assert(executionManager.currentlyExecutingStrategy() == strategy);
-        } catch {
-            assert(
-                deadline < block.timestamp ||
-                    recipient == address(0) ||
-                    strategy == address(executionManager) ||
-                    strategy == address(mockCrossDomainMessenger) ||
-                    strategy == address(executionManager.L1_NOVA_APPROVAL_ESCROW())
-            );
-        }
+        executionManager.exec(nonce, strategy, l1Calldata, gasLimit, recipient, deadline);
+
+        assert(executionManager.currentExecHash() == executionManager.DEFAULT_EXECHASH());
+        assert(executionManager.currentRelayer() == address(this));
+        assert(executionManager.currentlyExecutingStrategy() == strategy);
     }
 }

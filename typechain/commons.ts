@@ -12,13 +12,15 @@ export interface TypedEvent<EventArgs extends Result> extends Event {
   args: EventArgs;
 }
 
-export type TypedListener<EventArgsArray extends Array<any>, EventArgsObject> =
-  (
-    ...listenerArg: [
-      ...EventArgsArray,
-      TypedEvent<EventArgsArray & EventArgsObject>
-    ]
-  ) => void;
+export type TypedListener<
+  EventArgsArray extends Array<any>,
+  EventArgsObject
+> = (
+  ...listenerArg: [
+    ...EventArgsArray,
+    TypedEvent<EventArgsArray & EventArgsObject>
+  ]
+) => void;
 
 export type MinEthersFactory<C, ARGS> = {
   deploy(...a: ARGS[]): Promise<C>;

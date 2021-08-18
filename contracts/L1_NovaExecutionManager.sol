@@ -4,6 +4,7 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import {Auth} from "@rari-capital/solmate/src/auth/Auth.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
@@ -13,6 +14,9 @@ import {L2_NovaRegistry} from "./L2_NovaRegistry.sol";
 import {L1_NovaApprovalEscrow} from "./L1_NovaApprovalEscrow.sol";
 
 contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
+    using SafeMath for uint256;
+    using SafeMath for uint96;
+
     /*///////////////////////////////////////////////////////////////
                                CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -222,34 +226,28 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // other relayers, or freeze the contract entirely, without being properly authorized.
         require(strategy != address(this), "UNSAFE_STRATEGY");
 
-        // Compute the execHash.
-        bytes32 execHash =
-            NovaExecHashLib.compute({
-                nonce: nonce,
-                strategy: strategy,
-                l1Calldata: l1Calldata,
-                gasLimit: gasLimit,
-                gasPrice: tx.gasprice
-            });
+        // Compute the relevant execHash.
+        bytes32 execHash = NovaExecHashLib.compute({
+            nonce: nonce,
+            strategy: strategy,
+            l1Calldata: l1Calldata,
+            gasLimit: gasLimit,
+            gasPrice: tx.gasprice
+        });
 
         // Initialize execution context.
         currentExecHash = execHash;
         currentRelayer = msg.sender;
         currentlyExecutingStrategy = strategy;
 
-        // Call the strategy.
-        (bool success, bytes memory returnData) =
-            strategy.call{
-                gas: gasLimit -
-                    // Post call gas:
-                    gasConfig.missingGasEstimate -
-                    // Safety buffer:
-                    gasConfig.strategyCallGasBuffer -
-                    // Calldata gas:
-                    (msg.data.length * gasConfig.calldataByteGasEstimate) -
-                    // Gas used so far:
-                    (startGas - gasleft())
-            }(l1Calldata);
+        // Call the strategy with a safe gas limit.
+        (bool success, bytes memory returnData) = strategy.call{
+            gas: gasLimit
+                .sub(msg.data.length.mul(gasConfig.calldataByteGasEstimate))
+                .sub(gasConfig.strategyCallGasBuffer)
+                .sub(gasConfig.missingGasEstimate)
+                .sub(startGas.sub(gasleft()))
+        }(l1Calldata);
 
         // Revert if a valid hard revert was triggered. A hard revert is only valid if the strategy had a risk level of UNSAFE.
         require(
@@ -261,13 +259,9 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         currentExecHash = DEFAULT_EXECHASH;
 
         // Estimate how much gas this tx will have consumed in total (not accounting for refunds).
-        uint256 gasUsedEstimate =
-            // Unaccounted gas (base tx cost + sendMessage):
-            gasConfig.missingGasEstimate +
-                // Calldata gas estimate:
-                (msg.data.length * gasConfig.calldataByteGasEstimate) +
-                // Gas used so far:
-                (startGas - gasleft());
+        uint256 gasUsedEstimate = msg.data.length.mul(gasConfig.calldataByteGasEstimate).add(gasConfig.missingGasEstimate).add(
+            startGas.sub(gasleft())
+        );
 
         // Send message to unlock the bounty on L2.
         CROSS_DOMAIN_MESSENGER.sendMessage(
