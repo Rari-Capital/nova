@@ -3,6 +3,8 @@ pragma solidity 0.7.6;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/// @notice Escrow contract for relayers to approve input tokens to.
+/// @dev Used by the L1_NovaExecutionManager to safely transfer tokens from relayers to strategies.
 contract L1_NovaApprovalEscrow {
     /// @notice The address who is authorized to transfer tokens from the approval escrow.
     /// @dev Initializing it as msg.sender here is equivalent to setting it in the constructor.
@@ -25,19 +27,18 @@ contract L1_NovaApprovalEscrow {
         require(ESCROW_ADMIN == msg.sender, "UNAUTHORIZED");
 
         // Transfer tokens from the sender to the recipient.
-        (bool success, bytes memory returnData) =
-            address(token).call(
-                abi.encodeWithSelector(
-                    // The token to transfer:
-                    IERC20(token).transferFrom.selector,
-                    // The address who approved tokens to the escrow:
-                    sender,
-                    // The address who should receive the tokens:
-                    recipient,
-                    // The amount of tokens to transfer to the recipient:
-                    amount
-                )
-            );
+        (bool success, bytes memory returnData) = address(token).call(
+            abi.encodeWithSelector(
+                // The token to transfer:
+                IERC20(token).transferFrom.selector,
+                // The address who approved tokens to the escrow:
+                sender,
+                // The address who should receive the tokens:
+                recipient,
+                // The amount of tokens to transfer to the recipient:
+                amount
+            )
+        );
 
         if (!success) {
             // If it reverted, return false

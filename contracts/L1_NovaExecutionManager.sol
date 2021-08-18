@@ -13,6 +13,8 @@ import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDom
 import {L2_NovaRegistry} from "./L2_NovaRegistry.sol";
 import {L1_NovaApprovalEscrow} from "./L1_NovaApprovalEscrow.sol";
 
+/// @notice Entry point for relayers to execute requests.
+/// @dev Deploys an L1_NovaApprovalEscrow and sends cross domain messages to the L2_NovaRegistry.
 contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     using SafeMath for uint256;
     using SafeMath for uint96;

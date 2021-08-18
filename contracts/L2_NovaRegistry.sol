@@ -13,6 +13,8 @@ import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
 import {SafeTransferLib} from "./libraries/SafeTransferLib.sol";
 import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDomainEnabled.sol";
 
+/// @notice Hub for contracts/users on L2 to create and manage requests.
+/// @dev Receives messages from the L1_NovaExecutionManager via a cross domain messenger.
 contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     using SafeTransferLib for address;
     using SafeMath for uint256;
@@ -28,8 +30,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice The minimum delay between when unlockTokens and withdrawTokens can be called.
     uint256 public constant MIN_UNLOCK_DELAY_SECONDS = 300;
 
-    /// @param _xDomainMessenger The L2 xDomainMessenger contract to trust for receiving messages.
-    constructor(iOVM_CrossDomainMessenger _xDomainMessenger) CrossDomainEnabled(_xDomainMessenger) {}
+    /// @param _CROSS_DOMAIN_MESSENGER The L2 cross domain messenger to trust for receiving messages.
+    constructor(iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER) CrossDomainEnabled(_CROSS_DOMAIN_MESSENGER) {}
 
     /*///////////////////////////////////////////////////////////////
                     EXECUTION MANAGER ADDRESS STORAGE
