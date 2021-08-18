@@ -246,7 +246,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                 .sub(msg.data.length.mul(gasConfig.calldataByteGasEstimate))
                 .sub(gasConfig.strategyCallGasBuffer)
                 .sub(gasConfig.missingGasEstimate)
-                .sub(startGas.sub(gasleft()))
+                .sub(startGas - gasleft())
         }(l1Calldata);
 
         // Revert if a valid hard revert was triggered. A hard revert is only valid if the strategy had a risk level of UNSAFE.
@@ -260,7 +260,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
 
         // Estimate how much gas this tx will have consumed in total (not accounting for refunds).
         uint256 gasUsedEstimate = msg.data.length.mul(gasConfig.calldataByteGasEstimate).add(gasConfig.missingGasEstimate).add(
-            startGas.sub(gasleft())
+            startGas - gasleft()
         );
 
         // Send message to unlock the bounty on L2.

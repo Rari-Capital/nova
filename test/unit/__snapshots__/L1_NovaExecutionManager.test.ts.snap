@@ -1,21 +1,21 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`L1_NovaExecutionManager exec should not revert due to a hard revert triggered by a SAFE strategy 1`] = `49767`;
+exports[`L1_NovaExecutionManager exec should not revert due to a hard revert triggered by a SAFE strategy 1`] = `49651`;
 
-exports[`L1_NovaExecutionManager exec should not revert due to a hard revert triggered by an UNKNOWN strategy 1`] = `52567`;
+exports[`L1_NovaExecutionManager exec should not revert due to a hard revert triggered by an UNKNOWN strategy 1`] = `52451`;
 
-exports[`L1_NovaExecutionManager exec should not revert due to a soft revert 1`] = `46679`;
+exports[`L1_NovaExecutionManager exec should not revert due to a soft revert 1`] = `46563`;
 
-exports[`L1_NovaExecutionManager exec should properly execute a minimal exec 1`] = `45877`;
+exports[`L1_NovaExecutionManager exec should properly execute a minimal exec 1`] = `45761`;
 
-exports[`L1_NovaExecutionManager exec should properly execute a stateful exec 1`] = `50913`;
+exports[`L1_NovaExecutionManager exec should properly execute a stateful exec 1`] = `50797`;
 
-exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `98101`;
+exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `97985`;
 
-exports[`L1_NovaExecutionManager transferFromRelayer will not allow a SAFE strategy to call 1`] = `59876`;
+exports[`L1_NovaExecutionManager transferFromRelayer will not allow a SAFE strategy to call 1`] = `59760`;
 
-exports[`L1_NovaExecutionManager transferFromRelayer will not allow a random contract to call during execution 1`] = `57939`;
+exports[`L1_NovaExecutionManager transferFromRelayer will not allow a random contract to call during execution 1`] = `57823`;
 
-exports[`L1_NovaExecutionManager transferFromRelayer will not allow an UNKNOWN strategy to call 1`] = `59876`;
+exports[`L1_NovaExecutionManager transferFromRelayer will not allow an UNKNOWN strategy to call 1`] = `59760`;
 
-exports[`L1_NovaExecutionManager transferFromRelayer will properly handle a transferFrom with no return value 1`] = `64650`;
+exports[`L1_NovaExecutionManager transferFromRelayer will properly handle a transferFrom with no return value 1`] = `64534`;
