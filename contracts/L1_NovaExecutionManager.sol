@@ -17,7 +17,6 @@ import {L1_NovaApprovalEscrow} from "./L1_NovaApprovalEscrow.sol";
 /// @dev Deploys an L1_NovaApprovalEscrow and sends cross domain messages to the L2_NovaRegistry.
 contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     using SafeMath for uint256;
-    using SafeMath for uint96;
 
     /*///////////////////////////////////////////////////////////////
                                CONSTANTS
@@ -51,7 +50,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     L1_NovaApprovalEscrow public immutable L1_NOVA_APPROVAL_ESCROW;
 
     /// @param _L2_NOVA_REGISTRY_ADDRESS The address of the L2_NovaRegistry on L2 to send cross domain messages to.
-    /// @param _CROSS_DOMAIN_MESSENGER The L1 xDomainMessenger contract to use for sending cross domain messages.
+    /// @param _CROSS_DOMAIN_MESSENGER The L1 cross domain messenger contract to use for sending cross domain messages.
 
     constructor(address _L2_NOVA_REGISTRY_ADDRESS, iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER)
         CrossDomainEnabled(_CROSS_DOMAIN_MESSENGER)
@@ -207,7 +206,8 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Substitute for Auth's requiresAuth modifier.
         require(isAuthorized(msg.sender, msg.sig), "UNAUTHORIZED");
 
-        // Prevent the strategy from performing a reentrancy attack.
+        // Prevent the strategy or another contract from trying
+        // to frontrun a relayer's execution and take their payment.
         require(currentExecHash == DEFAULT_EXECHASH, "ALREADY_EXECUTING");
 
         // We cannot allow calling cross domain messenger directly, as a

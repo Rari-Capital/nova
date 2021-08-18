@@ -20,7 +20,7 @@ Nova gives your **L2 contracts** the power to **read and write to L1** with **mi
 - `external/`: Contracts and interfaces modified from external codebases.
   - [`CrossDomainEnabled.sol`](/contracts/external/CrossDomainEnabled.sol): Cross-domain communication helper mixin.
 
-[![Diagram](https://lucid.app/publicSegments/view/70e70068-38f5-49db-9107-243a7a77e812/image.png)](https://lucid.app/documents/view/dca3b0ad-26ed-42f8-a871-1b03b40a2395)
+[![Diagram](https://lucid.app/publicSegments/view/b543b380-7aa4-4f55-b1d9-1fe52028300b/image.png)](https://lucid.app/documents/view/dca3b0ad-26ed-42f8-a871-1b03b40a2395)
 
 ## Testing
 

@@ -298,9 +298,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @param execHash The unique hash of the request to unlock.
     /// @param unlockDelaySeconds The delay (in seconds) until the creator can withdraw their tokens.
     function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public requiresAuth {
-        // Ensure the request has not already had its tokens removed.
-        (bool tokensRemoved, ) = areTokensRemoved(execHash);
-        require(!tokensRemoved, "TOKENS_REMOVED");
+        // Ensure the request currently has tokens.
+        (bool requestHasTokens, ) = hasTokens(execHash);
+        require(requestHasTokens, "VOID_REQUEST");
 
         // Ensure an unlock is not already scheduled.
         require(getRequestUnlockTimestamp[execHash] == 0, "UNLOCK_ALREADY_SCHEDULED");
@@ -321,9 +321,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @notice Cancels a scheduled unlock.
     /// @param execHash The unique hash of the request which has an unlock scheduled.
     function relockTokens(bytes32 execHash) external requiresAuth {
-        // Ensure the request has not already had its tokens removed.
-        (bool tokensRemoved, ) = areTokensRemoved(execHash);
-        require(!tokensRemoved, "TOKENS_REMOVED");
+        // Ensure the request currently has tokens.
+        (bool requestHasTokens, ) = hasTokens(execHash);
+        require(requestHasTokens, "VOID_REQUEST");
 
         // Ensure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
@@ -349,13 +349,13 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         require(tokensUnlocked, "NOT_UNLOCKED");
 
         // Ensure that the tokens have not already been removed.
-        (bool tokensRemoved, ) = areTokensRemoved(execHash);
-        require(!tokensRemoved, "TOKENS_REMOVED");
+        (bool requestHasTokens, ) = hasTokens(execHash);
+        require(requestHasTokens, "VOID_REQUEST");
 
         // Get the request creator.
         address creator = getRequestCreator[execHash];
 
-        // Store that the request has had its input tokens removed.
+        // Store that the request has had its input tokens withdrawn.
         // isClaimed is set to true so the creator cannot call claimInputTokens to claim their tokens twice!
         getRequestInputTokenRecipientData[execHash] = InputTokenRecipientData({recipient: creator, isClaimed: true});
 
@@ -381,9 +381,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // Ensure that msg.sender is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
 
-        // Ensure tokens have not already had its tokens removed.
-        (bool tokensRemoved, ) = areTokensRemoved(execHash);
-        require(!tokensRemoved, "TOKENS_REMOVED");
+        // Ensure the request currently has tokens.
+        (bool requestHasTokens, ) = hasTokens(execHash);
+        require(requestHasTokens, "VOID_REQUEST");
 
         // Ensure the request has not already been sped up.
         require(getRequestDeathTimestamp[execHash] == 0, "ALREADY_SPED_UP");
@@ -455,15 +455,15 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         bool reverted,
         uint256 gasUsed
     ) external onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
-        // Ensure that this request exists, since areTokensRemoved does not!
+        // Ensure that this request exists, since hasTokens does not!
         require(getRequestCreator[execHash] != address(0), "NOT_CREATED");
 
         // Ensure tokens have not already been removed.
-        (bool tokensRemoved, ) = areTokensRemoved(execHash);
-        require(!tokensRemoved, "TOKENS_REMOVED");
+        (bool requestHasTokens, ) = hasTokens(execHash);
+        require(requestHasTokens, "VOID_REQUEST");
 
-        // We cannot allow providing address(0) for rewardRecipient, as we use
-        // address(0) to indicate a request has not had its tokens removed yet.
+        // We cannot allow providing address(0) for rewardRecipient, as we
+        // use address(0) to indicate a request has not its tokens removed.
         require(rewardRecipient != address(0), "INVALID_RECIPIENT");
 
         // Get relevant request data.
@@ -492,20 +492,21 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
                              VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Checks if the request has had any of its tokens removed.
+    /// @notice Checks if the request has all of its tokens.
     /// @param execHash The request to check.
-    /// @return tokensRemoved A boolean indicating if the request has had any of its tokens removed.
-    /// @return changeTimestamp A timestamp indicating when the request might have one of its tokens removed or added.
+    /// @return requestHasTokens A boolean indicating if the request still has all of the tokens it was created with.
+    /// @return changeTimestamp A timestamp indicating when the request might have its tokens removed or added.
     /// Will be 0 if there is no removal/addition expected.
     /// Will also be 0 if the request has had its tokens withdrawn or it has been executed.
     /// It will be a timestamp if the request will have its tokens added soon (it's a resubmitted copy of an uncled request)
     /// or if the request will have its tokens removed soon (its an uncle scheduled to die soon).
-    function areTokensRemoved(bytes32 execHash) public view returns (bool tokensRemoved, uint256 changeTimestamp) {
+    /// @dev Will return true for a request that has not been created. You must validate the request exists separately.
+    function hasTokens(bytes32 execHash) public view returns (bool requestHasTokens, uint256 changeTimestamp) {
         address inputTokenRecipient = getRequestInputTokenRecipientData[execHash].recipient;
         if (inputTokenRecipient != address(0)) {
             // The request has been executed or had its tokens withdrawn,
             // so we know its tokens are removed and won't be added back.
-            return (true, 0);
+            return (false, 0);
         }
 
         uint256 deathTimestamp = getRequestDeathTimestamp[execHash];
@@ -513,11 +514,11 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
             if (block.timestamp >= deathTimestamp) {
                 // This request is an uncle which has died, meaning its tokens
                 // have been removed and sent to a resubmitted request.
-                return (true, 0);
+                return (false, 0);
             } else {
                 // This request is an uncle which has not died yet, so we know
                 // it has tokens that will be removed on its deathTimestamp.
-                return (false, deathTimestamp);
+                return (true, deathTimestamp);
             }
         }
 
@@ -525,7 +526,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         if (uncleExecHash == "") {
             // This request does not have an uncle and has passed all
             // the previous removal checks, so we know it has tokens.
-            return (false, 0);
+            return (true, 0);
         }
 
         address uncleInputTokenRecipient = getRequestInputTokenRecipientData[uncleExecHash].recipient;
@@ -533,7 +534,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
             // This request is a resubmitted version of its uncle which was
             // executed before the uncle could "die" and switch its tokens
             // to this resubmitted request, so we know it does not have tokens.
-            return (true, 0);
+            return (false, 0);
         }
 
         uint256 uncleDeathTimestamp = getRequestDeathTimestamp[uncleExecHash];
@@ -541,12 +542,12 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
             // This request is a resubmitted version of its uncle which has
             // not "died" yet, so we know it does not have its tokens yet,
             // but will receive them after the uncleDeathTimestamp.
-            return (true, uncleDeathTimestamp);
+            return (false, uncleDeathTimestamp);
         }
 
         // This is a resubmitted request with an uncle that died properly
         // without being executed early, so we know it has its tokens.
-        return (false, 0);
+        return (true, 0);
     }
 
     /// @notice Checks if a request is scheduled to have its tokens unlocked.
