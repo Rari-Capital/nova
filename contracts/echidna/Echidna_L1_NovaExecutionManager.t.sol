@@ -50,13 +50,6 @@ contract Echidna_L1_NovaExecutionManager {
             assert(executionManager.currentRelayer() == address(this));
             assert(executionManager.currentlyExecutingStrategy() == strategy);
         } catch {
-            // If it reverted, it should be because either;
-            // - the deadline was in the past
-            // - strategy == executionManager
-            // - recipient == address(0)
-            // - the calldata had transferFrom as the sig
-            // - the calldata had sendMessage as the sig
-
             assert(
                 deadline < block.timestamp ||
                     recipient == address(0) ||

@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract L1_NovaApprovalEscrow {
     /// @notice The address who is authorized to transfer tokens from the approval escrow.
-    /// @dev Initializing it as msg.sender here is equivalent setting it in the constructor.
+    /// @dev Initializing it as msg.sender here is equivalent to setting it in the constructor.
     address public immutable ESCROW_ADMIN = msg.sender;
 
     /// @notice Transfers a token approved to the escrow.
