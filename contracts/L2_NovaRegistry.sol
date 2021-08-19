@@ -455,9 +455,6 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         bool reverted,
         uint256 gasUsed
     ) external onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
-        // Ensure that this request exists, since hasTokens does not!
-        require(getRequestCreator[execHash] != address(0), "NOT_CREATED");
-
         // Ensure tokens have not already been removed.
         (bool requestHasTokens, ) = hasTokens(execHash);
         require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
@@ -492,18 +489,17 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
                              VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Checks if the request has all of its tokens.
-    /// @param execHash The request to check.
-    /// @return requestHasTokens A boolean indicating if the request still has all of the tokens it was created with.
-    /// @return changeTimestamp A timestamp indicating when the request might have its tokens removed or added.
+    /// @notice Checks if a request exists and ensures it hasn't been withdrawn, uncled, or executed.
+    /// @notice A resubmitted request isn't considered to exist until its uncle dies.
+    /// @param execHash The unique identifier of the request to check.
+    /// @return requestHasTokens A boolean indicating if the request exists and has all of its tokens.
+    /// @return changeTimestamp A timestamp indicating when the request may have its tokens removed or added.
     /// Will be 0 if there is no removal/addition expected.
-    /// Will also be 0 if the request has had its tokens withdrawn or it has been executed.
-    /// It will be a timestamp if the request will have its tokens added soon (it's a resubmitted copy of an uncled request)
-    /// or if the request will have its tokens removed soon (its an uncle scheduled to die soon).
-    /// @dev Will return true for a request that has not been created. You must validate the request exists separately.
+    /// Will also be 0 if the request has had its tokens withdrawn or was executed.
+    /// Will be a timestamp if the request will have its tokens added soon (it's a resubmitted copy of an uncled request)
+    /// or if the request will have its tokens removed soon (it's an uncled request scheduled to die soon).
     function hasTokens(bytes32 execHash) public view returns (bool requestHasTokens, uint256 changeTimestamp) {
-        address inputTokenRecipient = getRequestInputTokenRecipientData[execHash].recipient;
-        if (inputTokenRecipient != address(0)) {
+        if (getRequestInputTokenRecipientData[execHash].recipient != address(0)) {
             // The request has been executed or had its tokens withdrawn,
             // so we know its tokens are removed and won't be added back.
             return (false, 0);
@@ -524,15 +520,20 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
         bytes32 uncleExecHash = getRequestUncle[execHash];
         if (uncleExecHash == "") {
-            // This request does not have an uncle and has passed all
-            // the previous removal checks, so we know it has tokens.
-            return (true, 0);
+            if (getRequestCreator[execHash] == address(0)) {
+                // The request has not been created yet and isn't a resubmitted
+                // copy of an uncled request, so we know it does not have tokens.
+                return (false, 0);
+            } else {
+                // This request does not have an uncle and has passed all
+                // the previous removal checks, so we know it has tokens.
+                return (true, 0);
+            }
         }
 
-        address uncleInputTokenRecipient = getRequestInputTokenRecipientData[uncleExecHash].recipient;
-        if (uncleInputTokenRecipient != address(0)) {
-            // This request is a resubmitted version of its uncle which was
-            // executed before the uncle could "die" and switch its tokens
+        if (getRequestInputTokenRecipientData[uncleExecHash].recipient != address(0)) {
+            // This request is a resubmitted version of an uncled request
+            // which was executed before it could "die" and switch its tokens
             // to this resubmitted request, so we know it does not have tokens.
             return (false, 0);
         }
@@ -550,11 +551,11 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         return (true, 0);
     }
 
-    /// @notice Checks if a request is scheduled to have its tokens unlocked.
-    /// @param execHash The request to check.
-    /// @return unlocked A boolean indicating if the request has had its tokens unlocked.
-    /// @return changeTimestamp A timestamp indicating when the request might have its tokens unlocked.
-    /// Will be 0 if there is no unlock scheduled or the request has already unlocked.
+    /// @notice Checks if a request has had an unlock completed (unlockTokens was called and MIN_UNLOCK_DELAY_SECONDS has passed).
+    /// @param execHash The unique identifier of the request to check.
+    /// @return unlocked A boolean indicating if the request has had an unlock completed and hence a withdrawal can be triggered.
+    /// @return changeTimestamp A timestamp indicating when the request may have its unlock completed
+    /// Will be 0 if there is no unlock scheduled or the request has already completed an unlock.
     /// It will be a timestamp if an unlock has been scheduled but not completed.
     function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked, uint256 changeTimestamp) {
         uint256 tokenUnlockTimestamp = getRequestUnlockTimestamp[execHash];

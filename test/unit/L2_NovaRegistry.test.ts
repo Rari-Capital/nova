@@ -206,7 +206,7 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.unlockTokens(
         ethers.utils.solidityKeccak256([], []),
         999999999999
-      ).should.be.revertedWith("NOT_CREATOR");
+      ).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow unlocking requests with a small delay", async function () {
@@ -369,7 +369,7 @@ describe("L2_NovaRegistry", function () {
     it("does not allow relocking random requests", async function () {
       await L2_NovaRegistry.relockTokens(
         ethers.utils.solidityKeccak256([], [])
-      ).should.be.revertedWith("NOT_CREATOR");
+      ).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow relocking a request that is not scheduled to unlock", async function () {
@@ -544,7 +544,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
-      }).should.be.revertedWith("NOT_CREATED");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow completing a request with tokens removed", async function () {
@@ -994,12 +994,12 @@ describe("L2_NovaRegistry", function () {
       changeTimestamp.should.equal(0);
     });
 
-    it("should return true for a nonexistent request", async function () {
+    it("should return false for a nonexistent request", async function () {
       const { requestHasTokens, changeTimestamp } = await L2_NovaRegistry.hasTokens(
         ethers.utils.solidityKeccak256([], [])
       );
 
-      requestHasTokens.should.equal(true);
+      requestHasTokens.should.equal(false);
       changeTimestamp.should.equal(0);
     });
 
