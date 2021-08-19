@@ -209,6 +209,20 @@ describe("L2_NovaRegistry", function () {
       ).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
+    it("does not allow unlocking requests if not creator", async function () {
+      const [, nonCreator] = signers;
+
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      await L2_NovaRegistry.connect(nonCreator)
+        .unlockTokens(
+          execHash,
+          // 1 second less than the min delay
+          (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).sub(1)
+        )
+        .should.be.revertedWith("NOT_CREATOR");
+    });
+
     it("does not allow unlocking requests with a small delay", async function () {
       const { execHash } = await createRequest(L2_NovaRegistry, {});
 
@@ -372,6 +386,16 @@ describe("L2_NovaRegistry", function () {
       ).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
+    it("does not allow relocking requests if not creator", async function () {
+      const [, nonCreator] = signers;
+
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      await L2_NovaRegistry.connect(nonCreator)
+        .relockTokens(execHash)
+        .should.be.revertedWith("NOT_CREATOR");
+    });
+
     it("does not allow relocking a request that is not scheduled to unlock", async function () {
       const { execHash } = await createRequest(L2_NovaRegistry, {});
 
@@ -415,7 +439,17 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.speedUpRequest(
         ethers.utils.solidityKeccak256([], []),
         999999999
-      ).should.be.revertedWith("NOT_CREATOR");
+      ).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
+    });
+
+    it("does not allow speeding up requests if not creator", async function () {
+      const [, nonCreator] = signers;
+
+      const { execHash, gasPrice } = await createRequest(L2_NovaRegistry, {});
+
+      await L2_NovaRegistry.connect(nonCreator)
+        .speedUpRequest(execHash, gasPrice + 1)
+        .should.be.revertedWith("NOT_CREATOR");
     });
 
     it("does not allow speeding up requests with tokens removed", async function () {
