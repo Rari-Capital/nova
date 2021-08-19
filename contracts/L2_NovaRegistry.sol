@@ -377,12 +377,12 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// @param gasPrice The updated gas price to use for the resubmitted request.
     /// @return newExecHash The unique identifier for the resubmitted request.
     function speedUpRequest(bytes32 execHash, uint256 gasPrice) external payable requiresAuth returns (bytes32 newExecHash) {
-        // Ensure that msg.sender is the creator of the request.
-        require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
-
         // Ensure the request currently has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
         require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
+
+        // Ensure that msg.sender is the creator of the request.
+        require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
 
         // Ensure the request has not already been sped up.
         require(getRequestDeathTimestamp[execHash] == 0, "ALREADY_SPED_UP");
