@@ -489,7 +489,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
                              VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Checks if a request exists and ensures it hasn't been withdrawn, uncled, or executed.
+    /// @notice Checks if a request exists and hasn't been withdrawn, uncled, or executed.
     /// @notice A resubmitted request isn't considered to exist until its uncle dies.
     /// @param execHash The unique identifier of the request to check.
     /// @return requestHasTokens A boolean indicating if the request exists and has all of its tokens.
@@ -508,8 +508,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         uint256 deathTimestamp = getRequestDeathTimestamp[execHash];
         if (deathTimestamp != 0) {
             if (block.timestamp >= deathTimestamp) {
-                // This request is an uncle which has died, meaning its tokens
-                // have been removed and sent to a resubmitted request.
+                // This request is an uncle which has died, meaning its
+                // tokens have been removed and sent to a resubmitted request.
                 return (false, 0);
             } else {
                 // This request is an uncle which has not died yet, so we know
@@ -521,8 +521,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         bytes32 uncleExecHash = getRequestUncle[execHash];
         if (uncleExecHash == "") {
             if (getRequestCreator[execHash] == address(0)) {
-                // The request has not been created yet and isn't a resubmitted
-                // copy of an uncled request, so we know it does not have tokens.
+                // The request doesn't exist and doesn't have
+                // an uncle, so we know it cannot have tokens.
                 return (false, 0);
             } else {
                 // This request does not have an uncle and has passed all
@@ -532,9 +532,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         }
 
         if (getRequestInputTokenRecipientData[uncleExecHash].recipient != address(0)) {
-            // This request is a resubmitted version of an uncled request
-            // which was executed before it could "die" and switch its tokens
-            // to this resubmitted request, so we know it does not have tokens.
+            // This request is a resubmitted version of its uncle
+            // which was executed before it could "die" and switch its
+            // tokens to this request, so we know it does not have tokens.
             return (false, 0);
         }
 
