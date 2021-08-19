@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`L1_NovaApprovalEscrow transferApprovedToken should transfer an arbitrary token to an arbitrary destination 1`] = `58808`;

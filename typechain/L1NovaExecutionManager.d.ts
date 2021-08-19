@@ -23,9 +23,9 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
   functions: {
     "CROSS_DOMAIN_MESSENGER()": FunctionFragment;
     "DEFAULT_EXECHASH()": FunctionFragment;
-    "EXEC_COMPLETED_MESSAGE_GAS_LIMIT()": FunctionFragment;
     "HARD_REVERT_HASH()": FunctionFragment;
     "HARD_REVERT_TEXT()": FunctionFragment;
+    "L1_NOVA_APPROVAL_ESCROW()": FunctionFragment;
     "L2_NOVA_REGISTRY_ADDRESS()": FunctionFragment;
     "authority()": FunctionFragment;
     "currentExecHash()": FunctionFragment;
@@ -52,15 +52,15 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "EXEC_COMPLETED_MESSAGE_GAS_LIMIT",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "HARD_REVERT_HASH",
     values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "HARD_REVERT_TEXT",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "L1_NOVA_APPROVAL_ESCROW",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -121,6 +121,7 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       }
     ]
   ): string;
@@ -134,15 +135,15 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "EXEC_COMPLETED_MESSAGE_GAS_LIMIT",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "HARD_REVERT_HASH",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "HARD_REVERT_TEXT",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "L1_NOVA_APPROVAL_ESCROW",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -251,13 +252,11 @@ export class L1NovaExecutionManager extends BaseContract {
 
     DEFAULT_EXECHASH(overrides?: CallOverrides): Promise<[string]>;
 
-    EXEC_COMPLETED_MESSAGE_GAS_LIMIT(
-      overrides?: CallOverrides
-    ): Promise<[number]>;
-
     HARD_REVERT_HASH(overrides?: CallOverrides): Promise<[string]>;
 
     HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<[string]>;
+
+    L1_NOVA_APPROVAL_ESCROW(overrides?: CallOverrides): Promise<[string]>;
 
     L2_NOVA_REGISTRY_ADDRESS(overrides?: CallOverrides): Promise<[string]>;
 
@@ -282,10 +281,11 @@ export class L1NovaExecutionManager extends BaseContract {
     gasConfig(
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, BigNumber] & {
-        calldataByteGasEstimate: BigNumber;
+      [number, BigNumber, BigNumber, number] & {
+        calldataByteGasEstimate: number;
         missingGasEstimate: BigNumber;
         strategyCallGasBuffer: BigNumber;
+        execCompletedMessageGasLimit: number;
       }
     >;
 
@@ -324,6 +324,7 @@ export class L1NovaExecutionManager extends BaseContract {
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -333,11 +334,11 @@ export class L1NovaExecutionManager extends BaseContract {
 
   DEFAULT_EXECHASH(overrides?: CallOverrides): Promise<string>;
 
-  EXEC_COMPLETED_MESSAGE_GAS_LIMIT(overrides?: CallOverrides): Promise<number>;
-
   HARD_REVERT_HASH(overrides?: CallOverrides): Promise<string>;
 
   HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<string>;
+
+  L1_NOVA_APPROVAL_ESCROW(overrides?: CallOverrides): Promise<string>;
 
   L2_NOVA_REGISTRY_ADDRESS(overrides?: CallOverrides): Promise<string>;
 
@@ -362,10 +363,11 @@ export class L1NovaExecutionManager extends BaseContract {
   gasConfig(
     overrides?: CallOverrides
   ): Promise<
-    [BigNumber, BigNumber, BigNumber] & {
-      calldataByteGasEstimate: BigNumber;
+    [number, BigNumber, BigNumber, number] & {
+      calldataByteGasEstimate: number;
       missingGasEstimate: BigNumber;
       strategyCallGasBuffer: BigNumber;
+      execCompletedMessageGasLimit: number;
     }
   >;
 
@@ -404,6 +406,7 @@ export class L1NovaExecutionManager extends BaseContract {
       calldataByteGasEstimate: BigNumberish;
       missingGasEstimate: BigNumberish;
       strategyCallGasBuffer: BigNumberish;
+      execCompletedMessageGasLimit: BigNumberish;
     },
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -413,13 +416,11 @@ export class L1NovaExecutionManager extends BaseContract {
 
     DEFAULT_EXECHASH(overrides?: CallOverrides): Promise<string>;
 
-    EXEC_COMPLETED_MESSAGE_GAS_LIMIT(
-      overrides?: CallOverrides
-    ): Promise<number>;
-
     HARD_REVERT_HASH(overrides?: CallOverrides): Promise<string>;
 
     HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<string>;
+
+    L1_NOVA_APPROVAL_ESCROW(overrides?: CallOverrides): Promise<string>;
 
     L2_NOVA_REGISTRY_ADDRESS(overrides?: CallOverrides): Promise<string>;
 
@@ -444,10 +445,11 @@ export class L1NovaExecutionManager extends BaseContract {
     gasConfig(
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, BigNumber] & {
-        calldataByteGasEstimate: BigNumber;
+      [number, BigNumber, BigNumber, number] & {
+        calldataByteGasEstimate: number;
         missingGasEstimate: BigNumber;
         strategyCallGasBuffer: BigNumber;
+        execCompletedMessageGasLimit: number;
       }
     >;
 
@@ -483,6 +485,7 @@ export class L1NovaExecutionManager extends BaseContract {
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       },
       overrides?: CallOverrides
     ): Promise<void>;
@@ -512,17 +515,19 @@ export class L1NovaExecutionManager extends BaseContract {
       newGasConfig?: null
     ): TypedEventFilter<
       [
-        [BigNumber, BigNumber, BigNumber] & {
-          calldataByteGasEstimate: BigNumber;
+        [number, BigNumber, BigNumber, number] & {
+          calldataByteGasEstimate: number;
           missingGasEstimate: BigNumber;
           strategyCallGasBuffer: BigNumber;
+          execCompletedMessageGasLimit: number;
         }
       ],
       {
-        newGasConfig: [BigNumber, BigNumber, BigNumber] & {
-          calldataByteGasEstimate: BigNumber;
+        newGasConfig: [number, BigNumber, BigNumber, number] & {
+          calldataByteGasEstimate: number;
           missingGasEstimate: BigNumber;
           strategyCallGasBuffer: BigNumber;
+          execCompletedMessageGasLimit: number;
         };
       }
     >;
@@ -541,13 +546,11 @@ export class L1NovaExecutionManager extends BaseContract {
 
     DEFAULT_EXECHASH(overrides?: CallOverrides): Promise<BigNumber>;
 
-    EXEC_COMPLETED_MESSAGE_GAS_LIMIT(
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     HARD_REVERT_HASH(overrides?: CallOverrides): Promise<BigNumber>;
 
     HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<BigNumber>;
+
+    L1_NOVA_APPROVAL_ESCROW(overrides?: CallOverrides): Promise<BigNumber>;
 
     L2_NOVA_REGISTRY_ADDRESS(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -606,6 +609,7 @@ export class L1NovaExecutionManager extends BaseContract {
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -618,13 +622,13 @@ export class L1NovaExecutionManager extends BaseContract {
 
     DEFAULT_EXECHASH(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    EXEC_COMPLETED_MESSAGE_GAS_LIMIT(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     HARD_REVERT_HASH(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     HARD_REVERT_TEXT(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    L1_NOVA_APPROVAL_ESCROW(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     L2_NOVA_REGISTRY_ADDRESS(
       overrides?: CallOverrides
@@ -687,6 +691,7 @@ export class L1NovaExecutionManager extends BaseContract {
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;

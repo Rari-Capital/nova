@@ -55,7 +55,7 @@ describe("L1_NovaExecutionManager", function () {
     it("should properly deploy the execution manager", async function () {
       L1_NovaExecutionManager = await (
         await getFactory<L1NovaExecutionManager__factory>("L1_NovaExecutionManager")
-      ).deploy(ethers.constants.AddressZero, MockCrossDomainMessenger.address, 0);
+      ).deploy(ethers.constants.AddressZero, MockCrossDomainMessenger.address);
     });
 
     it("should not allow calling authed functions before permitted", async function () {
@@ -167,32 +167,24 @@ describe("L1_NovaExecutionManager", function () {
       }).should.be.revertedWith("PAST_DEADLINE");
     });
 
-    it("should not allow calling sendMessage", async function () {
+    it("should not allow calling the cross domain messenger", async function () {
       const [relayer] = signers;
 
       await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
         strategy: MockCrossDomainMessenger.address,
-        l1Calldata: MockCrossDomainMessenger.interface.encodeFunctionData("sendMessage", [
-          ethers.constants.AddressZero,
-          "0x00",
-          0,
-        ]),
-      }).should.be.revertedWith("UNSAFE_CALLDATA");
+        l1Calldata: "0x00",
+      }).should.be.revertedWith("UNSAFE_STRATEGY");
     });
 
-    it("should not allow calling transferFrom", async function () {
+    it("should not allow calling the approval escrow", async function () {
       const [relayer] = signers;
 
       await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
-        strategy: MockERC20.address,
-        l1Calldata: MockERC20.interface.encodeFunctionData("transferFrom", [
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
-          0,
-        ]),
-      }).should.be.revertedWith("UNSAFE_CALLDATA");
+        strategy: await L1_NovaExecutionManager.L1_NOVA_APPROVAL_ESCROW(),
+        l1Calldata: "0x00",
+      }).should.be.revertedWith("UNSAFE_STRATEGY");
     });
 
     it("should not allow self calls", async function () {
@@ -291,7 +283,7 @@ describe("L1_NovaExecutionManager", function () {
 
       // Approve the right amount of input tokens.
       const weiAmount = ethers.utils.parseEther("1337");
-      await MockERC20.approve(L1_NovaExecutionManager.address, weiAmount);
+      await MockERC20.approve(await L1_NovaExecutionManager.L1_NOVA_APPROVAL_ESCROW(), weiAmount);
 
       const { tx } = await executeRequest(L1_NovaExecutionManager, {
         relayer: relayer.address,
@@ -308,8 +300,32 @@ describe("L1_NovaExecutionManager", function () {
         .should.emit(MockERC20, "Transfer")
         .withArgs(relayer.address, UnsafeStrategy.address, weiAmount);
 
-      // The strategy should get properly transferred the right amount of tokens.
       await MockERC20.balanceOf(UnsafeStrategy.address).should.eventually.equal(weiAmount);
+    });
+
+    it("will properly handle a transferFrom with no return value", async function () {
+      const [relayer] = signers;
+
+      const NoReturnValueERC20 = await (
+        await getFactory<NoReturnValueERC20__factory>("NoReturnValueERC20")
+      ).deploy();
+
+      // Since this is a mock token we don't have to approve this amount.
+      const weiAmount = ethers.utils.parseEther("1337");
+
+      const { tx } = await executeRequest(L1_NovaExecutionManager, {
+        relayer: relayer.address,
+        strategy: UnsafeStrategy.address,
+        l1Calldata: UnsafeStrategy.interface.encodeFunctionData(
+          "thisFunctionWillTransferFromRelayer",
+          [NoReturnValueERC20.address, weiAmount]
+        ),
+      });
+
+      // Should emit an event to indicate it was called properly.
+      await snapshotGasCost(tx)
+        .should.emit(NoReturnValueERC20, "Transfer")
+        .withArgs(relayer.address, UnsafeStrategy.address, weiAmount);
     });
 
     it("will hard revert if tokens were not approved", async function () {
@@ -323,25 +339,6 @@ describe("L1_NovaExecutionManager", function () {
           [MockERC20.address, ethers.utils.parseEther("9999999")]
         ),
       }).should.be.revertedWith("HARD_REVERT");
-    });
-
-    it("will properly handle a transferFrom with no return value", async function () {
-      const [relayer] = signers;
-
-      const NoReturnValueERC20 = await (
-        await getFactory<NoReturnValueERC20__factory>("NoReturnValueERC20")
-      ).deploy();
-
-      const { tx } = await executeRequest(L1_NovaExecutionManager, {
-        relayer: relayer.address,
-        strategy: UnsafeStrategy.address,
-        l1Calldata: UnsafeStrategy.interface.encodeFunctionData(
-          "thisFunctionWillTransferFromRelayer",
-          [NoReturnValueERC20.address, 0]
-        ),
-      });
-
-      await snapshotGasCost(tx);
     });
 
     it("will hard revert if transferFrom returns a non-bool", async function () {
@@ -441,6 +438,19 @@ describe("L1_NovaExecutionManager", function () {
         UnknownStrategy,
         "TransferFromRelayerFailedWithUnsupportedRiskLevel"
       );
+    });
+
+    it("does not allow calling the escrow directly", async function () {
+      const L1_NovaApprovalEscrow = (
+        await ethers.getContractFactory("L1_NovaApprovalEscrow")
+      ).attach(await L1_NovaExecutionManager.L1_NOVA_APPROVAL_ESCROW());
+
+      await L1_NovaApprovalEscrow.transferApprovedToken(
+        ethers.constants.AddressZero,
+        0,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero
+      ).should.be.revertedWith("UNAUTHORIZED");
     });
   });
 

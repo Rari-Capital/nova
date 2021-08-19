@@ -45,6 +45,7 @@ interface EchidnaL1NovaExecutionManagerInterface
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       }
     ]
   ): string;
@@ -128,6 +129,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -154,6 +156,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       calldataByteGasEstimate: BigNumberish;
       missingGasEstimate: BigNumberish;
       strategyCallGasBuffer: BigNumberish;
+      execCompletedMessageGasLimit: BigNumberish;
     },
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -180,6 +183,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       },
       overrides?: CallOverrides
     ): Promise<void>;
@@ -209,6 +213,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -236,6 +241,7 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
         calldataByteGasEstimate: BigNumberish;
         missingGasEstimate: BigNumberish;
         strategyCallGasBuffer: BigNumberish;
+        execCompletedMessageGasLimit: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;

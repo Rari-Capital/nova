@@ -4,17 +4,22 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import {Auth} from "@rari-capital/solmate/src/auth/Auth.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {SigLib} from "./libraries/SigLib.sol";
 import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
 import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDomainEnabled.sol";
 
 import {L2_NovaRegistry} from "./L2_NovaRegistry.sol";
+import {L1_NovaApprovalEscrow} from "./L1_NovaApprovalEscrow.sol";
 
+/// @notice Entry point for relayers to execute requests.
+/// @dev Deploys an L1_NovaApprovalEscrow and sends cross domain messages to the L2_NovaRegistry.
 contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
+    using SafeMath for uint256;
+
     /*///////////////////////////////////////////////////////////////
-                        HARD REVERT CONSTANTS
+                               CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The revert message text used to trigger a hard revert.
@@ -25,8 +30,12 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @dev The exec function uses this hash the compare the revert reason of an execution with the hard revert text.
     bytes32 public constant HARD_REVERT_HASH = keccak256(abi.encodeWithSignature("Error(string)", HARD_REVERT_TEXT));
 
+    /// @notice The 'default' value for currentExecHash.
+    /// @dev Outside of an active exec call currentExecHash will always equal DEFAULT_EXECHASH.
+    bytes32 public constant DEFAULT_EXECHASH = 0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEF;
+
     /*///////////////////////////////////////////////////////////////
-                    CROSS DOMAIN MESSAGE CONSTANTS
+                              IMMUTABLES
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The address of the L2_NovaRegistry to send cross domain messages to.
@@ -34,21 +43,23 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// deployed on L2. We can only communicate with this address using cross domain messages.
     address public immutable L2_NOVA_REGISTRY_ADDRESS;
 
-    /// @notice The xDomainGasLimit to use for the cross domain call to execCompleted.
-    /// @dev This needs to factor in the overhead of relaying the message on L2 (currently ~800k),
-    /// along with the actual L2 gas cost of calling the L2_NovaRegistry's execCompleted function.
-    uint32 public immutable EXEC_COMPLETED_MESSAGE_GAS_LIMIT;
+    /// @notice The address of the L1_NovaApprovalEscrow to access tokens from.
+    /// @dev The transferFromRelayer function uses the escrow as a proxy identity for relayers to approve their tokens to, where
+    /// only the execution manager can transfer them. If relayers approved tokens directly to the execution manager, another relayer
+    /// could steal them by calling exec with the token set as the strategy and transferFrom or pull (used by DAI/MKR) used as calldata.
+    L1_NovaApprovalEscrow public immutable L1_NOVA_APPROVAL_ESCROW;
 
     /// @param _L2_NOVA_REGISTRY_ADDRESS The address of the L2_NovaRegistry on L2 to send cross domain messages to.
-    /// @param _CROSS_DOMAIN_MESSENGER The L1 xDomainMessenger contract to use for sending cross domain messages.
-    /// @param _EXEC_COMPLETED_MESSAGE_GAS_LIMIT The xDomainGasLimit to use for the cross domain call to execCompleted.
-    constructor(
-        address _L2_NOVA_REGISTRY_ADDRESS,
-        iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER,
-        uint32 _EXEC_COMPLETED_MESSAGE_GAS_LIMIT
-    ) CrossDomainEnabled(_CROSS_DOMAIN_MESSENGER) {
+    /// @param _CROSS_DOMAIN_MESSENGER The L1 cross domain messenger contract to use for sending cross domain messages.
+
+    constructor(address _L2_NOVA_REGISTRY_ADDRESS, iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER)
+        CrossDomainEnabled(_CROSS_DOMAIN_MESSENGER)
+    {
         L2_NOVA_REGISTRY_ADDRESS = _L2_NOVA_REGISTRY_ADDRESS;
-        EXEC_COMPLETED_MESSAGE_GAS_LIMIT = _EXEC_COMPLETED_MESSAGE_GAS_LIMIT;
+
+        // Create an approval escrow which implicitly becomes
+        // owned by the execution manager in its constructor.
+        L1_NOVA_APPROVAL_ESCROW = new L1_NovaApprovalEscrow();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -75,18 +86,22 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
 
     /// @dev Packed struct of gas limit/estimation configuration values used in exec.
     /// @param calldataByteGasEstimate The amount of gas to assume each byte of calldata consumes.
-    /// @param missingGasEstimate The extra amount of gas the system consumes but cannot measure on-the-fly.
+    /// @param missingGasEstimate The extra amount of gas the system consumes but cannot measure on the fly.
     /// @param strategyCallGasBuffer The extra amount of gas to keep as a buffer when calling a strategy.
+    /// @param execCompletedMessageGasLimit The L2 gas limit to use for the cross domain call to execCompleted.
     struct GasConfig {
         // This needs to factor in raw calldata costs, along with the hidden
         // cost of abi decoding and copying the calldata into an Solidity function.
-        uint64 calldataByteGasEstimate;
+        uint32 calldataByteGasEstimate;
         // This needs to factor in the base transaction gas (currently 21000), along
         // with the gas cost of sending the cross domain message and emitting the Exec event.
         uint96 missingGasEstimate;
         // This needs to factor in the max amount of gas consumed after the strategy call, up
         // until the cross domain message is sent (as this is not accounted for in missingGasEstimate).
         uint96 strategyCallGasBuffer;
+        // This needs to factor in the overhead of relaying the message on L2 (currently ~800k),
+        // along with the actual L2 gas cost of calling the L2_NovaRegistry's execCompleted function.
+        uint32 execCompletedMessageGasLimit;
     }
 
     /// @notice Gas limit/estimation configuration values used in exec.
@@ -94,7 +109,8 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         GasConfig({
             calldataByteGasEstimate: 13, // OpenGSN uses 13 to estimate gas per calldata byte too.
             missingGasEstimate: 200000, // Rough estimate for missing gas. Tune this in production.
-            strategyCallGasBuffer: 5000 // Overly cautious gas buffer. Can likely be safely reduced.
+            strategyCallGasBuffer: 5000, // Overly cautious gas buffer. Can likely be safely reduced.
+            execCompletedMessageGasLimit: 1500000 // If the limit is too low, relayers won't get paid.
         });
 
     /// @notice Updates the gasConfig.
@@ -151,11 +167,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                         EXECUTION CONTEXT STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The 'default' value for `currentExecHash`.
-    /// @dev Outside of an active `exec` call `currentExecHash` will always equal DEFAULT_EXECHASH.
-    bytes32 public constant DEFAULT_EXECHASH = 0xFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEFFEEDFACECAFEBEEF;
-
-    /// @notice The address who called `exec`.
+    /// @notice The address who called exec.
     /// @dev This will not be reset after each execution completes.
     address public currentRelayer;
 
@@ -163,7 +175,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @dev This will not be reset after each execution completes.
     address public currentlyExecutingStrategy;
 
-    /// @notice The execHash computed from the currently executing call to `exec`.
+    /// @notice The execHash computed from the currently executing call to exec.
     /// @dev This will be reset to DEFAULT_EXECHASH after each execution completes.
     bytes32 public currentExecHash = DEFAULT_EXECHASH;
 
@@ -171,11 +183,11 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                             EXECUTION LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Executes a request and sends tip/inputs to a specific address.
+    /// @notice Executes a request and sends tips/gas/inputs to a specific address on L2.
     /// @param nonce The nonce of the request.
-    /// @param strategy The strategy requested in the request.
+    /// @param strategy The strategy specified in the request.
     /// @param l1Calldata The calldata associated with the request.
-    /// @param l2Recipient The address of the account on L2 to receive the tip/inputs.
+    /// @param l2Recipient An address who will receive the tips, gas and input tokens on L2.
     /// @param deadline Timestamp after which the transaction will immediately revert.
     function exec(
         uint256 nonce,
@@ -191,58 +203,50 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Check that the deadline has not already passed.
         require(block.timestamp <= deadline, "PAST_DEADLINE");
 
-        // Substitute for Auth's `requiresAuth` modifier.
+        // Substitute for Auth's requiresAuth modifier.
         require(isAuthorized(msg.sender, msg.sig), "UNAUTHORIZED");
 
-        // Prevent the strategy from performing a reentrancy attack.
+        // Prevent the strategy or another contract from trying
+        // to frontrun a relayer's execution and take their payment.
         require(currentExecHash == DEFAULT_EXECHASH, "ALREADY_EXECUTING");
+
+        // We cannot allow calling cross domain messenger directly, as a
+        // malicious relayer could use it to trigger the registry's execCompleted
+        // function and claim bounties without actually executing the proper request(s).
+        require(strategy != address(CROSS_DOMAIN_MESSENGER), "UNSAFE_STRATEGY");
+
+        // We cannot allow calling the approval escrow directly, as a malicious
+        // relayer could call its transferTokenToStrategy function and access tokens
+        // from other relayers outside of a proper call to the transferFromRelayer function.
+        require(strategy != address(L1_NOVA_APPROVAL_ESCROW), "UNSAFE_STRATEGY");
 
         // We cannot allow calling the execution manager itself, as any malicious
         // relayer could exploit Auth inherited functions to change ownership, blacklist
         // other relayers, or freeze the contract entirely, without being properly authorized.
         require(strategy != address(this), "UNSAFE_STRATEGY");
 
-        // Extract the 4 byte function signature from l1Calldata.
-        // After Solidity 0.8.5 we can do this inline using slices.
-        bytes4 calldataSig = SigLib.fromCalldata(l1Calldata);
-
-        // We cannot allow calling IERC20.transferFrom directly, as a malicious
-        // relayer could steal tokens approved to the registry by other relayers.
-        require(calldataSig != IERC20.transferFrom.selector, "UNSAFE_CALLDATA");
-
-        // We cannot allow calling iOVM_CrossDomainMessenger.sendMessage directly,
-        // as a malicious relayer could use it to trigger the registry's execCompleted
-        // function and claim bounties without actually executing the proper request(s).
-        require(calldataSig != iOVM_CrossDomainMessenger.sendMessage.selector, "UNSAFE_CALLDATA");
-
-        // Compute the execHash.
-        bytes32 execHash =
-            NovaExecHashLib.compute({
-                nonce: nonce,
-                strategy: strategy,
-                l1Calldata: l1Calldata,
-                gasLimit: gasLimit,
-                gasPrice: tx.gasprice
-            });
+        // Compute the relevant execHash.
+        bytes32 execHash = NovaExecHashLib.compute({
+            nonce: nonce,
+            strategy: strategy,
+            l1Calldata: l1Calldata,
+            gasLimit: gasLimit,
+            gasPrice: tx.gasprice
+        });
 
         // Initialize execution context.
         currentExecHash = execHash;
         currentRelayer = msg.sender;
         currentlyExecutingStrategy = strategy;
 
-        // Call the strategy.
-        (bool success, bytes memory returnData) =
-            strategy.call{
-                gas: gasLimit -
-                    // Post call gas:
-                    gasConfig.missingGasEstimate -
-                    // Safety buffer:
-                    gasConfig.strategyCallGasBuffer -
-                    // Calldata gas:
-                    (msg.data.length * gasConfig.calldataByteGasEstimate) -
-                    // Gas used so far:
-                    (startGas - gasleft())
-            }(l1Calldata);
+        // Call the strategy with a safe gas limit.
+        (bool success, bytes memory returnData) = strategy.call{
+            gas: gasLimit
+                .sub(msg.data.length.mul(gasConfig.calldataByteGasEstimate))
+                .sub(gasConfig.strategyCallGasBuffer)
+                .sub(gasConfig.missingGasEstimate)
+                .sub(startGas - gasleft())
+        }(l1Calldata);
 
         // Revert if a valid hard revert was triggered. A hard revert is only valid if the strategy had a risk level of UNSAFE.
         require(
@@ -250,17 +254,13 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
             "HARD_REVERT"
         );
 
-        // Reset currentExecHash to default so `transferFromRelayer` becomes uncallable again.
+        // Reset currentExecHash to default so transferFromRelayer becomes uncallable again.
         currentExecHash = DEFAULT_EXECHASH;
 
         // Estimate how much gas this tx will have consumed in total (not accounting for refunds).
-        uint256 gasUsedEstimate =
-            // Unaccounted gas (base tx cost + sendMessage):
-            gasConfig.missingGasEstimate +
-                // Calldata gas estimate:
-                (msg.data.length * gasConfig.calldataByteGasEstimate) +
-                // Gas used so far:
-                (startGas - gasleft());
+        uint256 gasUsedEstimate = msg.data.length.mul(gasConfig.calldataByteGasEstimate).add(gasConfig.missingGasEstimate).add(
+            startGas - gasleft()
+        );
 
         // Send message to unlock the bounty on L2.
         CROSS_DOMAIN_MESSENGER.sendMessage(
@@ -276,7 +276,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                 // Estimated gas used in total:
                 gasUsedEstimate
             ),
-            EXEC_COMPLETED_MESSAGE_GAS_LIMIT
+            gasConfig.execCompletedMessageGasLimit
         );
 
         emit Exec(execHash, msg.sender, !success, gasUsedEstimate);
@@ -286,12 +286,13 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
                           STRATEGY UTILITIES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Transfers tokens from the relayer (the account that called execute) has approved to the execution manager for the currently executing strategy.
+    /// @notice Transfers tokens the relayer (the address that called exec)
+    /// approved to the L1_NOVA_APPROVAL_ESCROW to currently executing strategy.
     /// @notice Can only be called by the currently executing strategy (if there is one at all).
     /// @notice The currently execution strategy must be registered as UNSAFE to use this function.
-    /// @notice Will trigger a hard revert if the correct amount of tokens are not approved when called.
-    /// @param token The ER20-compliant token to transfer to the currently executing strategy.
-    /// @param amount The amount of `token` (scaled by its decimals) to transfer to the currently executing strategy.
+    /// @notice Will hard revert if the correct amount of tokens are not approved to the escrow.
+    /// @param token The ER20 token to transfer to the currently executing strategy.
+    /// @param amount The amount of the token to transfer to the currently executing strategy.
     function transferFromRelayer(address token, uint256 amount) external requiresAuth {
         // Only the currently executing strategy is allowed to call this function.
         // Since msg.sender is inexpensive, from here on it's used to access the strategy.
@@ -305,30 +306,21 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // avoid strategies that use transferFromRelayer if they want to be cautious.
         require(getStrategyRiskLevel[msg.sender] == StrategyRiskLevel.UNSAFE, "UNSUPPORTED_RISK_LEVEL");
 
-        // Transfer the token from the relayer the currently executing strategy.
-        (bool success, bytes memory returnData) =
-            address(token).call(
-                // Encode a call to transferFrom.
-                abi.encodeWithSelector(IERC20(token).transferFrom.selector, currentRelayer, msg.sender, amount)
-            );
-
-        // Hard revert if the transferFrom call reverted.
-        require(success, HARD_REVERT_TEXT);
-
-        // If it returned something, hard revert if it is not a positive bool.
-        if (returnData.length > 0) {
-            if (returnData.length == 32) {
-                // It returned a bool, hard revert if it is not a positive bool.
-                require(abi.decode(returnData, (bool)), HARD_REVERT_TEXT);
-            } else {
-                // It returned some data that was not a bool, let's hard revert.
-                revert(HARD_REVERT_TEXT);
-            }
-        }
+        require(
+            // Transfer tokens from the relayer to the strategy.
+            L1_NOVA_APPROVAL_ESCROW.transferApprovedToken({
+                token: token,
+                amount: amount,
+                sender: currentRelayer,
+                recipient: msg.sender
+            }),
+            HARD_REVERT_TEXT // Hard revert if the transfer fails.
+        );
     }
 
     /// @notice Convenience function that triggers a hard revert.
-    /// @notice The execution manager will ignore hard reverts if they are triggered by a strategy not registered as UNSAFE.
+    /// @notice The execution manager will ignore hard reverts if
+    /// they are triggered by a strategy not registered as UNSAFE.
     function hardRevert() external pure {
         // Call revert with the hard revert text.
         revert(HARD_REVERT_TEXT);

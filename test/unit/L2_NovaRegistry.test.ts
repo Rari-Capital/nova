@@ -16,6 +16,7 @@ import {
   checkpointERC20Balance,
   checkpointETHBalance,
   getETHPaidForTx,
+  latestBlockTimestamp,
 } from "../../utils/testUtils";
 
 import {
@@ -103,7 +104,7 @@ describe("L2_NovaRegistry", function () {
 
       const [, calcBalanceDecrease] = await checkpointERC20Balance(MockERC20, user.address);
 
-      const { tx, execHash, inputTokens, weiOwed } = await createRequest(L2_NovaRegistry, {
+      const { tx, execHash, inputTokens } = await createRequest(L2_NovaRegistry, {
         inputTokens: [{ l2Token: MockERC20.address, amount: 5 }],
       });
 
@@ -183,9 +184,7 @@ describe("L2_NovaRegistry", function () {
           gasLimit,
           gasPrice,
         })
-      ).should.eventually.equal(
-        (await ethers.provider.getBlock("latest")).timestamp + unlockDelaySeconds.toNumber()
-      );
+      ).should.eventually.equal((await latestBlockTimestamp()) + unlockDelaySeconds.toNumber());
     });
 
     it("should revert if delay is too small", async function () {
@@ -207,7 +206,7 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.unlockTokens(
         ethers.utils.solidityKeccak256([], []),
         999999999999
-      ).should.be.revertedWith("NOT_CREATOR");
+      ).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow unlocking requests with a small delay", async function () {
@@ -248,7 +247,7 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.withdrawTokens(execHash);
 
       await L2_NovaRegistry.unlockTokens(execHash, unlockDelay).should.be.revertedWith(
-        "TOKENS_REMOVED"
+        "REQUEST_HAS_NO_TOKENS"
       );
     });
 
@@ -360,7 +359,9 @@ describe("L2_NovaRegistry", function () {
 
       await L2_NovaRegistry.withdrawTokens(execHash);
 
-      await L2_NovaRegistry.withdrawTokens(execHash).should.be.revertedWith("TOKENS_REMOVED");
+      await L2_NovaRegistry.withdrawTokens(execHash).should.be.revertedWith(
+        "REQUEST_HAS_NO_TOKENS"
+      );
     });
   });
 
@@ -368,7 +369,7 @@ describe("L2_NovaRegistry", function () {
     it("does not allow relocking random requests", async function () {
       await L2_NovaRegistry.relockTokens(
         ethers.utils.solidityKeccak256([], [])
-      ).should.be.revertedWith("NOT_CREATOR");
+      ).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow relocking a request that is not scheduled to unlock", async function () {
@@ -391,7 +392,7 @@ describe("L2_NovaRegistry", function () {
       // Withdraw tokens so the request has no tokens.
       await L2_NovaRegistry.withdrawTokens(execHash);
 
-      await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("TOKENS_REMOVED");
+      await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("allows relocking tokens", async function () {
@@ -431,7 +432,7 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.withdrawTokens(execHash);
 
       await L2_NovaRegistry.speedUpRequest(execHash, unlockDelay).should.be.revertedWith(
-        "TOKENS_REMOVED"
+        "REQUEST_HAS_NO_TOKENS"
       );
     });
 
@@ -543,7 +544,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
-      }).should.be.revertedWith("NOT_CREATED");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow completing a request with tokens removed", async function () {
@@ -566,7 +567,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
-      }).should.be.revertedWith("TOKENS_REMOVED");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow completing a request with a null rewardRecipient", async function () {
@@ -594,7 +595,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
-      }).should.be.revertedWith("TOKENS_REMOVED");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("allows completing a simple request", async function () {
@@ -640,7 +641,7 @@ describe("L2_NovaRegistry", function () {
       await executeRequest();
 
       // Execute the same request a second time.
-      await executeRequest().should.be.revertedWith("TOKENS_REMOVED");
+      await executeRequest().should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("allows completing a request that overflows gas usage", async function () {
@@ -778,7 +779,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 0,
-      }).should.be.revertedWith("TOKENS_REMOVED");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow completing a resubmitted request with an uncle that has no tokens", async function () {
@@ -807,7 +808,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
-      }).should.be.revertedWith("TOKENS_REMOVED");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("allows completing a resubmitted request", async function () {
@@ -930,6 +931,187 @@ describe("L2_NovaRegistry", function () {
 
       // Try claiming again.
       await L2_NovaRegistry.claimInputTokens(execHash).should.be.revertedWith("ALREADY_CLAIMED");
+    });
+  });
+
+  describe("hasTokens", function () {
+    it("should return false if the request is executed", async function () {
+      const [, rewardRecipient] = signers;
+
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      });
+
+      const { requestHasTokens, changeTimestamp } = await L2_NovaRegistry.hasTokens(execHash);
+
+      requestHasTokens.should.equal(false);
+      changeTimestamp.should.equal(0);
+    });
+
+    it("should return false for a dead uncle", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      await speedUpRequest(L2_NovaRegistry, {
+        execHash,
+      });
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS());
+
+      const { requestHasTokens, changeTimestamp } = await L2_NovaRegistry.hasTokens(execHash);
+
+      requestHasTokens.should.equal(false);
+      changeTimestamp.should.equal(0);
+    });
+
+    it("should return true for an alive uncle", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      await speedUpRequest(L2_NovaRegistry, {
+        execHash,
+      });
+
+      const { requestHasTokens, changeTimestamp } = await L2_NovaRegistry.hasTokens(execHash);
+
+      requestHasTokens.should.equal(true);
+      changeTimestamp.should.equal(
+        (await latestBlockTimestamp()) +
+          (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).toNumber()
+      );
+    });
+
+    it("should return true for a normal request", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      const { requestHasTokens, changeTimestamp } = await L2_NovaRegistry.hasTokens(execHash);
+
+      requestHasTokens.should.equal(true);
+      changeTimestamp.should.equal(0);
+    });
+
+    it("should return false for a nonexistent request", async function () {
+      const { requestHasTokens, changeTimestamp } = await L2_NovaRegistry.hasTokens(
+        ethers.utils.solidityKeccak256([], [])
+      );
+
+      requestHasTokens.should.equal(false);
+      changeTimestamp.should.equal(0);
+    });
+
+    it("should return false for a resubmitted request with an uncle that died early", async function () {
+      const [, rewardRecipient] = signers;
+
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      const { resubmittedExecHash } = await speedUpRequest(L2_NovaRegistry, {
+        execHash,
+      });
+
+      await completeRequest(MockCrossDomainMessenger, L2_NovaRegistry, {
+        execHash,
+        rewardRecipient: rewardRecipient.address,
+        reverted: false,
+        gasUsed: 50000,
+      });
+
+      const { requestHasTokens, changeTimestamp } = await L2_NovaRegistry.hasTokens(
+        resubmittedExecHash
+      );
+
+      requestHasTokens.should.equal(false);
+      changeTimestamp.should.equal(0);
+    });
+
+    it("should return false for a resubmitted request waiting for tokens", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      const { resubmittedExecHash } = await speedUpRequest(L2_NovaRegistry, {
+        execHash,
+      });
+
+      const { requestHasTokens, changeTimestamp } = await L2_NovaRegistry.hasTokens(
+        resubmittedExecHash
+      );
+
+      requestHasTokens.should.equal(false);
+      changeTimestamp.should.equal(
+        (await latestBlockTimestamp()) +
+          (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).toNumber()
+      );
+    });
+
+    it("should return true for a resubmitted request with an uncle that died correctly", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      const { resubmittedExecHash } = await speedUpRequest(L2_NovaRegistry, {
+        execHash,
+      });
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS());
+
+      const { requestHasTokens, changeTimestamp } = await L2_NovaRegistry.hasTokens(
+        resubmittedExecHash
+      );
+
+      requestHasTokens.should.equal(true);
+      changeTimestamp.should.equal(0);
+    });
+  });
+
+  describe("areTokensUnlocked", function () {
+    it("returns false for a nonexistent request", async function () {
+      const { unlocked, changeTimestamp } = await L2_NovaRegistry.areTokensUnlocked(
+        ethers.utils.solidityKeccak256([], [])
+      );
+
+      unlocked.should.equal(false);
+      changeTimestamp.should.equal(0);
+    });
+
+    it("returns false for a request that exists but not unlocked", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      const { unlocked, changeTimestamp } = await L2_NovaRegistry.areTokensUnlocked(execHash);
+
+      unlocked.should.equal(false);
+      changeTimestamp.should.equal(0);
+    });
+
+    it("returns false for a request that has an unlock scheduled but not reached", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      const { unlocked, changeTimestamp } = await L2_NovaRegistry.areTokensUnlocked(execHash);
+
+      unlocked.should.equal(false);
+      changeTimestamp.should.equal((await latestBlockTimestamp()) + unlockDelay.toNumber());
+    });
+
+    it("returns true for a request that has an unlock reached", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(unlockDelay);
+
+      const { unlocked, changeTimestamp } = await L2_NovaRegistry.areTokensUnlocked(execHash);
+
+      unlocked.should.equal(true);
+      changeTimestamp.should.equal(0);
     });
   });
 });

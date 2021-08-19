@@ -26,7 +26,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     "L1_NovaExecutionManagerAddress()": FunctionFragment;
     "MAX_INPUT_TOKENS()": FunctionFragment;
     "MIN_UNLOCK_DELAY_SECONDS()": FunctionFragment;
-    "areTokensRemoved(bytes32)": FunctionFragment;
     "areTokensUnlocked(bytes32)": FunctionFragment;
     "authority()": FunctionFragment;
     "claimInputTokens(bytes32)": FunctionFragment;
@@ -44,6 +43,7 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     "getRequestTip(bytes32)": FunctionFragment;
     "getRequestUncle(bytes32)": FunctionFragment;
     "getRequestUnlockTimestamp(bytes32)": FunctionFragment;
+    "hasTokens(bytes32)": FunctionFragment;
     "owner()": FunctionFragment;
     "relockTokens(bytes32)": FunctionFragment;
     "requestExec(address,bytes,uint256,uint256,uint256,tuple[])": FunctionFragment;
@@ -72,10 +72,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "MIN_UNLOCK_DELAY_SECONDS",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "areTokensRemoved",
-    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "areTokensUnlocked",
@@ -140,6 +136,10 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "getRequestUnlockTimestamp",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "hasTokens",
     values: [BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
@@ -213,10 +213,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "areTokensRemoved",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "areTokensUnlocked",
     data: BytesLike
   ): Result;
@@ -281,6 +277,7 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     functionFragment: "getRequestUnlockTimestamp",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "hasTokens", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "relockTokens",
@@ -399,16 +396,6 @@ export class L2NovaRegistry extends BaseContract {
 
     MIN_UNLOCK_DELAY_SECONDS(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    areTokensRemoved(
-      execHash: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<
-      [boolean, BigNumber] & {
-        tokensRemoved: boolean;
-        changeTimestamp: BigNumber;
-      }
-    >;
-
     areTokensUnlocked(
       execHash: BytesLike,
       overrides?: CallOverrides
@@ -498,6 +485,16 @@ export class L2NovaRegistry extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    hasTokens(
+      execHash: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<
+      [boolean, BigNumber] & {
+        requestHasTokens: boolean;
+        changeTimestamp: BigNumber;
+      }
+    >;
+
     owner(overrides?: CallOverrides): Promise<[string]>;
 
     relockTokens(
@@ -569,16 +566,6 @@ export class L2NovaRegistry extends BaseContract {
   MAX_INPUT_TOKENS(overrides?: CallOverrides): Promise<BigNumber>;
 
   MIN_UNLOCK_DELAY_SECONDS(overrides?: CallOverrides): Promise<BigNumber>;
-
-  areTokensRemoved(
-    execHash: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<
-    [boolean, BigNumber] & {
-      tokensRemoved: boolean;
-      changeTimestamp: BigNumber;
-    }
-  >;
 
   areTokensUnlocked(
     execHash: BytesLike,
@@ -661,6 +648,16 @@ export class L2NovaRegistry extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  hasTokens(
+    execHash: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<
+    [boolean, BigNumber] & {
+      requestHasTokens: boolean;
+      changeTimestamp: BigNumber;
+    }
+  >;
+
   owner(overrides?: CallOverrides): Promise<string>;
 
   relockTokens(
@@ -732,16 +729,6 @@ export class L2NovaRegistry extends BaseContract {
     MAX_INPUT_TOKENS(overrides?: CallOverrides): Promise<BigNumber>;
 
     MIN_UNLOCK_DELAY_SECONDS(overrides?: CallOverrides): Promise<BigNumber>;
-
-    areTokensRemoved(
-      execHash: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<
-      [boolean, BigNumber] & {
-        tokensRemoved: boolean;
-        changeTimestamp: BigNumber;
-      }
-    >;
 
     areTokensUnlocked(
       execHash: BytesLike,
@@ -831,6 +818,16 @@ export class L2NovaRegistry extends BaseContract {
       arg0: BytesLike,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    hasTokens(
+      execHash: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<
+      [boolean, BigNumber] & {
+        requestHasTokens: boolean;
+        changeTimestamp: BigNumber;
+      }
+    >;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
@@ -973,11 +970,6 @@ export class L2NovaRegistry extends BaseContract {
 
     MIN_UNLOCK_DELAY_SECONDS(overrides?: CallOverrides): Promise<BigNumber>;
 
-    areTokensRemoved(
-      execHash: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     areTokensUnlocked(
       execHash: BytesLike,
       overrides?: CallOverrides
@@ -1063,6 +1055,11 @@ export class L2NovaRegistry extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    hasTokens(
+      execHash: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     relockTokens(
@@ -1139,11 +1136,6 @@ export class L2NovaRegistry extends BaseContract {
     MAX_INPUT_TOKENS(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     MIN_UNLOCK_DELAY_SECONDS(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    areTokensRemoved(
-      execHash: BytesLike,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -1229,6 +1221,11 @@ export class L2NovaRegistry extends BaseContract {
 
     getRequestUnlockTimestamp(
       arg0: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    hasTokens(
+      execHash: BytesLike,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

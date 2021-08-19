@@ -262,11 +262,17 @@ export async function checkpointETHBalance(user: string) {
   return [calcIncrease, calcDecrease];
 }
 
+/** Get the ETH paid for the gas of a tx (gasPrice * gasUsed) */
 export async function getETHPaidForTx(tx: Promise<ContractTransaction>) {
   const awaitedTx = await tx;
   const { gasUsed } = await awaitedTx.wait();
 
   return awaitedTx.gasPrice.mul(gasUsed);
+}
+
+/** Gets the latest block's timestamp in seconds. */
+export async function latestBlockTimestamp() {
+  return (await ethers.provider.getBlock("latest")).timestamp;
 }
 
 export * from "./nova";

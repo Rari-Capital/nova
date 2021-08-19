@@ -11,32 +11,57 @@ import type {
 
 const _abi = [
   {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
+      },
+    ],
+    name: "Transfer",
+    type: "event",
+  },
+  {
     inputs: [
       {
         internalType: "address",
-        name: "",
+        name: "a1",
         type: "address",
       },
       {
         internalType: "address",
-        name: "",
+        name: "a2",
         type: "address",
       },
       {
         internalType: "uint256",
-        name: "",
+        name: "u1",
         type: "uint256",
       },
     ],
     name: "transferFrom",
     outputs: [],
-    stateMutability: "pure",
+    stateMutability: "nonpayable",
     type: "function",
   },
 ];
 
 const _bytecode =
-  "0x6080604052348015600f57600080fd5b5060818061001e6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c806323b872dd14602d575b600080fd5b606d60048036036060811015604157600080fd5b5073ffffffffffffffffffffffffffffffffffffffff813581169160208101359091169060400135606f565b005b50505056fea164736f6c6343000706000a";
+  "0x6080604052348015600f57600080fd5b5060e68061001e6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c806323b872dd14602d575b600080fd5b606d60048036036060811015604157600080fd5b5073ffffffffffffffffffffffffffffffffffffffff813581169160208101359091169060400135606f565b005b8173ffffffffffffffffffffffffffffffffffffffff168373ffffffffffffffffffffffffffffffffffffffff167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef836040518082815260200191505060405180910390a350505056fea164736f6c6343000706000a";
 
 export class NoReturnValueERC20__factory extends ContractFactory {
   constructor(signer?: Signer) {
