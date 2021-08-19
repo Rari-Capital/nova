@@ -51,7 +51,6 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
 
     /// @param _L2_NOVA_REGISTRY_ADDRESS The address of the L2_NovaRegistry on L2 to send cross domain messages to.
     /// @param _CROSS_DOMAIN_MESSENGER The L1 cross domain messenger contract to use for sending cross domain messages.
-
     constructor(address _L2_NOVA_REGISTRY_ADDRESS, iOVM_CrossDomainMessenger _CROSS_DOMAIN_MESSENGER)
         CrossDomainEnabled(_CROSS_DOMAIN_MESSENGER)
     {
