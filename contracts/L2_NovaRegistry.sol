@@ -300,7 +300,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public requiresAuth {
         // Ensure the request currently has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
-        require(requestHasTokens, "VOID_REQUEST");
+        require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
 
         // Ensure an unlock is not already scheduled.
         require(getRequestUnlockTimestamp[execHash] == 0, "UNLOCK_ALREADY_SCHEDULED");
@@ -323,7 +323,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     function relockTokens(bytes32 execHash) external requiresAuth {
         // Ensure the request currently has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
-        require(requestHasTokens, "VOID_REQUEST");
+        require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
 
         // Ensure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
@@ -350,7 +350,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
         // Ensure that the tokens have not already been removed.
         (bool requestHasTokens, ) = hasTokens(execHash);
-        require(requestHasTokens, "VOID_REQUEST");
+        require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
 
         // Get the request creator.
         address creator = getRequestCreator[execHash];
@@ -383,7 +383,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
         // Ensure the request currently has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
-        require(requestHasTokens, "VOID_REQUEST");
+        require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
 
         // Ensure the request has not already been sped up.
         require(getRequestDeathTimestamp[execHash] == 0, "ALREADY_SPED_UP");
@@ -460,7 +460,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
         // Ensure tokens have not already been removed.
         (bool requestHasTokens, ) = hasTokens(execHash);
-        require(requestHasTokens, "VOID_REQUEST");
+        require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
 
         // We cannot allow providing address(0) for rewardRecipient, as we
         // use address(0) to indicate a request has not its tokens removed.

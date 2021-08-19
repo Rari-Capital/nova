@@ -247,7 +247,7 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.withdrawTokens(execHash);
 
       await L2_NovaRegistry.unlockTokens(execHash, unlockDelay).should.be.revertedWith(
-        "VOID_REQUEST"
+        "REQUEST_HAS_NO_TOKENS"
       );
     });
 
@@ -359,7 +359,9 @@ describe("L2_NovaRegistry", function () {
 
       await L2_NovaRegistry.withdrawTokens(execHash);
 
-      await L2_NovaRegistry.withdrawTokens(execHash).should.be.revertedWith("VOID_REQUEST");
+      await L2_NovaRegistry.withdrawTokens(execHash).should.be.revertedWith(
+        "REQUEST_HAS_NO_TOKENS"
+      );
     });
   });
 
@@ -390,7 +392,7 @@ describe("L2_NovaRegistry", function () {
       // Withdraw tokens so the request has no tokens.
       await L2_NovaRegistry.withdrawTokens(execHash);
 
-      await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("VOID_REQUEST");
+      await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("allows relocking tokens", async function () {
@@ -430,7 +432,7 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.withdrawTokens(execHash);
 
       await L2_NovaRegistry.speedUpRequest(execHash, unlockDelay).should.be.revertedWith(
-        "VOID_REQUEST"
+        "REQUEST_HAS_NO_TOKENS"
       );
     });
 
@@ -565,7 +567,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
-      }).should.be.revertedWith("VOID_REQUEST");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow completing a request with a null rewardRecipient", async function () {
@@ -593,7 +595,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
-      }).should.be.revertedWith("VOID_REQUEST");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("allows completing a simple request", async function () {
@@ -639,7 +641,7 @@ describe("L2_NovaRegistry", function () {
       await executeRequest();
 
       // Execute the same request a second time.
-      await executeRequest().should.be.revertedWith("VOID_REQUEST");
+      await executeRequest().should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("allows completing a request that overflows gas usage", async function () {
@@ -777,7 +779,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 0,
-      }).should.be.revertedWith("VOID_REQUEST");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("does not allow completing a resubmitted request with an uncle that has no tokens", async function () {
@@ -806,7 +808,7 @@ describe("L2_NovaRegistry", function () {
         rewardRecipient: rewardRecipient.address,
         reverted: false,
         gasUsed: 50000,
-      }).should.be.revertedWith("VOID_REQUEST");
+      }).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
     it("allows completing a resubmitted request", async function () {
