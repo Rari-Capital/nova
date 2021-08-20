@@ -18,17 +18,17 @@ exports[`L2_NovaRegistry execCompleted allows completing an uncled request befor
 
 exports[`L2_NovaRegistry relockTokens allows relocking tokens 1`] = `34715`;
 
-exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `333722`;
+exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `336060`;
 
-exports[`L2_NovaRegistry requestExec allows making a simple request 1`] = `206028`;
+exports[`L2_NovaRegistry requestExec allows making a simple request 1`] = `208366`;
 
-exports[`L2_NovaRegistry requestExec allows making a simple request with one input token 1`] = `297820`;
+exports[`L2_NovaRegistry requestExec allows making a simple request with one input token 1`] = `300158`;
 
-exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `200323`;
+exports[`L2_NovaRegistry requestExecWithTimeout should allow a simple request with minimum timeout 1`] = `202661`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `235961`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a request scheduled to unlock after switch 1`] = `238302`;
 
-exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `235950`;
+exports[`L2_NovaRegistry speedUpRequest allows speeding up a simple request 1`] = `238291`;
 
 exports[`L2_NovaRegistry unlockTokens allows unlocking a valid request 1`] = `57226`;
 

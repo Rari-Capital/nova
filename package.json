@@ -4,18 +4,13 @@
   "description": "Cross-layer execution firmware.",
   "scripts": {
     "compile": "TS_NODE_TRANSPILE_ONLY=1 hardhat compile && hardhat compile --network optimism",
-
     "unit-tests": "hardhat test",
     "integration-tests": "hardhat test --network optimism",
     "kovan-integration-tests": "hardhat test --network optimisticKovan",
-
     "gas-changed": "UPDATE_SNAPSHOT=1 hardhat test",
-
     "coverage": "hardhat coverage",
     "open-coverage-report": "if [ $(uname) = 'Darwin' ]; then open ./coverage/index.html; fi",
-
     "fuzz": "./fuzz.sh",
-
     "clean": "hardhat clean && rm -rf ./artifacts ./cache ./artifacts-ovm ./cache-ovm ./coverage ./crytic-export ./contracts/echidna/echidna_corpus ./contracts/echidna/contracts"
   },
   "author": "t11s",
@@ -25,7 +20,7 @@
     "@eth-optimism/hardhat-ovm": "^0.2.2",
     "@eth-optimism/watcher": "0.0.1-alpha.9",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@nomiclabs/hardhat-etherscan": "^2.1.4",
+    "@nomiclabs/hardhat-etherscan": "^2.1.5",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@typechain/ethers-v5": "^7.0.1",
     "@typechain/hardhat": "^2.3.0",
@@ -39,7 +34,7 @@
     "chalk": "^4.1.2",
     "dotenv": "^10.0.0",
     "ethereum-waffle": "^3.4.0",
-    "ethers": "^5.4.4",
+    "ethers": "^5.4.5",
     "hardhat": "^2.6.0",
     "hardhat-gas-reporter": "^1.0.4",
     "hardhat-interface-generator": "0.0.6",

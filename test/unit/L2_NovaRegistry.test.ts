@@ -430,7 +430,7 @@ describe("L2_NovaRegistry", function () {
       await snapshotGasCost(L2_NovaRegistry.relockTokens(execHash));
 
       // Should be able to schedule an unlock again.
-      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay).should.not.be.reverted;
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
     });
   });
 

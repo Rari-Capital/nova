@@ -7,6 +7,7 @@ import {
   executeRequest,
   getOVMFactory,
   StrategyRiskLevel,
+  wait,
   waitForL1ToL2Relay,
 } from "../../utils/testUtils";
 import { tuneMissingGasEstimate } from "../../tasks/tune";
@@ -74,8 +75,7 @@ describe("Integration", function () {
     });
 
     it("should properly link the registry to the execution manager", async function () {
-      await L2_NovaRegistry.connectExecutionManager(L1_NovaExecutionManager.address).should.not.be
-        .reverted;
+      await wait(L2_NovaRegistry.connectExecutionManager(L1_NovaExecutionManager.address));
     });
 
     it("should allow changing the execution manager's authority", async function () {
@@ -84,7 +84,7 @@ describe("Integration", function () {
       );
 
       // Set the authority to a MockAuthority that always returns true.
-      await L1_NovaExecutionManager.setAuthority(MockAuthority.address).should.not.be.reverted;
+      await wait(L1_NovaExecutionManager.setAuthority(MockAuthority.address));
     });
 
     it("should properly deploy a strategy", async function () {

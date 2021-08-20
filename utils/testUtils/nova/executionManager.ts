@@ -61,12 +61,7 @@ export async function executeRequest(
     gasLimit,
     l2Recipient,
     deadline,
-
-    gasPrice
-      ? {
-          gasPrice,
-        }
-      : {}
+    { type: 0, gasPrice }
   );
   const awaitedTx = await tx;
 

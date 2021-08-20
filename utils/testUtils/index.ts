@@ -178,8 +178,7 @@ export async function deployAndLogVerificationInfo<T extends ContractFactory>(
     ([, config]) => config.chainId == chainID
   );
 
-  // We can add 69 and 10 to this once Hardhat fixes OE verification:
-  const shouldPrintVerifyInfo = chainID == 1 || chainID == 42;
+  const shouldPrintVerifyInfo = chainID == 1 || chainID == 42 || chainID == 10 || chainID == 69;
 
   if (shouldPrintVerifyInfo) {
     console.log();
@@ -273,6 +272,11 @@ export async function getETHPaidForTx(tx: Promise<ContractTransaction>) {
 /** Gets the latest block's timestamp in seconds. */
 export async function latestBlockTimestamp() {
   return (await ethers.provider.getBlock("latest")).timestamp;
+}
+/** Waits for a transaction to be included in a block. */
+export async function wait(tx: Promise<ContractTransaction>) {
+  const resolvedTx = await tx;
+  return await resolvedTx.wait();
 }
 
 export * from "./nova";
