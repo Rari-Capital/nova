@@ -772,7 +772,7 @@ describe("L2_NovaRegistry", function () {
 
       const { execHash, gasPrice, gasLimit, tip } = await createRequest(L2_NovaRegistry, {});
 
-      const { uncleExecHash } = await speedUpRequest(L2_NovaRegistry, {
+      const { uncleExecHash, gasDelta } = await speedUpRequest(L2_NovaRegistry, {
         execHash,
       });
 
@@ -790,7 +790,12 @@ describe("L2_NovaRegistry", function () {
 
       // Ensure the balance of the user increased properly.
       await calcUserIncrease().should.eventually.equal(
-        (gasLimit - gasUsed) * gasPrice - ethPaid.toNumber()
+        // Have to use BigNumbers here or else equal will complain that the number is too big.
+        BigNumber.from(gasLimit)
+          .sub(gasUsed)
+          .mul(gasPrice)
+          .sub(ethPaid)
+          .add(BigNumber.from(gasDelta).mul(gasLimit))
       );
 
       // Ensure the balance of the reward recipient increased properly.
