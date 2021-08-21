@@ -497,10 +497,10 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
 
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
 
-        // Pay the reward recipient the gas they consumed, and the tip if execution did not revert.
+        // Pay the reward recipient for gas consumed and the tip if execution did not revert.
         rewardRecipient.safeTransferETH(gasPayment.add(reverted ? 0 : tip));
 
-        // Refund any unused gas, the tip if execution reverted, and extra ETH from the resubmitted request if it exits.
+        // Refund any unused gas, the tip if execution reverted, and extra ETH from the resubmitted request if necessary.
         requestCreator.safeTransferETH(
             gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0).add(
                 // Refund the ETH attached to the request's resubmitted copy if necessary.
