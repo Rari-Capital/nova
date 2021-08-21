@@ -31,6 +31,7 @@ contract Echidna_L1_NovaExecutionManager {
         assert(newGasConfig.calldataByteGasEstimate == calldataByteGasEstimate);
         assert(newGasConfig.missingGasEstimate == missingGasEstimate);
         assert(newGasConfig.strategyCallGasBuffer == strategyCallGasBuffer);
+        assert(newGasConfig.execCompletedMessageGasLimit == execCompletedMessageGasLimit);
     }
 
     function transferFromRelayer_should_always_be_not_executable(address token, uint256 amount) external {

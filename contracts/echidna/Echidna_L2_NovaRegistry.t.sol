@@ -42,7 +42,6 @@ contract Echidna_L2_NovaRegistry is HevmHelper {
                 assert(((gasLimit * gasPrice) + tip) == 0);
             }
         } catch {
-            // This should only revert if the delay would cause overflow or is below the min.
             assert((block.timestamp + unlockDelay) < block.timestamp || registry.MIN_UNLOCK_DELAY_SECONDS() > unlockDelay);
         }
     }
