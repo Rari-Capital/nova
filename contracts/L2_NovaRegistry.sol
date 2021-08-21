@@ -7,7 +7,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {Auth} from "@rari-capital/solmate/src/auth/Auth.sol";
-import {ReentrancyGuard} from "@rari-capital/solmate/src/utils/ReentrancyGuard.sol";
 
 import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
 import {SafeTransferLib} from "./libraries/SafeTransferLib.sol";
@@ -15,7 +14,7 @@ import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDom
 
 /// @notice Hub for contracts/users on L2 to create and manage requests.
 /// @dev Receives messages from the L1_NovaExecutionManager via a cross domain messenger.
-contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
+contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     using SafeTransferLib for address;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -204,8 +203,6 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @param inputTokens An array of MAX_INPUT_TOKENS or less token/amount pairs that
     /// a relayer will need on L1 to execute the request (and will be returned to them on L2).
     /// @return execHash The "execHash" (unique identifier) for this request.
-    /// @dev This function requires a nonReentrant modifier to prevent a malicious input token from
-    /// calling speedUpRequest and taking advantage of the preserved msg.value to steal ETH from the registry.
     function requestExec(
         address strategy,
         bytes calldata l1Calldata,
@@ -213,7 +210,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         uint256 gasPrice,
         uint256 tip,
         InputToken[] calldata inputTokens
-    ) public payable requiresAuth nonReentrant returns (bytes32 execHash) {
+    ) public payable requiresAuth returns (bytes32 execHash) {
         // Do not allow more than MAX_INPUT_TOKENS input tokens as it could use too much gas.
         require(inputTokens.length <= MAX_INPUT_TOKENS, "TOO_MANY_INPUTS");
 
@@ -386,15 +383,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
     /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
     /// @return newExecHash The unique identifier for the resubmitted request.
-    /// @dev This function requires a nonReentrant modifier to prevent a malicious input token used in requestExec
-    /// from calling speedUpRequest and taking advantage of the preserved msg.value to steal ETH from the registry.
-    function speedUpRequest(bytes32 execHash, uint256 gasPrice)
-        external
-        payable
-        nonReentrant
-        requiresAuth
-        returns (bytes32 newExecHash)
-    {
+    function speedUpRequest(bytes32 execHash, uint256 gasPrice) external payable requiresAuth returns (bytes32 newExecHash) {
         // Ensure the request currently has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
         require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
