@@ -49,7 +49,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     "relockTokens(bytes32)": FunctionFragment;
     "requestExec(address,bytes,uint256,uint256,uint256,tuple[])": FunctionFragment;
     "requestExecWithTimeout(address,bytes,uint256,uint256,uint256,tuple[],uint256)": FunctionFragment;
-    "requestInputTokens(bytes32,uint256)": FunctionFragment;
     "setAuthority(address)": FunctionFragment;
     "setOwner(address)": FunctionFragment;
     "speedUpRequest(bytes32,uint256)": FunctionFragment;
@@ -176,10 +175,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: "requestInputTokens",
-    values: [BytesLike, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "setAuthority",
     values: [string]
   ): string;
@@ -298,10 +293,6 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "requestExecWithTimeout",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "requestInputTokens",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -537,12 +528,6 @@ export class L2NovaRegistry extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    requestInputTokens(
-      arg0: BytesLike,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[string, BigNumber] & { l2Token: string; amount: BigNumber }>;
-
     setAuthority(
       newAuthority: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -704,12 +689,6 @@ export class L2NovaRegistry extends BaseContract {
     autoUnlockDelaySeconds: BigNumberish,
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
-
-  requestInputTokens(
-    arg0: BytesLike,
-    arg1: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<[string, BigNumber] & { l2Token: string; amount: BigNumber }>;
 
   setAuthority(
     newAuthority: string,
@@ -877,12 +856,6 @@ export class L2NovaRegistry extends BaseContract {
       autoUnlockDelaySeconds: BigNumberish,
       overrides?: CallOverrides
     ): Promise<string>;
-
-    requestInputTokens(
-      arg0: BytesLike,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[string, BigNumber] & { l2Token: string; amount: BigNumber }>;
 
     setAuthority(
       newAuthority: string,
@@ -1117,12 +1090,6 @@ export class L2NovaRegistry extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    requestInputTokens(
-      arg0: BytesLike,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     setAuthority(
       newAuthority: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1289,12 +1256,6 @@ export class L2NovaRegistry extends BaseContract {
       inputTokens: { l2Token: string; amount: BigNumberish }[],
       autoUnlockDelaySeconds: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    requestInputTokens(
-      arg0: BytesLike,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     setAuthority(

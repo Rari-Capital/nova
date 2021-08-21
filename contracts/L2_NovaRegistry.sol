@@ -134,9 +134,11 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         uint256 amount;
     }
 
-    /// @notice Maps execHashes to the input tokens a relayer must have to execute the request.
-    mapping(bytes32 => InputToken[]) public requestInputTokens;
+    /// @dev Maps execHashes to the input tokens a relayer must have to execute each request.
+    mapping(bytes32 => InputToken[]) internal requestInputTokens;
 
+    /// @notice Fetches the input tokens a relayer must have to execute a request.
+    /// @return The input tokens required to execute the request.
     function getRequestInputTokens(bytes32 execHash) external view returns (InputToken[] memory) {
         return requestInputTokens[execHash];
     }
