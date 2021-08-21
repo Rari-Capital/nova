@@ -504,7 +504,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         requestCreator.safeTransferETH(
             gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0).add(
                 // Refund the ETH attached to the request's resubmitted copy if necessary.
-                // The hasTokens call above ensures that this request is cannot be a dead uncle.
+                // The hasTokens call above ensures that this request isn't a dead uncle.
                 resubmittedRequest != bytes32(0) ? getRequestGasPrice[resubmittedRequest].sub(gasPrice).mul(gasLimit) : 0
             )
         );
