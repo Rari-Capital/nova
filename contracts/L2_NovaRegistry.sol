@@ -481,7 +481,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         // use address(0) to indicate a request has not its tokens removed.
         require(rewardRecipient != address(0), "INVALID_RECIPIENT");
 
-        // Get relevant request data
+        // Get relevant request data.
         uint256 tip = getRequestTip[execHash];
         uint256 gasLimit = getRequestGasLimit[execHash];
         uint256 gasPrice = getRequestGasPrice[execHash];
@@ -504,7 +504,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled, ReentrancyGuard {
         requestCreator.safeTransferETH(
             gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0).add(
                 // Refund the ETH attached to the request's resubmitted copy if necessary.
-                // The hasTokens call above ensures that this request is never a dead uncle.
+                // The hasTokens call above ensures that this request is cannot be a dead uncle.
                 resubmittedRequest != bytes32(0) ? getRequestGasPrice[resubmittedRequest].sub(gasPrice).mul(gasLimit) : 0
             )
         );
