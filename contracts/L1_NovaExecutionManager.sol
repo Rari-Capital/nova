@@ -305,8 +305,8 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // avoid strategies that use transferFromRelayer if they want to be cautious.
         require(getStrategyRiskLevel[msg.sender] == StrategyRiskLevel.UNSAFE, "UNSUPPORTED_RISK_LEVEL");
 
+        // Transfer tokens from the relayer to the strategy.
         require(
-            // Transfer tokens from the relayer to the strategy.
             L1_NOVA_APPROVAL_ESCROW.transferApprovedToken({
                 token: token,
                 amount: amount,
