@@ -43,6 +43,7 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
     "getRequestTip(bytes32)": FunctionFragment;
     "getRequestUncle(bytes32)": FunctionFragment;
     "getRequestUnlockTimestamp(bytes32)": FunctionFragment;
+    "getResubmittedRequest(bytes32)": FunctionFragment;
     "hasTokens(bytes32)": FunctionFragment;
     "owner()": FunctionFragment;
     "relockTokens(bytes32)": FunctionFragment;
@@ -136,6 +137,10 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "getRequestUnlockTimestamp",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getResubmittedRequest",
     values: [BytesLike]
   ): string;
   encodeFunctionData(
@@ -275,6 +280,10 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getRequestUnlockTimestamp",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getResubmittedRequest",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "hasTokens", data: BytesLike): Result;
@@ -485,6 +494,11 @@ export class L2NovaRegistry extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    getResubmittedRequest(
+      arg0: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
+
     hasTokens(
       execHash: BytesLike,
       overrides?: CallOverrides
@@ -647,6 +661,11 @@ export class L2NovaRegistry extends BaseContract {
     arg0: BytesLike,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
+
+  getResubmittedRequest(
+    arg0: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<string>;
 
   hasTokens(
     execHash: BytesLike,
@@ -818,6 +837,11 @@ export class L2NovaRegistry extends BaseContract {
       arg0: BytesLike,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    getResubmittedRequest(
+      arg0: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<string>;
 
     hasTokens(
       execHash: BytesLike,
@@ -1055,6 +1079,11 @@ export class L2NovaRegistry extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    getResubmittedRequest(
+      arg0: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     hasTokens(
       execHash: BytesLike,
       overrides?: CallOverrides
@@ -1220,6 +1249,11 @@ export class L2NovaRegistry extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     getRequestUnlockTimestamp(
+      arg0: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getResubmittedRequest(
       arg0: BytesLike,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;

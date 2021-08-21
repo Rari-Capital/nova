@@ -29,7 +29,7 @@ Many of these scripts are run automatically as part of our continuous integratio
 
 ### Running Unit Tests
 
-To fail tests when their gas snapshots are incorrect (by default only a warning is printed), set the `CI` environment variable to `true`.
+To fail tests when their gas snapshots are incorrect (default is only a warning), set the `CI` env var to `true`.
 
 ```bash
 npm run unit-tests

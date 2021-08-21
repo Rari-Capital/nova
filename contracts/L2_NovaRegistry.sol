@@ -174,8 +174,15 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// via speedUpRequest to their corresponding "uncled" request's execHash.
     /// @notice An uncled request is a request that has had its tokens removed via
     /// speedUpRequest in favor of a resubmitted request generated in the transaction.
-    /// @notice Will be bytes32("") if speedUpRequest has not been called with the execHash.
+    /// @notice Will be bytes32(0) the request is not a resubmitted copy of an uncle.
     mapping(bytes32 => bytes32) public getRequestUncle;
+
+    /// @notice Maps execHashes which represent requests uncled via
+    /// speedUpRequest to their corresponding "resubmitted" request's execHash.
+    /// @notice A resubmitted request is a request that is scheduled to replace its
+    /// uncle after MIN_UNLOCK_DELAY_SECONDS from the time speedUpRequest was called.
+    /// @notice Will be bytes32(0) if the request is not an uncle.
+    mapping(bytes32 => bytes32) public getResubmittedRequest;
 
     /// @notice Maps execHashes to a timestamp representing when the request will be disabled
     /// and replaced by a re-submitted request with a higher gas price (via speedUpRequest).
@@ -431,6 +438,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
 
         // Map the resubmitted request to its uncle.
         getRequestUncle[newExecHash] = execHash;
+        getResubmittedRequest[execHash] = newExecHash;
 
         // Set the uncled request to die in MIN_UNLOCK_DELAY_SECONDS.
         getRequestDeathTimestamp[execHash] = switchTimestamp;
@@ -463,25 +471,32 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         require(rewardRecipient != address(0), "INVALID_RECIPIENT");
 
         // Get relevant request data.
+        uint256 tip = getRequestTip[execHash];
         uint256 gasLimit = getRequestGasLimit[execHash];
         uint256 gasPrice = getRequestGasPrice[execHash];
-        uint256 tip = getRequestTip[execHash];
-        address creator = getRequestCreator[execHash];
+        address requestCreator = getRequestCreator[execHash];
+        bytes32 resubmittedRequest = getResubmittedRequest[execHash];
+
+        // The amount of ETH to pay for the gas consumed, capped at the gas limit.
+        uint256 gasPayment = gasPrice.mul(gasUsed > gasLimit ? gasLimit : gasUsed);
 
         // Give the proper input token recipient the ability to claim the tokens.
         // isClaimed is implicitly kept as false, so the recipient can claim the tokens with claimInputTokens.
-        getRequestInputTokenRecipientData[execHash].recipient = reverted ? creator : rewardRecipient;
-
-        // The amount of ETH to pay for the gas used (capped at the gas limit).
-        uint256 gasPayment = gasPrice.mul(gasUsed > gasLimit ? gasLimit : gasUsed);
+        getRequestInputTokenRecipientData[execHash].recipient = reverted ? requestCreator : rewardRecipient;
 
         emit ExecCompleted(execHash, rewardRecipient, reverted, gasUsed);
 
-        // Pay the recipient the gas payment + the tip (if execution succeeded).
+        // Pay the reward recipient for gas consumed and the tip if execution did not revert.
         rewardRecipient.safeTransferETH(gasPayment.add(reverted ? 0 : tip));
 
-        // Refund the creator any unused gas + the tip (if execution reverted).
-        creator.safeTransferETH(gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0));
+        // Refund any unused gas, the tip if execution reverted, and extra ETH from the resubmitted request if necessary.
+        requestCreator.safeTransferETH(
+            gasLimit.mul(gasPrice).sub(gasPayment).add(reverted ? tip : 0).add(
+                // Refund the ETH attached to the request's resubmitted copy if necessary.
+                // The hasTokens call above ensures that this request isn't a dead uncle.
+                resubmittedRequest != bytes32(0) ? getRequestGasPrice[resubmittedRequest].sub(gasPrice).mul(gasLimit) : 0
+            )
+        );
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -518,7 +533,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         }
 
         bytes32 uncleExecHash = getRequestUncle[execHash];
-        if (uncleExecHash == "") {
+        if (uncleExecHash == bytes32(0)) {
             if (getRequestCreator[execHash] == address(0)) {
                 // The request doesn't exist and doesn't have
                 // an uncle, so we know it cannot have tokens.
