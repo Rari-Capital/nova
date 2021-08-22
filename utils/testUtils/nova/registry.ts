@@ -1,7 +1,6 @@
 import { BigNumber, BigNumberish } from "ethers";
 
-import { computeExecHash } from ".";
-import { getFactory } from "..";
+import { computeExecHash, getFactory } from "..";
 import { gweiToWei } from "../..";
 
 import {

@@ -4,6 +4,8 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import {MockCrossDomainMessenger, iOVM_CrossDomainMessenger} from "../mocks/MockCrossDomainMessenger.sol";
+import {MockAuthority} from "../mocks/MockAuthority.sol";
+import {MockStrategy} from "../mocks/MockStrategy.sol";
 
 import {L1_NovaExecutionManager, IERC20} from "../L1_NovaExecutionManager.sol";
 
@@ -16,6 +18,8 @@ contract Echidna_L1_NovaExecutionManager {
     constructor() {
         mockCrossDomainMessenger = new MockCrossDomainMessenger();
         executionManager = new L1_NovaExecutionManager(L2_NOVA_REGISTRY_ADDRESS, mockCrossDomainMessenger);
+
+        executionManager.setAuthority(new MockAuthority());
     }
 
     function should_always_be_able_to_update_gas_config(L1_NovaExecutionManager.GasConfig calldata newGasConfig) external {
@@ -40,7 +44,26 @@ contract Echidna_L1_NovaExecutionManager {
         } catch Error(string memory reason) {
             bytes32 hashedReason = keccak256(abi.encodePacked(reason));
 
-            assert(hashedReason == keccak256("NO_ACTIVE_EXECUTION") || hashedReason == keccak256("NOT_CURRENT_STRATEGY"));
+            assert(hashedReason == keccak256("NOT_CURRENT_STRATEGY") || hashedReason == keccak256("NO_ACTIVE_EXECUTION"));
+        }
+    }
+
+    function registerSelfAsStrategy_should_never_be_callable_twice(
+        L1_NovaExecutionManager.StrategyRiskLevel riskLevel1,
+        L1_NovaExecutionManager.StrategyRiskLevel riskLevel2
+    ) external {
+        MockStrategy strategy = new MockStrategy(executionManager, L1_NovaExecutionManager.StrategyRiskLevel.UNKNOWN);
+
+        try strategy.registerSelfAsStrategy(riskLevel1) {} catch {
+            assert(riskLevel1 == L1_NovaExecutionManager.StrategyRiskLevel.UNKNOWN);
+        }
+
+        try strategy.registerSelfAsStrategy(riskLevel2) {
+            assert(riskLevel1 == L1_NovaExecutionManager.StrategyRiskLevel.UNKNOWN);
+        } catch Error(string memory reason) {
+            bytes32 hashedReason = keccak256(abi.encodePacked(reason));
+
+            assert(hashedReason == keccak256("ALREADY_REGISTERED") || hashedReason == keccak256("INVALID_RISK_LEVEL"));
         }
     }
 

@@ -1,7 +1,6 @@
 import { BytesLike } from "ethers";
 
-import { computeExecHash } from ".";
-import { getFactory } from "..";
+import { getFactory, computeExecHash } from "..";
 
 import { L1NovaExecutionManager, MockStrategy__factory } from "../../../typechain";
 

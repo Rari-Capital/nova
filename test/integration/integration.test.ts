@@ -1,5 +1,6 @@
 import hre, { ethers } from "hardhat";
 import { Watcher } from "@eth-optimism/watcher";
+import { HttpNetworkConfig } from "hardhat/types";
 
 import {
   createRequest,
@@ -10,6 +11,7 @@ import {
   wait,
   waitForL1ToL2Relay,
 } from "../../utils/testUtils";
+import { gweiToWei } from "../../utils";
 import { tuneMissingGasEstimate } from "../../tasks/tune";
 
 import {
@@ -21,8 +23,6 @@ import {
   MockStrategy,
   MockStrategy__factory,
 } from "../../typechain";
-import { gweiToWei } from "../../utils";
-import { HttpNetworkConfig } from "hardhat/types";
 
 const isOptimisticKovan = hre.network.name === "optimisticKovan";
 

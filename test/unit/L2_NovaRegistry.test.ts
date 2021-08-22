@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { BigNumber } from "@ethersproject/bignumber";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
@@ -28,7 +29,6 @@ import {
   MockERC20__factory,
   L2NovaRegistry,
 } from "../../typechain";
-import { BigNumber } from "@ethersproject/bignumber";
 
 describe("L2_NovaRegistry", function () {
   let signers: SignerWithAddress[];

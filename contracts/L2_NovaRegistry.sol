@@ -537,8 +537,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         bytes32 uncleExecHash = getRequestUncle[execHash];
         if (uncleExecHash == bytes32(0)) {
             if (getRequestCreator[execHash] == address(0)) {
-                // The request doesn't exist and doesn't have
-                // an uncle, so we know it cannot have tokens.
+                // The request passed all the previous removal checks but
+                // doesn't actually exist, so we know it does not have tokens.
                 return (false, 0);
             } else {
                 // This request does not have an uncle and has passed all
