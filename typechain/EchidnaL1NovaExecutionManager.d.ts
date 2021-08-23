@@ -23,6 +23,7 @@ interface EchidnaL1NovaExecutionManagerInterface
   extends ethers.utils.Interface {
   functions: {
     "exec_should_not_affect_currentExecHash(uint256,address,bytes,uint256,address,uint256)": FunctionFragment;
+    "registerSelfAsStrategy_should_never_be_callable_twice(uint8,uint8)": FunctionFragment;
     "should_always_be_able_to_update_gas_config(tuple)": FunctionFragment;
     "transferFromRelayer_should_always_be_not_executable(address,uint256)": FunctionFragment;
   };
@@ -37,6 +38,10 @@ interface EchidnaL1NovaExecutionManagerInterface
       string,
       BigNumberish
     ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "registerSelfAsStrategy_should_never_be_callable_twice",
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "should_always_be_able_to_update_gas_config",
@@ -56,6 +61,10 @@ interface EchidnaL1NovaExecutionManagerInterface
 
   decodeFunctionResult(
     functionFragment: "exec_should_not_affect_currentExecHash",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "registerSelfAsStrategy_should_never_be_callable_twice",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -124,6 +133,12 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    registerSelfAsStrategy_should_never_be_callable_twice(
+      riskLevel1: BigNumberish,
+      riskLevel2: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     should_always_be_able_to_update_gas_config(
       newGasConfig: {
         calldataByteGasEstimate: BigNumberish;
@@ -151,6 +166,12 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  registerSelfAsStrategy_should_never_be_callable_twice(
+    riskLevel1: BigNumberish,
+    riskLevel2: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   should_always_be_able_to_update_gas_config(
     newGasConfig: {
       calldataByteGasEstimate: BigNumberish;
@@ -175,6 +196,12 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       gasLimit: BigNumberish,
       recipient: string,
       deadline: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    registerSelfAsStrategy_should_never_be_callable_twice(
+      riskLevel1: BigNumberish,
+      riskLevel2: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -208,6 +235,12 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    registerSelfAsStrategy_should_never_be_callable_twice(
+      riskLevel1: BigNumberish,
+      riskLevel2: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     should_always_be_able_to_update_gas_config(
       newGasConfig: {
         calldataByteGasEstimate: BigNumberish;
@@ -233,6 +266,12 @@ export class EchidnaL1NovaExecutionManager extends BaseContract {
       gasLimit: BigNumberish,
       recipient: string,
       deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    registerSelfAsStrategy_should_never_be_callable_twice(
+      riskLevel1: BigNumberish,
+      riskLevel2: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

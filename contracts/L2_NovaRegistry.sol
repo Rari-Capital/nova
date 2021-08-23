@@ -44,7 +44,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     function connectExecutionManager(address newExecutionManagerAddress) external requiresAuth {
         L1_NovaExecutionManagerAddress = newExecutionManagerAddress;
 
-        emit ConnectExecutionManager(newExecutionManagerAddress);
+        emit ExecutionManagerConnected(newExecutionManagerAddress);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -53,7 +53,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
 
     /// @notice Emitted when `connectExecutionManager` is called.
     /// @param newExecutionManagerAddress The new value for L1_NovaExecutionManagerAddress.
-    event ConnectExecutionManager(address newExecutionManagerAddress);
+    event ExecutionManagerConnected(address newExecutionManagerAddress);
 
     /// @notice Emitted when `requestExec` is called.
     /// @param execHash The unique identifier generated for this request.

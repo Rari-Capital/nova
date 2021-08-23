@@ -320,8 +320,8 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
   events: {
     "AuthorityUpdated(address)": EventFragment;
     "ClaimInputTokens(bytes32)": EventFragment;
-    "ConnectExecutionManager(address)": EventFragment;
     "ExecCompleted(bytes32,address,bool,uint256)": EventFragment;
+    "ExecutionManagerConnected(address)": EventFragment;
     "OwnerUpdated(address)": EventFragment;
     "RelockTokens(bytes32)": EventFragment;
     "RequestExec(bytes32,address)": EventFragment;
@@ -332,8 +332,8 @@ interface L2NovaRegistryInterface extends ethers.utils.Interface {
 
   getEvent(nameOrSignatureOrTopic: "AuthorityUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "ClaimInputTokens"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "ConnectExecutionManager"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "ExecCompleted"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "ExecutionManagerConnected"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnerUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RelockTokens"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RequestExec"): EventFragment;
@@ -893,10 +893,6 @@ export class L2NovaRegistry extends BaseContract {
       execHash?: BytesLike | null
     ): TypedEventFilter<[string], { execHash: string }>;
 
-    ConnectExecutionManager(
-      newExecutionManagerAddress?: null
-    ): TypedEventFilter<[string], { newExecutionManagerAddress: string }>;
-
     ExecCompleted(
       execHash?: BytesLike | null,
       rewardRecipient?: string | null,
@@ -911,6 +907,10 @@ export class L2NovaRegistry extends BaseContract {
         gasUsed: BigNumber;
       }
     >;
+
+    ExecutionManagerConnected(
+      newExecutionManagerAddress?: null
+    ): TypedEventFilter<[string], { newExecutionManagerAddress: string }>;
 
     OwnerUpdated(
       owner?: string | null
