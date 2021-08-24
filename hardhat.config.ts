@@ -31,35 +31,37 @@ const config: HardhatUserConfig = {
 
     mainnet: {
       url: process.env.MAINNET_RPC_URL ?? "",
-      accounts,
       chainId: 1,
+      accounts,
     },
 
     kovan: {
       url: process.env.KOVAN_RPC_URL ?? "",
-      accounts,
       chainId: 42,
+      accounts,
     },
 
     optimisticMainnet: {
-      url: "https://mainnet.optimism.io",
-      accounts,
+      url: process.env.OE_MAINNET_RPC_URL ?? "",
       ovm: true,
       chainId: 10,
+      accounts,
     },
 
     optimisticKovan: {
-      url: "https://kovan.optimism.io",
-      accounts,
+      url: process.env.OE_KOVAN_RPC_URL ?? "",
       ovm: true,
       chainId: 69,
+      accounts,
     },
 
     optimism: {
       url: "http://localhost:8545",
-      accounts: ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],
       ovm: true,
       chainId: 420,
+
+      // This account is funded with 10k ETH by default.
+      accounts: ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"],
     },
   },
 
