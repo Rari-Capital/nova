@@ -449,7 +449,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
                   CROSS DOMAIN MESSENGER ONLY FUNCTION
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Distributes inputs/tips to the relayer as a result of a successful execution.
+    /// @dev Distributes rewards to the relayer of a request.
     /// @dev Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
     /// @param execHash The unique identifier of the request that was executed.
     /// @param rewardRecipient The address the relayer specified to be the recipient of rewards on L2.
