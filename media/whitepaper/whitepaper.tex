@@ -1,0 +1,45 @@
+\documentclass[sigplan,screen,nonacm]{acmart}
+
+\begin{document}
+
+\title{Nova Protocol (WIP)}
+\author{transmissions11}
+
+\begin{abstract}
+The Nova protocol enables smart contracts located on optimistic rollups to read from and make stateless writes to Ethereum smart contracts. It does this in a completely trustless manner with minimal latency by establishing a network of relayers who interact with a pair of smart contracts on both Ethereum and the origin rollup.
+\end{abstract}
+
+\begin{teaserfigure}
+  \includegraphics[width=\textwidth]{teaser}
+  \caption*{}
+\end{teaserfigure}
+
+\maketitle
+
+\section{Introduction}
+
+\subsection{Rollups}
+
+Rollups are an Ethereum scaling solution which establish a separate execution environment from Ethereum that can receive and communicate directly with Ethereum through asynchronous messages. Rollups post all the transactions made on them as well as a hash of the rollup state in big batches on Ethereum as frequently as every block. This layered relationship has led the Ethereum community to converge around calling the rollup environment, "layer two" (or L2, for short) and Ethereum "layer one" (or L1, for short).
+
+\subsection{Optimistic Rollups}
+
+Optimistic rollups are particular flavor of the rollup design that are uniquely separated from Ethereum. Messages can be sent from Ethereum smart contracts up to smart contracts on an optimistic rollup and be received within minutes but messages from the rollup to Ethereum take week(s) to be received. This is inherent to the optimistic rollup design's security model, which establishes this week (or longer) waiting period to give actors on the network time to challenge invalid transaction outputs and resolve disputes before messages from the rollup can be finalized on Ethereum.
+
+\subsection{Problems and Past Workarounds} 
+
+Optimistic rollups have been a hotly anticipated scaling solution for years, and multiple optimistic rollup projects are finally nearing full public release. However, even though users are thrilled to begin transacting on optimistic rollups, Ethereum will likely remain a hub for security critical and multi-rollup applications for the foreseeable future. Developers want to deploy contracts on L2 that can interoperate with contracts on Ethereum, but are currently stifled by the week-long message passing delay to Ethereum. \textbf{There is a strong desire for smart contracts that can:}
+
+\begin{itemize}
+  \setlength\itemsep{2mm}
+  \item Reward users on L2 for actions they take with components of their application on L1.
+ 
+  \item Access L1 oracle prices, governance decisions, and other data from their L2 contracts
+ 
+  \item Swap, deposit, and transfer tokens their L2 contracts hold using existing contracts on Ethereum.
+\end{itemize}
+
+Nova is the only protocol today that can do all 3 trustlessly and with low latency. Before diving into Nova's design and implementation, we will briefly explore a couple of other interoperability protocols and explain why they fall short.
+
+\end{document}
+\endinput

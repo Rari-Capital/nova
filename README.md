@@ -1,26 +1,25 @@
-<img width="320" src="/docs/images/white-bg-small.png" alt="Logo">
+<img width="320" src="media/logo/white-bg-small.png" alt="Logo">
 
 [![Coverage Status](https://coveralls.io/repos/github/Rari-Capital/nova/badge.svg?branch=master)](https://coveralls.io/github/Rari-Capital/nova?branch=master) [![Fuzz Tests](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml) [![Integration Tests](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml) [![Unit Tests](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml)
 
 Nova gives your **L2 contracts** the power to **read and write to L1** with **minimal latency** and **no trust tradeoffs**.
 
 - [Documentation](https://docs.rari.capital/nova)
-- [Relayer Guide](/docs/relayers.md)
-- [Whitepaper]()
-- [Audit](https://github.com/Fixed-Point-Solutions/published-work/blob/master/SmartContractAudits/FPS_Nova_Assessment_FINAL.pdf)
+- [Whitepaper](media/whitepaper.pdf)
+- [Audits](media/audits/)
 
 ## Architecture
 
-- [`L1_NovaExecutionManager.sol`](/contracts/L1_NovaExecutionManager.sol): Entry point for relayers to execute requests.
-- [`L2_NovaRegistry.sol`](/contracts/L2_NovaRegistry.sol): Hub for contracts/users on L2 to create and manage requests.
-- [`L1_NovaApprovalEscrow.sol`](/contracts/L1_NovaApprovalEscrow.sol): Escrow contract for relayers to approve input tokens to.
+- [`L1_NovaExecutionManager.sol`](contracts/L1_NovaExecutionManager.sol): Entry point for relayers to execute requests.
+- [`L2_NovaRegistry.sol`](contracts/L2_NovaRegistry.sol): Hub for contracts/users on L2 to create and manage requests.
+- [`L1_NovaApprovalEscrow.sol`](contracts/L1_NovaApprovalEscrow.sol): Escrow contract for relayers to approve input tokens to.
 - `libraries/`: Utilities used to help implement the Nova protocol.
-  - [`SafeTransferLib.sol`](/contracts/libraries/SafeTransferLib.sol): Library for safely transferring Ether.
-  - [`NovaExecHashLib.sol`](/contracts/libraries/NovaExecHashLib.sol): Library for computing a Nova execHash.
+  - [`SafeTransferLib.sol`](contracts/libraries/SafeTransferLib.sol): Library for safely transferring Ether.
+  - [`NovaExecHashLib.sol`](contracts/libraries/NovaExecHashLib.sol): Library for computing a Nova execHash.
 - `external/`: Contracts and interfaces modified from external codebases.
-  - [`CrossDomainEnabled.sol`](/contracts/external/CrossDomainEnabled.sol): Cross-domain communication helper mixin.
+  - [`CrossDomainEnabled.sol`](contracts/external/CrossDomainEnabled.sol): Cross-domain communication helper mixin.
 
-[![Diagram](https://lucid.app/publicSegments/view/3cbf2d11-05fe-4f79-ae8b-fcdd4ad11f26/image.png)](https://lucid.app/documents/view/dca3b0ad-26ed-42f8-a871-1b03b40a2395)
+![Diagram](https://lucid.app/publicSegments/view/3cbf2d11-05fe-4f79-ae8b-fcdd4ad11f26/image.png)
 
 ## Testing
 
