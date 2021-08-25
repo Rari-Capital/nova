@@ -195,7 +195,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Request a strategy to be executed with specific calldata and (optionally) input tokens.
-    /// @notice The caller must attach (gasPrice * gasLimit) + tip of ETH to their call.
+    /// @notice The caller must attach (gasPrice * gasLimit) + tip of ETH when calling.
     /// @param strategy The address of the "strategy" contract that should be called on L1.
     /// @param l1Calldata The abi encoded calldata the strategy should be called with.
     /// @param gasLimit The gas limit that will be used when calling the strategy.
@@ -251,7 +251,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         }
     }
 
-    /// @notice Calls requestExec with all relevant parameters and unlockTokens with the autoUnlockDelay.
+    /// @notice Bundles a call to requestExec and unlockTokens into a single transaction.
     /// @notice See requestExec and unlockTokens for more information.
     function requestExecWithTimeout(
         address strategy,
@@ -273,8 +273,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// @notice Request creators must also call this function if their request
     /// reverted (as input tokens are not sent to relayers if the request reverts).
     /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient
-    /// (either the l2Recipient given in execCompleted or the request creator if the request reverted).
-    /// @param execHash The unique identifier of the executed request.
+    /// which is either the l2Recipient passed to execCompleted or the request creator if the request reverted.
+    /// @param execHash The unique identifier of the executed request to claim tokens for.
     function claimInputTokens(bytes32 execHash) external requiresAuth {
         // Get a pointer to the input token recipient data.
         InputTokenRecipientData storage inputTokenRecipientData = getRequestInputTokenRecipientData[execHash];
@@ -325,9 +325,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     }
 
     /// @notice Reverses a request's completed token unlock, hence requiring the creator
-    /// to call unlockTokens again if they wish to cancel their request another time.
+    /// to call unlockTokens again if they wish to unlock the request's tokens another time.
     /// @notice The caller must be the creator of the request associated with the execHash.
-    /// @param execHash The unique identifier of the request which has been unlocked.
+    /// @param execHash The unique identifier of the request to relock tokens for.
     function relockTokens(bytes32 execHash) external requiresAuth {
         // Ensure the request currently has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
@@ -346,7 +346,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         emit RelockTokens(execHash);
     }
 
-    /// @notice Withdraws tokens from an unlocked request.
+    /// @notice Withdraws tokens from a request that has its tokens unlocked.
     /// @notice The creator of the request associated with the execHash must call unlockTokens and
     /// wait the unlockDelaySeconds they specified before tokens may be withdrawn from their request.
     /// @notice Anyone may call this function, but the tokens will still go the creator of the request associated with the execHash.
@@ -382,7 +382,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// @notice Resubmit a request with a higher gas price.
     /// @notice This will "uncle" the execHash which means after MIN_UNLOCK_DELAY_SECONDS it will be disabled and the newExecHash will be enabled.
     /// @notice The caller must be the creator of the request associated with the execHash.
-    /// @param execHash The unique identifier of the request you wish to resubmit with a higher gas price.
+    /// @param execHash The unique identifier of the request to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
     /// @return newExecHash The unique identifier for the resubmitted request.
     function speedUpRequest(bytes32 execHash, uint256 gasPrice) external payable requiresAuth returns (bytes32 newExecHash) {
@@ -390,7 +390,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         (bool requestHasTokens, ) = hasTokens(execHash);
         require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
 
-        // Ensure that msg.sender is the creator of the request.
+        // Ensure that the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
 
         // Ensure the request has not already been sped up.
@@ -451,12 +451,12 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
                   CROSS DOMAIN MESSENGER ONLY FUNCTION
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Distributes rewards to the relayer of a request.
-    /// @dev Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
+    /// @dev Assigns and partially rewards to the relayer of a request.
+    /// @dev Only the connected L1_NovaExecutionManager can call via the cross domain messenger.
     /// @param execHash The unique identifier of the request that was executed.
     /// @param rewardRecipient The address the relayer specified to be the recipient of rewards on L2.
     /// @param reverted If the strategy reverted during execution.
-    /// @param gasUsed The amount of gas used by the execution tx on L1.
+    /// @param gasUsed The amount of gas used by the execution transaction on L1.
     function execCompleted(
         bytes32 execHash,
         address rewardRecipient,
@@ -555,9 +555,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
 
         uint256 uncleDeathTimestamp = getRequestDeathTimestamp[uncleExecHash];
         if (uncleDeathTimestamp > block.timestamp) {
-            // This request is a resubmitted version of its uncle which has
-            // not "died" yet, so we know it does not have its tokens yet,
-            // but will receive them after the uncleDeathTimestamp.
+            // This request is a resubmitted version of its uncle
+            // which has not "died" yet, so we know it does not have its
+            // tokens yet, but will receive them after the uncleDeathTimestamp.
             return (false, uncleDeathTimestamp);
         }
 

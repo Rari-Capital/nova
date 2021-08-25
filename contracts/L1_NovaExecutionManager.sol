@@ -145,7 +145,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @dev This mapping is used to determine if strategies can access transferFromRelayer and trigger hard reverts.
     mapping(address => StrategyRiskLevel) public getStrategyRiskLevel;
 
-    /// @notice Registers msg.sender as a strategy with the passed in risk level.
+    /// @notice Registers the caller as a strategy with the provided risk level.
     /// @dev A strategy can only register once, and will have no way to change its risk level after registering.
     /// @param strategyRiskLevel The risk level the strategy is registering as. Strategies cannot register as UNKNOWN.
     function registerSelfAsStrategy(StrategyRiskLevel strategyRiskLevel) external requiresAuth {
