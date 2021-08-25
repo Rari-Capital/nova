@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for a reverted request 1`] = `63828`;
+exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for a reverted request 1`] = `63840`;
 
-exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for an executed request 1`] = `80940`;
+exports[`L2_NovaRegistry claimInputTokens allows claiming input tokens for an executed request 1`] = `80928`;
 
 exports[`L2_NovaRegistry execCompleted allows completing a request that overflows gas usage 1`] = `83552`;
 
@@ -16,7 +16,7 @@ exports[`L2_NovaRegistry execCompleted allows completing a simple request 1`] = 
 
 exports[`L2_NovaRegistry execCompleted allows completing an uncled request before it dies 1`] = `90230`;
 
-exports[`L2_NovaRegistry relockTokens allows relocking tokens 1`] = `34715`;
+exports[`L2_NovaRegistry relockTokens allows relocking tokens for a request with an unlock completed 1`] = `34833`;
 
 exports[`L2_NovaRegistry requestExec allows a simple request with 2 input tokens 1`] = `333722`;
 

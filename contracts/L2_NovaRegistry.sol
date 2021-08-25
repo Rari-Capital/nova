@@ -162,8 +162,8 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
                               UNLOCK STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Maps execHashes to a timestamp representing when the request will
-    /// have its tokens unlocked, meaning the creator can withdraw their bounties/inputs.
+    /// @notice Maps execHashes to a timestamp representing when the request will have
+    /// its tokens unlocked, meaning the creator can withdraw tokens from the request.
     /// @notice Will be 0 if no unlock has been scheduled.
     mapping(bytes32 => uint256) public getRequestUnlockTimestamp;
 
@@ -297,10 +297,10 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         }
     }
 
-    /// @notice Unlocks a request's tokens with a delay. Once the delay has passed, anyone may
-    /// call withdrawTokens on behalf of the creator to send the bounties/input tokens back.
+    /// @notice Unlocks a request's tokens after a delay. Once the delay has passed,
+    /// anyone can call withdrawTokens on behalf of the creator to refund their tokens.
     /// @notice unlockDelaySeconds must be greater than or equal to MIN_UNLOCK_DELAY_SECONDS.
-    /// @notice msg.sender must be the creator of the request associated with the execHash.
+    /// @notice The caller must be the creator of the request associated with the execHash.
     /// @param execHash The unique identifier of the request to unlock tokens for.
     /// @param unlockDelaySeconds The delay (in seconds) until the creator can withdraw their tokens.
     function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public requiresAuth {
@@ -324,19 +324,21 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         emit UnlockTokens(execHash, unlockTimestamp);
     }
 
-    /// @notice Cancels a scheduled unlock.
+    /// @notice Reverses a request's completed token unlock, hence requiring the creator
+    /// to call unlockTokens again if they wish to cancel their request another time.
+    /// @notice The caller must be the creator of the request associated with the execHash.
     /// @param execHash The unique identifier of the request which has an unlock scheduled.
     function relockTokens(bytes32 execHash) external requiresAuth {
         // Ensure the request currently has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
         require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
 
+        // Ensure that the request has had its tokens unlocked.
+        (bool tokensUnlocked, ) = areTokensUnlocked(execHash);
+        require(tokensUnlocked, "NOT_UNLOCKED");
+
         // Ensure the caller is the creator of the request.
         require(getRequestCreator[execHash] == msg.sender, "NOT_CREATOR");
-
-        // Ensure the request is actually scheduled to unlock. We don't allow relocking if
-        // the request isn't unlocking to prevent emitting RelockTokens in an unhelpful context.
-        require(getRequestUnlockTimestamp[execHash] != 0, "NO_UNLOCK_SCHEDULED");
 
         // Reset the unlock timestamp to 0.
         delete getRequestUnlockTimestamp[execHash];
@@ -344,9 +346,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         emit RelockTokens(execHash);
     }
 
-    /// @notice Withdraws tokens (input/gas/bounties) from an unlocked request.
-    /// @notice The creator of the request associated with execHash must call unlockTokens
-    /// and wait the unlockDelaySeconds they specified before calling withdrawTokens.
+    /// @notice Withdraws tokens from an unlocked request.
+    /// @notice The creator of the request associated with the execHash must call unlockTokens and
+    /// wait the unlockDelaySeconds they specified before tokens may be withdrawn from their request.
     /// @notice Anyone may call this function, but the tokens will still go the creator of the request associated with the execHash.
     /// @param execHash The unique identifier of the request to withdraw tokens from.
     function withdrawTokens(bytes32 execHash) external requiresAuth {
@@ -379,7 +381,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
 
     /// @notice Resubmit a request with a higher gas price.
     /// @notice This will "uncle" the execHash which means after MIN_UNLOCK_DELAY_SECONDS it will be disabled and the newExecHash will be enabled.
-    /// @notice msg.sender must be the creator of the request associated with the execHash.
+    /// @notice The caller must be the creator of the request associated with the execHash.
     /// @param execHash The unique identifier of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
     /// @return newExecHash The unique identifier for the resubmitted request.
@@ -461,7 +463,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         bool reverted,
         uint256 gasUsed
     ) external onlyFromCrossDomainAccount(L1_NovaExecutionManagerAddress) {
-        // Ensure tokens have not already been removed.
+        // Ensure the request still has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
         require(requestHasTokens, "REQUEST_HAS_NO_TOKENS");
 

@@ -215,11 +215,7 @@ describe("L2_NovaRegistry", function () {
       const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       await L2_NovaRegistry.connect(nonCreator)
-        .unlockTokens(
-          execHash,
-          // 1 second less than the min delay
-          (await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS()).sub(1)
-        )
+        .unlockTokens(execHash, await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS())
         .should.be.revertedWith("NOT_CREATOR");
     });
 
@@ -391,6 +387,14 @@ describe("L2_NovaRegistry", function () {
 
       const { execHash } = await createRequest(L2_NovaRegistry, {});
 
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(unlockDelay);
+
       await L2_NovaRegistry.connect(nonCreator)
         .relockTokens(execHash)
         .should.be.revertedWith("NOT_CREATOR");
@@ -399,10 +403,10 @@ describe("L2_NovaRegistry", function () {
     it("does not allow relocking a request that is not scheduled to unlock", async function () {
       const { execHash } = await createRequest(L2_NovaRegistry, {});
 
-      await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("NO_UNLOCK_SCHEDULED");
+      await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("NOT_UNLOCKED");
     });
 
-    it("does not allow relocking tokens on a request with tokens removed", async function () {
+    it("does not allow relocking tokens for a request with tokens removed", async function () {
       const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
@@ -419,13 +423,30 @@ describe("L2_NovaRegistry", function () {
       await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("REQUEST_HAS_NO_TOKENS");
     });
 
-    it("allows relocking tokens", async function () {
+    it("does not allow relocking tokens for a request that is unlocking", async function () {
       const { execHash } = await createRequest(L2_NovaRegistry, {});
 
       const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
 
       // Unlock tokens for the request.
       await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be half way through the unlock delay.
+      await increaseTimeAndMine(unlockDelay.div(2));
+
+      await L2_NovaRegistry.relockTokens(execHash).should.be.revertedWith("NOT_UNLOCKED");
+    });
+
+    it("allows relocking tokens for a request with an unlock completed", async function () {
+      const { execHash } = await createRequest(L2_NovaRegistry, {});
+
+      const unlockDelay = await L2_NovaRegistry.MIN_UNLOCK_DELAY_SECONDS();
+
+      // Unlock tokens for the request.
+      await L2_NovaRegistry.unlockTokens(execHash, unlockDelay);
+
+      // Forward time to be after the delay.
+      await increaseTimeAndMine(unlockDelay);
 
       await snapshotGasCost(L2_NovaRegistry.relockTokens(execHash));
 
