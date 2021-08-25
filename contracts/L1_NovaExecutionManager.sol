@@ -183,10 +183,10 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Executes a request and sends tips/gas/inputs to a specific address on L2.
-    /// @param nonce The nonce of the request.
+    /// @param nonce The nonce of the request to execute.
     /// @param strategy The strategy specified in the request.
     /// @param l1Calldata The calldata associated with the request.
-    /// @param l2Recipient An address who will receive the tips, gas and input tokens on L2.
+    /// @param l2Recipient An address who will receive the tips, gas and input tokens attached to the request on L2.
     /// @param deadline Timestamp after which the transaction will immediately revert.
     function exec(
         uint256 nonce,

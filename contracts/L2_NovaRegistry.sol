@@ -95,7 +95,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
                        GLOBAL NONCE COUNTER STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The most recent nonce assigned to an execution request.
+    /// @notice The most recent nonce assigned to a request.
     uint256 public systemNonce;
 
     /*///////////////////////////////////////////////////////////////
@@ -199,11 +199,12 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// @notice The caller must attach (gasPrice * gasLimit) + tip of ETH to their call.
     /// @param strategy The address of the "strategy" contract on L1 a relayer should call.
     /// @param l1Calldata The abi encoded calldata a relayer should call the strategy with on L1.
-    /// @param gasLimit The gas limit a relayer should use on L1.
+    /// @param gasLimit The gas limit that will be afforded to the call on L1.
     /// @param gasPrice The gas price (in wei) a relayer should use on L1.
-    /// @param tip The additional wei to pay as a tip for any relayer that executes this request.
-    /// @param inputTokens An array of MAX_INPUT_TOKENS or less token/amount pairs that
-    /// a relayer will need on L1 to execute the request (and will be returned to them on L2).
+    /// @param tip The additional wei to pay as a tip for any relayer that successfully executes the request.
+    /// If the relayer executes the request and the strategy reverts, the creator will be refunded the tip.
+    /// @param inputTokens An array with a length of MAX_INPUT_TOKENS or less token/amount pairs that the relayer will
+    /// need to execute the request on L1. Input tokens are refunded to the relayer on L2 after a successful execution.
     /// @return execHash The "execHash" (unique identifier) for this request.
     function requestExec(
         address strategy,
@@ -276,7 +277,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// reverted (as input tokens are not sent to relayers if the request reverts).
     /// @notice Anyone may call this function, but the tokens will be sent to the proper input token recipient
     /// (either the l2Recipient given in execCompleted or the request creator if the request reverted).
-    /// @param execHash The hash of the executed request.
+    /// @param execHash The unique identifier of the executed request.
     function claimInputTokens(bytes32 execHash) external requiresAuth {
         // Get a pointer to the input token recipient data.
         InputTokenRecipientData storage inputTokenRecipientData = getRequestInputTokenRecipientData[execHash];
@@ -303,7 +304,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// call withdrawTokens on behalf of the creator to send the bounties/input tokens back.
     /// @notice unlockDelaySeconds must be greater than or equal to MIN_UNLOCK_DELAY_SECONDS.
     /// @notice msg.sender must be the creator of the request associated with the execHash.
-    /// @param execHash The unique hash of the request to unlock.
+    /// @param execHash The unique identifier of the request to unlock tokens for.
     /// @param unlockDelaySeconds The delay (in seconds) until the creator can withdraw their tokens.
     function unlockTokens(bytes32 execHash, uint256 unlockDelaySeconds) public requiresAuth {
         // Ensure the request currently has tokens.
@@ -327,7 +328,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     }
 
     /// @notice Cancels a scheduled unlock.
-    /// @param execHash The unique hash of the request which has an unlock scheduled.
+    /// @param execHash The unique identifier of the request which has an unlock scheduled.
     function relockTokens(bytes32 execHash) external requiresAuth {
         // Ensure the request currently has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
@@ -350,7 +351,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// @notice The creator of the request associated with execHash must call unlockTokens
     /// and wait the unlockDelaySeconds they specified before calling withdrawTokens.
     /// @notice Anyone may call this function, but the tokens will still go the creator of the request associated with the execHash.
-    /// @param execHash The unique hash of the request to withdraw from.
+    /// @param execHash The unique identifier of the request to withdraw tokens from.
     function withdrawTokens(bytes32 execHash) external requiresAuth {
         // Ensure that the tokens are unlocked.
         (bool tokensUnlocked, ) = areTokensUnlocked(execHash);
@@ -382,7 +383,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// @notice Resubmit a request with a higher gas price.
     /// @notice This will "uncle" the execHash which means after MIN_UNLOCK_DELAY_SECONDS it will be disabled and the newExecHash will be enabled.
     /// @notice msg.sender must be the creator of the request associated with the execHash.
-    /// @param execHash The execHash of the request you wish to resubmit with a higher gas price.
+    /// @param execHash The unique identifier of the request you wish to resubmit with a higher gas price.
     /// @param gasPrice The updated gas price to use for the resubmitted request.
     /// @return newExecHash The unique identifier for the resubmitted request.
     function speedUpRequest(bytes32 execHash, uint256 gasPrice) external payable requiresAuth returns (bytes32 newExecHash) {
@@ -454,9 +455,9 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
 
     /// @dev Distributes inputs/tips to the relayer as a result of a successful execution.
     /// @dev Only the linked L1_NovaExecutionManager can call via the cross domain messenger.
-    /// @param execHash The computed execHash of the execution.
-    /// @param rewardRecipient The address the relayer specified to be the recipient of the tokens on L2.
-    /// @param reverted If the strategy reverted on L1 during execution.
+    /// @param execHash The unique identifier of the request that was executed.
+    /// @param rewardRecipient The address the relayer specified to be the recipient of rewards on L2.
+    /// @param reverted If the strategy reverted during execution.
     /// @param gasUsed The amount of gas used by the execution tx on L1.
     function execCompleted(
         bytes32 execHash,
@@ -570,7 +571,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// @notice Checks if a request has had an unlock completed (unlockTokens was called and MIN_UNLOCK_DELAY_SECONDS has passed).
     /// @param execHash The unique identifier of the request to check.
     /// @return unlocked A boolean indicating if the request has had an unlock completed and hence a withdrawal can be triggered.
-    /// @return changeTimestamp A timestamp indicating when the request may have its unlock completed
+    /// @return changeTimestamp A timestamp indicating when the request may have its unlock completed.
     /// Will be 0 if there is no unlock scheduled or the request has already completed an unlock.
     /// It will be a timestamp if an unlock has been scheduled but not completed.
     function areTokensUnlocked(bytes32 execHash) public view returns (bool unlocked, uint256 changeTimestamp) {
