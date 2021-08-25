@@ -86,7 +86,7 @@ const config: HardhatUserConfig = {
 
   paths: {
     tests:
-      process.argv.includes("optimism") || process.argv.includes("optimisticKovan")
+      process.argv.includes("optimisticMainnet") || process.argv.includes("optimisticKovan")
         ? "test/integration"
         : "test/unit",
   },

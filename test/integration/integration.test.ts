@@ -44,6 +44,10 @@ describe("Integration", function () {
     },
   });
 
+  // Lower the number of blocks to fetch with
+  // the watcher to work with all RPC endpoints.
+  watcher.NUM_BLOCKS_TO_FETCH = 1000;
+
   // Wallets:
   const key = hre.network.config.accounts[0];
   const l1Wallet = new ethers.Wallet(key, watcher.l1.provider);
