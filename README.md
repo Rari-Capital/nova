@@ -1,11 +1,11 @@
-<img width="320" src="media/logo/white-bg-small.png" alt="Logo">
+<img width="320" src="media/logo/White-Background-Small.png" alt="Logo">
 
 [![Coverage Status](https://coveralls.io/repos/github/Rari-Capital/nova/badge.svg?branch=master)](https://coveralls.io/github/Rari-Capital/nova?branch=master) [![Fuzz Tests](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/fuzz.yml) [![Integration Tests](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/integration-tests.yml) [![Unit Tests](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/Rari-Capital/nova/actions/workflows/unit-tests.yml)
 
 Nova gives your **L2 contracts** the power to **read and write to L1** with **minimal latency** and **no trust tradeoffs**.
 
 - [Documentation](https://docs.rari.capital/nova)
-- [Whitepaper](media/whitepaper.pdf)
+- [Whitepaper](media/whitepaper/Whitepaper.pdf)
 - [Audits](media/audits/)
 
 ## Architecture

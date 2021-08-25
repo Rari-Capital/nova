@@ -121,14 +121,13 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     mapping(bytes32 => uint256) public getRequestTip;
 
     /// @notice Maps execHashes to the nonce of each request.
-    /// @dev This is just for convenience, does not need to be on-chain.
     mapping(bytes32 => uint256) public getRequestNonce;
 
     /// @notice A token/amount pair that a relayer will need on L1 to execute the request (and will be returned to them on L2).
     /// @param l2Token The token on L2 to transfer to the relayer upon a successful execution.
     /// @param amount The amount of l2Token to refund the relayer upon a successful execution.
-    /// @dev Relayers may have to reference a registry/list of some sort to determine the equivalent L1 token they will need.
-    /// @dev The decimal scheme may not align between the L1 and L2 tokens, a relayer should check via off-chain logic.
+    /// @dev Relayers must reference a list of L2-L1 token mappings to determine the L1 equivalent for an l2Token.
+    /// @dev The decimal scheme may not align between the L1 and L2 tokens, relayers should check via off-chain logic.
     struct InputToken {
         IERC20 l2Token;
         uint256 amount;
@@ -239,7 +238,6 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         getRequestGasLimit[execHash] = gasLimit;
         getRequestGasPrice[execHash] = gasPrice;
         getRequestTip[execHash] = tip;
-        // Storing the nonce is just for convenience; it does not need to be on-chain.
         getRequestNonce[execHash] = systemNonce;
 
         emit RequestExec(execHash, strategy);
@@ -248,7 +246,6 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         for (uint256 i = 0; i < inputTokens.length; i++) {
             inputTokens[i].l2Token.safeTransferFrom(msg.sender, address(this), inputTokens[i].amount);
 
-            // Copy over this index to the requestInputTokens mapping.
             // We can't just put a calldata/memory array directly into storage so we have to go index by index.
             requestInputTokens[execHash].push(inputTokens[i]);
         }
@@ -436,7 +433,6 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         getRequestGasLimit[newExecHash] = previousGasLimit;
         getRequestGasPrice[newExecHash] = gasPrice;
         getRequestTip[newExecHash] = getRequestTip[execHash];
-        // Storing the nonce is just for convenience; it does not need to be on-chain.
         getRequestNonce[execHash] = systemNonce;
 
         // Map the resubmitted request to its uncle.
