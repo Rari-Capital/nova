@@ -57,7 +57,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
 
     /// @notice Emitted when `requestExec` is called.
     /// @param execHash The unique identifier generated for this request.
-    /// @param strategy The address of the "strategy" contract on L1 a relayer should call.
+    /// @param strategy The strategy associated with the request.
     event RequestExec(bytes32 indexed execHash, address indexed strategy);
 
     /// @notice Emitted when `execCompleted` is called.
@@ -102,7 +102,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
                            PER REQUEST STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Maps execHashes to the creator of each request.
+    /// @notice Maps execHashes to the creator of the request.
     mapping(bytes32 => address) public getRequestCreator;
 
     /// @notice Maps execHashes to the address of the strategy associated with the request.
@@ -111,16 +111,16 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// @notice Maps execHashes to the calldata associated with the request.
     mapping(bytes32 => bytes) public getRequestCalldata;
 
-    /// @notice Maps execHashes to the gas limit a relayer should use to execute the request.
+    /// @notice Maps execHashes to the gas limit that will be used when calling the request's strategy.
     mapping(bytes32 => uint256) public getRequestGasLimit;
 
-    /// @notice Maps execHashes to the gas price a relayer must use to execute the request.
+    /// @notice Maps execHashes to the gas price (in wei) a relayer must use to execute the request.
     mapping(bytes32 => uint256) public getRequestGasPrice;
 
-    /// @notice Maps execHashes to the additional tip in wei relayers will receive for executing them.
+    /// @notice Maps execHashes to the additional tip (in wei) relayers will receive for successfully executing the request.
     mapping(bytes32 => uint256) public getRequestTip;
 
-    /// @notice Maps execHashes to the nonce of each request.
+    /// @notice Maps execHashes to the nonce assigned to the request.
     mapping(bytes32 => uint256) public getRequestNonce;
 
     /// @notice A token/amount pair that a relayer will need on L1 to execute the request (and will be returned to them on L2).
@@ -133,7 +133,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
         uint256 amount;
     }
 
-    /// @dev Maps execHashes to the input tokens a relayer must have to execute each request.
+    /// @dev Maps execHashes to the input tokens a relayer must have to execute the request.
     mapping(bytes32 => InputToken[]) internal requestInputTokens;
 
     /// @notice Fetches the input tokens a relayer must have to execute a request.
@@ -196,10 +196,10 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
 
     /// @notice Request a strategy to be executed with specific calldata and (optionally) input tokens.
     /// @notice The caller must attach (gasPrice * gasLimit) + tip of ETH to their call.
-    /// @param strategy The address of the "strategy" contract on L1 a relayer should call.
-    /// @param l1Calldata The abi encoded calldata a relayer should call the strategy with on L1.
-    /// @param gasLimit The gas limit that will be afforded to the call on L1.
-    /// @param gasPrice The gas price (in wei) a relayer should use on L1.
+    /// @param strategy The address of the "strategy" contract that should be called on L1.
+    /// @param l1Calldata The abi encoded calldata the strategy should be called with.
+    /// @param gasLimit The gas limit that will be used when calling the strategy.
+    /// @param gasPrice The gas price (in wei) a relayer must use to execute the request.
     /// @param tip The additional wei to pay as a tip for any relayer that successfully executes the request.
     /// If the relayer executes the request and the strategy reverts, the creator will be refunded the tip.
     /// @param inputTokens An array with a length of MAX_INPUT_TOKENS or less token/amount pairs that the relayer will
