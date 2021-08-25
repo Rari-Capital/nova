@@ -327,7 +327,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
     /// @notice Reverses a request's completed token unlock, hence requiring the creator
     /// to call unlockTokens again if they wish to cancel their request another time.
     /// @notice The caller must be the creator of the request associated with the execHash.
-    /// @param execHash The unique identifier of the request which has an unlock scheduled.
+    /// @param execHash The unique identifier of the request which has been unlocked.
     function relockTokens(bytes32 execHash) external requiresAuth {
         // Ensure the request currently has tokens.
         (bool requestHasTokens, ) = hasTokens(execHash);
