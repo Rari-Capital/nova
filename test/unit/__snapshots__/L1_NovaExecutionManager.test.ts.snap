@@ -10,6 +10,10 @@ exports[`L1_NovaExecutionManager exec should properly execute a minimal exec 1`]
 
 exports[`L1_NovaExecutionManager exec should properly execute a stateful exec 1`] = `50928`;
 
+exports[`L1_NovaExecutionManager registerSelfAsStrategy should allow registering properly 1`] = `56258`;
+
+exports[`L1_NovaExecutionManager registerSelfAsStrategy should not allow registering multiple times 1`] = `56258`;
+
 exports[`L1_NovaExecutionManager transferFromRelayer should transfer an arbitrary token to a strategy when requested 1`] = `98116`;
 
 exports[`L1_NovaExecutionManager transferFromRelayer will not allow a SAFE strategy to call 1`] = `59891`;

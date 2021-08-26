@@ -69,8 +69,9 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     event GasConfigUpdated(GasConfig newGasConfig);
 
     /// @notice Emitted when `registerSelfAsStrategy` is called.
+    /// @param strategy The address of the strategy that registered itself.
     /// @param strategyRiskLevel The risk level the strategy registered itself as.
-    event StrategyRegistered(StrategyRiskLevel strategyRiskLevel);
+    event StrategyRegistered(address indexed strategy, StrategyRiskLevel strategyRiskLevel);
 
     /// @notice Emitted when `exec` is called.
     /// @param execHash The execHash computed from arguments and transaction context.
@@ -158,7 +159,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Set the strategy's risk level.
         getStrategyRiskLevel[msg.sender] = strategyRiskLevel;
 
-        emit StrategyRegistered(strategyRiskLevel);
+        emit StrategyRegistered(msg.sender, strategyRiskLevel);
     }
 
     /*///////////////////////////////////////////////////////////////

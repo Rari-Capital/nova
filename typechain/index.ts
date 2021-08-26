@@ -2,6 +2,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { IOVMCrossDomainMessenger } from "./IOVMCrossDomainMessenger";
+export type { IOVML1ERC20Bridge } from "./IOVML1ERC20Bridge";
+export type { IOVML1StandardBridge } from "./IOVML1StandardBridge";
 export type { ERC20 } from "./ERC20";
 export type { IERC20 } from "./IERC20";
 export type { Auth } from "./Auth";
@@ -21,8 +23,12 @@ export type { NoReturnValueERC20 } from "./NoReturnValueERC20";
 export type { ReturnFalseERC20 } from "./ReturnFalseERC20";
 export type { EvilExternalContract } from "./EvilExternalContract";
 export type { MockStrategy } from "./MockStrategy";
+export type { CERC20 } from "./CERC20";
+export type { FuseStrategy } from "./FuseStrategy";
 
 export { IOVMCrossDomainMessenger__factory } from "./factories/IOVMCrossDomainMessenger__factory";
+export { IOVML1ERC20Bridge__factory } from "./factories/IOVML1ERC20Bridge__factory";
+export { IOVML1StandardBridge__factory } from "./factories/IOVML1StandardBridge__factory";
 export { ERC20__factory } from "./factories/ERC20__factory";
 export { IERC20__factory } from "./factories/IERC20__factory";
 export { Auth__factory } from "./factories/Auth__factory";
@@ -42,3 +48,5 @@ export { NoReturnValueERC20__factory } from "./factories/NoReturnValueERC20__fac
 export { ReturnFalseERC20__factory } from "./factories/ReturnFalseERC20__factory";
 export { EvilExternalContract__factory } from "./factories/EvilExternalContract__factory";
 export { MockStrategy__factory } from "./factories/MockStrategy__factory";
+export { CERC20__factory } from "./factories/CERC20__factory";
+export { FuseStrategy__factory } from "./factories/FuseStrategy__factory";
