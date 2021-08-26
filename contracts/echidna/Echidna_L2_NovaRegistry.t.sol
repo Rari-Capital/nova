@@ -4,8 +4,6 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import {HevmHelper} from "./Hevm.sol";
-
-import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockCrossDomainMessenger} from "../mocks/MockCrossDomainMessenger.sol";
 
 import {L2_NovaRegistry} from "../L2_NovaRegistry.sol";

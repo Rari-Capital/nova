@@ -3,11 +3,11 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import {MockCrossDomainMessenger, iOVM_CrossDomainMessenger} from "../mocks/MockCrossDomainMessenger.sol";
 import {MockAuthority} from "../mocks/MockAuthority.sol";
 import {MockStrategy} from "../mocks/MockStrategy.sol";
+import {MockCrossDomainMessenger} from "../mocks/MockCrossDomainMessenger.sol";
 
-import {L1_NovaExecutionManager, IERC20} from "../L1_NovaExecutionManager.sol";
+import {L1_NovaExecutionManager} from "../L1_NovaExecutionManager.sol";
 
 contract Echidna_L1_NovaExecutionManager {
     L1_NovaExecutionManager internal executionManager;
