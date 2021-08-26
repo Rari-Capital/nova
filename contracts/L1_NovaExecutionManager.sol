@@ -77,7 +77,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @param execHash The execHash computed from arguments and transaction context.
     /// @param reverted Will be true if the strategy call reverted, will be false if not.
     /// @param gasUsed The gas estimate computed during the call.
-    event Exec(bytes32 indexed execHash, address relayer, bool reverted, uint256 gasUsed);
+    event Exec(bytes32 indexed execHash, address indexed relayer, bool reverted, uint256 gasUsed);
 
     /*///////////////////////////////////////////////////////////////
                    GAS LIMIT/ESTIMATION CONFIGURATION

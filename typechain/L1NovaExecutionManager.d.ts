@@ -498,7 +498,7 @@ export class L1NovaExecutionManager extends BaseContract {
 
     Exec(
       execHash?: BytesLike | null,
-      relayer?: null,
+      relayer?: string | null,
       reverted?: null,
       gasUsed?: null
     ): TypedEventFilter<
