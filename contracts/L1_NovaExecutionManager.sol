@@ -5,7 +5,6 @@ pragma abicoder v2;
 
 import {Auth} from "@rari-capital/solmate/src/auth/Auth.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {NovaExecHashLib} from "./libraries/NovaExecHashLib.sol";
 import {CrossDomainEnabled, iOVM_CrossDomainMessenger} from "./external/CrossDomainEnabled.sol";
