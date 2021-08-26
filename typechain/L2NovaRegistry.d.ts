@@ -909,7 +909,7 @@ export class L2NovaRegistry extends BaseContract {
     >;
 
     ExecutionManagerConnected(
-      newExecutionManagerAddress?: null
+      newExecutionManagerAddress?: string | null
     ): TypedEventFilter<[string], { newExecutionManagerAddress: string }>;
 
     OwnerUpdated(

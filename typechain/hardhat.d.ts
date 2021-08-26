@@ -100,14 +100,6 @@ declare module "hardhat/types/runtime" {
       name: "MockStrategy",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockStrategy__factory>;
-    getContractFactory(
-      name: "CERC20",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.CERC20__factory>;
-    getContractFactory(
-      name: "FuseStrategy",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.FuseStrategy__factory>;
 
     // default types
     getContractFactory(

@@ -23,8 +23,6 @@ export type { NoReturnValueERC20 } from "./NoReturnValueERC20";
 export type { ReturnFalseERC20 } from "./ReturnFalseERC20";
 export type { EvilExternalContract } from "./EvilExternalContract";
 export type { MockStrategy } from "./MockStrategy";
-export type { CERC20 } from "./CERC20";
-export type { FuseStrategy } from "./FuseStrategy";
 
 export { IOVMCrossDomainMessenger__factory } from "./factories/IOVMCrossDomainMessenger__factory";
 export { IOVML1ERC20Bridge__factory } from "./factories/IOVML1ERC20Bridge__factory";
@@ -48,5 +46,3 @@ export { NoReturnValueERC20__factory } from "./factories/NoReturnValueERC20__fac
 export { ReturnFalseERC20__factory } from "./factories/ReturnFalseERC20__factory";
 export { EvilExternalContract__factory } from "./factories/EvilExternalContract__factory";
 export { MockStrategy__factory } from "./factories/MockStrategy__factory";
-export { CERC20__factory } from "./factories/CERC20__factory";
-export { FuseStrategy__factory } from "./factories/FuseStrategy__factory";
