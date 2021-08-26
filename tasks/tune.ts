@@ -101,10 +101,12 @@ export async function tuneMissingGasEstimate(
   const newMissingGasEstimate = optimalMissingGasEstimate + 500;
 
   // Update the missing gas estimate on-chain.
-  await L1_NovaExecutionManager.updateGasConfig({
-    ...currentGasConfig,
-    missingGasEstimate: newMissingGasEstimate,
-  });
+  await (
+    await L1_NovaExecutionManager.updateGasConfig({
+      ...currentGasConfig,
+      missingGasEstimate: newMissingGasEstimate,
+    })
+  ).wait();
 
   loader.stopAndPersist({
     symbol: chalk.magenta("✓"),
