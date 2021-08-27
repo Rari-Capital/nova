@@ -2,8 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { IOVMCrossDomainMessenger } from "./IOVMCrossDomainMessenger";
-export type { IOVML1ERC20Bridge } from "./IOVML1ERC20Bridge";
-export type { IOVML1StandardBridge } from "./IOVML1StandardBridge";
 export type { ERC20 } from "./ERC20";
 export type { IERC20 } from "./IERC20";
 export type { Auth } from "./Auth";
@@ -25,8 +23,6 @@ export type { EvilExternalContract } from "./EvilExternalContract";
 export type { MockStrategy } from "./MockStrategy";
 
 export { IOVMCrossDomainMessenger__factory } from "./factories/IOVMCrossDomainMessenger__factory";
-export { IOVML1ERC20Bridge__factory } from "./factories/IOVML1ERC20Bridge__factory";
-export { IOVML1StandardBridge__factory } from "./factories/IOVML1StandardBridge__factory";
 export { ERC20__factory } from "./factories/ERC20__factory";
 export { IERC20__factory } from "./factories/IERC20__factory";
 export { Auth__factory } from "./factories/Auth__factory";

@@ -17,14 +17,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IOVMCrossDomainMessenger__factory>;
     getContractFactory(
-      name: "IOVML1ERC20Bridge",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IOVML1ERC20Bridge__factory>;
-    getContractFactory(
-      name: "IOVML1StandardBridge",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IOVML1StandardBridge__factory>;
-    getContractFactory(
       name: "ERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20__factory>;
