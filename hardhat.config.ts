@@ -66,7 +66,7 @@ const config: HardhatUserConfig = {
   },
 
   ovm: {
-    // This version supports ETH opcodes:
+    // This version supports ETH opcodes.
     solcVersion: "0.7.6+commit.3b061308",
   },
 
@@ -102,7 +102,6 @@ const config: HardhatUserConfig = {
   },
 
   mocha: {
-    // 5 minutes:
     timeout: 300000,
   },
 
