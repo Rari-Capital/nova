@@ -1,5 +1,5 @@
 import hre, { ethers } from "hardhat";
-import { Watcher } from "@eth-optimism/watcher";
+import { Watcher } from "@eth-optimism/core-utils";
 import { HttpNetworkConfig } from "hardhat/types";
 
 import {
@@ -38,15 +38,14 @@ describe("Integration", function () {
         ? "0x4361d0F75A0186C05f971c566dC6bEa5957483fD" // https://github.com/ethereum-optimism/optimism/blob/develop/packages/contracts/deployments/README.md
         : "0x59b670e9fA9D0A427751Af201D676719a970857b", // http://localhost:8080/addresses.json
     },
+
     l2: {
       provider: new ethers.providers.JsonRpcProvider((hre.network.config as HttpNetworkConfig).url),
       messengerAddress: "0x4200000000000000000000000000000000000007",
     },
-  });
 
-  // Lower the number of blocks to fetch with
-  // the watcher to work with all RPC endpoints.
-  watcher.NUM_BLOCKS_TO_FETCH = 1000;
+    blocksToFetch: 1000,
+  });
 
   // Wallets:
   const key = hre.network.config.accounts[0];
