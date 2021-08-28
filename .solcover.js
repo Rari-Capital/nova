@@ -3,6 +3,6 @@ function serverReadyHandler() {
 }
 
 module.exports = {
-  skipFiles: ["mocks", "external", "echidna"],
+  skipFiles: ["mocks", "echidna"],
   onServerReady: serverReadyHandler,
 };
