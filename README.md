@@ -5,8 +5,9 @@
 Nova gives your **L2 contracts** the power to **read and write to L1** with **minimal latency** and **no trust tradeoffs**.
 
 - [Documentation](https://docs.rari.capital/nova)
+- [Deployments](https://github.com/Rari-Capital/nova/releases)
 - [Whitepaper](media/whitepaper/Whitepaper.pdf)
-- [Audits](media/audits/)
+- [Audits](media/audits)
 
 ## Architecture
 
