@@ -12,7 +12,7 @@ task("tune", "Tunes an execution manager's missing gas estimate based on single 
   .addParam("txHash", "Transaction hash of an exec tx.")
   .addFlag(
     "update",
-    "If enabled, the task will update the estimate on chain. If not enabled the task will just report the optimal estimate."
+    "If enabled, the task will update the estimate on-chain. If not enabled the task will just report the optimal estimate."
   )
   .setAction(async ({ txHash, update }, hre) => {
     const txPromise = hre.ethers.provider.getTransaction(txHash);
