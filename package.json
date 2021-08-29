@@ -54,6 +54,6 @@
   "dependencies": {
     "@eth-optimism/contracts": "^0.4.10",
     "@openzeppelin/contracts": "^3.4.1",
-    "@rari-capital/solmate": "^3.2.0"
+    "@rari-capital/solmate": "^3.2.1"
   }
 }
