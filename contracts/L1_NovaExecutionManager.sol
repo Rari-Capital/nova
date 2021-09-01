@@ -106,9 +106,9 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @notice Gas limit/estimation configuration values used in exec.
     GasConfig public gasConfig =
         GasConfig({
-            calldataByteGasEstimate: 13, // OpenGSN uses 13 to estimate gas per calldata byte too.
+            calldataByteGasEstimate: 12, // Between 4 for zero bytes and 16 for non-zero bytes.
             missingGasEstimate: 200000, // Rough estimate for missing gas. Tune this in production.
-            strategyCallGasBuffer: 5000, // Overly cautious gas buffer. Can likely be safely reduced.
+            strategyCallGasBuffer: 5000, // Overly cautious buffer. Can be safely reduced if needed.
             execCompletedMessageGasLimit: 1500000 // If the limit is too low, relayers won't get paid.
         });
 
