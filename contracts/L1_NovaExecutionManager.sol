@@ -92,14 +92,14 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // This needs to factor in raw calldata costs, along with the hidden
         // cost of abi decoding and copying the calldata into an Solidity function.
         uint32 calldataByteGasEstimate;
-        // This needs to factor in the base transaction gas (currently 21000), along
+        // This needs to factor in the base transaction gas (currently 21,000), along
         // with the gas cost of sending the cross domain message and emitting the Exec event.
         uint96 missingGasEstimate;
         // This needs to factor in the max amount of gas consumed after the strategy call, up
         // until the cross domain message is sent (as this is not accounted for in missingGasEstimate).
         uint96 strategyCallGasBuffer;
-        // This needs to factor in the overhead of relaying the message on L2 (currently ~800k),
-        // along with the actual L2 gas cost of calling the L2_NovaRegistry's execCompleted function.
+        // This needs to factor in the overhead of relaying messages on L2 (currently ~1,100,000),
+        // along with the gas cost of calling the L2_NovaRegistry's execCompleted function in isolation.
         uint32 execCompletedMessageGasLimit;
     }
 
