@@ -321,7 +321,6 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @notice The execution manager will ignore hard reverts if
     /// they are triggered by a strategy not registered as UNSAFE.
     function hardRevert() external pure {
-        // Call revert with the hard revert text.
         revert(HARD_REVERT_TEXT);
     }
 }
