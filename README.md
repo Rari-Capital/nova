@@ -14,10 +14,10 @@ Nova gives your **L2 contracts** the power to **read and write to L1** with **mi
 - [`L1_NovaExecutionManager.sol`](contracts/L1_NovaExecutionManager.sol): Entry point for relayers to execute requests.
 - [`L2_NovaRegistry.sol`](contracts/L2_NovaRegistry.sol): Hub for contracts/users on L2 to create and manage requests.
 - [`L1_NovaApprovalEscrow.sol`](contracts/L1_NovaApprovalEscrow.sol): Escrow contract for relayers to approve input tokens to.
-- `libraries/`: Utilities used to help implement the Nova protocol.
+- [`libraries/`](contracts/libraries): Utilities used to help implement the Nova protocol.
   - [`SafeTransferLib.sol`](contracts/libraries/SafeTransferLib.sol): Library for safely transferring Ether.
   - [`NovaExecHashLib.sol`](contracts/libraries/NovaExecHashLib.sol): Library for computing a Nova execHash.
-- `external/`: Contracts and interfaces modified from external codebases.
+- [`external/`](contracts/external): Contracts and interfaces modified from external codebases.
   - [`CrossDomainEnabled.sol`](contracts/external/CrossDomainEnabled.sol): Cross-domain communication helper mixin.
 
 ![Diagram](https://lucid.app/publicSegments/view/3cbf2d11-05fe-4f79-ae8b-fcdd4ad11f26/image.png)
