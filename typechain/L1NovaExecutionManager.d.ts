@@ -194,7 +194,7 @@ interface L1NovaExecutionManagerInterface extends ethers.utils.Interface {
     "Exec(bytes32,address,bool,uint256)": EventFragment;
     "GasConfigUpdated(tuple)": EventFragment;
     "OwnerUpdated(address)": EventFragment;
-    "StrategyRegistered(uint8)": EventFragment;
+    "StrategyRegistered(address,uint8)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "AuthorityUpdated"): EventFragment;
@@ -498,7 +498,7 @@ export class L1NovaExecutionManager extends BaseContract {
 
     Exec(
       execHash?: BytesLike | null,
-      relayer?: null,
+      relayer?: string | null,
       reverted?: null,
       gasUsed?: null
     ): TypedEventFilter<
@@ -537,8 +537,12 @@ export class L1NovaExecutionManager extends BaseContract {
     ): TypedEventFilter<[string], { owner: string }>;
 
     StrategyRegistered(
+      strategy?: string | null,
       strategyRiskLevel?: null
-    ): TypedEventFilter<[number], { strategyRiskLevel: number }>;
+    ): TypedEventFilter<
+      [string, number],
+      { strategy: string; strategyRiskLevel: number }
+    >;
   };
 
   estimateGas: {

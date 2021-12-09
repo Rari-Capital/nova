@@ -53,7 +53,7 @@ contract L2_NovaRegistry is Auth, CrossDomainEnabled {
 
     /// @notice Emitted when `connectExecutionManager` is called.
     /// @param newExecutionManagerAddress The new value for L1_NovaExecutionManagerAddress.
-    event ExecutionManagerConnected(address newExecutionManagerAddress);
+    event ExecutionManagerConnected(address indexed newExecutionManagerAddress);
 
     /// @notice Emitted when `requestExec` is called.
     /// @param execHash The unique identifier generated for this request.

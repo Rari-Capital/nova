@@ -273,6 +273,7 @@ export async function getETHPaidForTx(tx: Promise<ContractTransaction>) {
 export async function latestBlockTimestamp() {
   return (await ethers.provider.getBlock("latest")).timestamp;
 }
+
 /** Waits for a transaction to be included in a block. */
 export async function wait(tx: Promise<ContractTransaction>) {
   const resolvedTx = await tx;

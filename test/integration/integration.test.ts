@@ -43,8 +43,6 @@ describe("Integration", function () {
       provider: new ethers.providers.JsonRpcProvider((hre.network.config as HttpNetworkConfig).url),
       messengerAddress: "0x4200000000000000000000000000000000000007",
     },
-
-    blocksToFetch: 1000,
   });
 
   // Wallets:

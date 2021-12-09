@@ -69,14 +69,15 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     event GasConfigUpdated(GasConfig newGasConfig);
 
     /// @notice Emitted when `registerSelfAsStrategy` is called.
+    /// @param strategy The address of the registered strategy.
     /// @param strategyRiskLevel The risk level the strategy registered itself as.
-    event StrategyRegistered(StrategyRiskLevel strategyRiskLevel);
+    event StrategyRegistered(address indexed strategy, StrategyRiskLevel strategyRiskLevel);
 
     /// @notice Emitted when `exec` is called.
     /// @param execHash The execHash computed from arguments and transaction context.
     /// @param reverted Will be true if the strategy call reverted, will be false if not.
     /// @param gasUsed The gas estimate computed during the call.
-    event Exec(bytes32 indexed execHash, address relayer, bool reverted, uint256 gasUsed);
+    event Exec(bytes32 indexed execHash, address indexed relayer, bool reverted, uint256 gasUsed);
 
     /*///////////////////////////////////////////////////////////////
                    GAS LIMIT/ESTIMATION CONFIGURATION
@@ -91,23 +92,23 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // This needs to factor in raw calldata costs, along with the hidden
         // cost of abi decoding and copying the calldata into an Solidity function.
         uint32 calldataByteGasEstimate;
-        // This needs to factor in the base transaction gas (currently 21000), along
+        // This needs to factor in the base transaction gas (currently 21,000), along
         // with the gas cost of sending the cross domain message and emitting the Exec event.
         uint96 missingGasEstimate;
         // This needs to factor in the max amount of gas consumed after the strategy call, up
         // until the cross domain message is sent (as this is not accounted for in missingGasEstimate).
         uint96 strategyCallGasBuffer;
-        // This needs to factor in the overhead of relaying the message on L2 (currently ~800k),
-        // along with the actual L2 gas cost of calling the L2_NovaRegistry's execCompleted function.
+        // This needs to factor in the overhead of relaying messages on L2 (currently ~1,100,000),
+        // along with the gas cost of calling the L2_NovaRegistry's execCompleted function in isolation.
         uint32 execCompletedMessageGasLimit;
     }
 
     /// @notice Gas limit/estimation configuration values used in exec.
     GasConfig public gasConfig =
         GasConfig({
-            calldataByteGasEstimate: 13, // OpenGSN uses 13 to estimate gas per calldata byte too.
+            calldataByteGasEstimate: 12, // Between 4 for zero bytes and 16 for non-zero bytes.
             missingGasEstimate: 200000, // Rough estimate for missing gas. Tune this in production.
-            strategyCallGasBuffer: 5000, // Overly cautious gas buffer. Can likely be safely reduced.
+            strategyCallGasBuffer: 5000, // Overly cautious buffer. Can be safely reduced if needed.
             execCompletedMessageGasLimit: 1500000 // If the limit is too low, relayers won't get paid.
         });
 
@@ -158,7 +159,7 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
         // Set the strategy's risk level.
         getStrategyRiskLevel[msg.sender] = strategyRiskLevel;
 
-        emit StrategyRegistered(strategyRiskLevel);
+        emit StrategyRegistered(msg.sender, strategyRiskLevel);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -320,7 +321,6 @@ contract L1_NovaExecutionManager is Auth, CrossDomainEnabled {
     /// @notice The execution manager will ignore hard reverts if
     /// they are triggered by a strategy not registered as UNSAFE.
     function hardRevert() external pure {
-        // Call revert with the hard revert text.
         revert(HARD_REVERT_TEXT);
     }
 }

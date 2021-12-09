@@ -127,7 +127,7 @@ describe("L1_NovaExecutionManager", function () {
     it("should not allow registering multiple times", async function () {
       const strategy = await deployStrategy(L1_NovaExecutionManager);
 
-      await strategy.registerSelfAsStrategy(StrategyRiskLevel.SAFE);
+      await snapshotGasCost(strategy.registerSelfAsStrategy(StrategyRiskLevel.SAFE));
 
       await strategy
         .registerSelfAsStrategy(StrategyRiskLevel.UNSAFE)
@@ -137,7 +137,7 @@ describe("L1_NovaExecutionManager", function () {
     it("should allow registering properly", async function () {
       const strategy = await deployStrategy(L1_NovaExecutionManager);
 
-      await strategy.registerSelfAsStrategy(StrategyRiskLevel.UNSAFE);
+      await snapshotGasCost(strategy.registerSelfAsStrategy(StrategyRiskLevel.UNSAFE));
 
       await L1_NovaExecutionManager.getStrategyRiskLevel(strategy.address).should.eventually.equal(
         StrategyRiskLevel.UNSAFE
